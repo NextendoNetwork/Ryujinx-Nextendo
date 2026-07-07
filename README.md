@@ -24,7 +24,7 @@ Grab the latest build from **[Releases](https://github.com/NextendoNetwork/Ryuji
 A quick-start wizard walks you through:
 1. Your **games** folder and **updates/DLC** folder.
 2. Your **`prod.keys`** (bring your own).
-3. Your **online profile** — pick a nickname and you're ready. No Nintendo account.
+3. Your **Nextendo account** — required for online play. Create one for free (or log in) at **[nextendo.network](https://nextendo.network)**, then link it. No Nintendo account needed.
 
 Then launch a supported game and look for the online modes — they connect straight to the Nextendo servers.
 
@@ -40,7 +40,7 @@ Online play evolves with the servers, so Ryujinx-Nextendo keeps itself current: 
 
 ## Account
 
-You can play with a local profile straight from the wizard, or create a full account at **[nextendo.network](https://nextendo.network)** to get a permanent friend code, a friends list and cross-device presence (emulator ↔ Switch).
+A **Nextendo account is required** to play online. Create one for free at **[nextendo.network](https://nextendo.network)** — you get a permanent friend code, a friends list and cross-device presence (emulator ↔ Switch).
 
 ---
 

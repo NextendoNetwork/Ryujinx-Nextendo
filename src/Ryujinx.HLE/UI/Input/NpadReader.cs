@@ -1,0 +1,141 @@
+using Ryujinx.HLE.HOS.Services.Hid.Types.SharedMemory.Common;
+using Ryujinx.HLE.HOS.Services.Hid.Types.SharedMemory.Npad;
+using System;
+
+namespace Ryujinx.HLE.UI.Input
+{
+    /// <summary>
+    /// Class that converts Hid entries for the Npad into pressed / released events.
+    /// </summary>
+    class NpadReader
+    {
+        private readonly Switch _device;
+        private readonly NpadCommonState[] _lastStates;
+
+        public event NpadButtonHandler NpadButtonUpEvent;
+        public event NpadButtonHandler NpadButtonDownEvent;
+
+        public NpadReader(Switch device)
+        {
+            _device = device;
+            _lastStates = new NpadCommonState[_device.Hid.SharedMemory.Npads.Length];
+        }
+
+        public NpadButton GetCurrentButtonsOfNpad(int npadIndex)
+        {
+            return _lastStates[npadIndex].Buttons;
+        }
+
+        public NpadButton GetCurrentButtonsOfAllNpads()
+        {
+            NpadButton buttons = 0;
+
+            foreach (NpadCommonState state in _lastStates)
+            {
+                buttons |= state.Buttons;
+            }
+
+            return buttons;
+        }
+
+        private static ref RingLifo<NpadCommonState> GetCommonStateLifo(ref NpadInternalState npad)
+        {
+            switch (npad.StyleSet)
+            {
+                case NpadStyleTag.FullKey:
+                    return ref npad.FullKey;
+                case NpadStyleTag.Handheld:
+                    return ref npad.Handheld;
+                case NpadStyleTag.JoyDual:
+                    return ref npad.JoyDual;
+                case NpadStyleTag.JoyLeft:
+                    return ref npad.JoyLeft;
+                case NpadStyleTag.JoyRight:
+                    return ref npad.JoyRight;
+                case NpadStyleTag.Palma:
+                    return ref npad.Palma;
+                default:
+                    return ref npad.SystemExt;
+            }
+        }
+
+        public void Update(bool suppressEvents = false)
+        {
+            int npadsCount = _device.Hid.SharedMemory.Npads.Length;
+
+            // Process each input individually.
+            for (int npadIndex = 0; npadIndex < npadsCount; npadIndex++)
+            {
+                UpdateNpad(npadIndex, suppressEvents);
+            }
+        }
+
+        private void UpdateNpad(int npadIndex, bool suppressEvents)
+        {
+            const int MaxEntries = 1024;
+
+            ref NpadState npadState = ref _device.Hid.SharedMemory.Npads[npadIndex];
+            ref NpadCommonState lastEntry = ref _lastStates[npadIndex];
+
+            ReadOnlySpan<AtomicStorage<NpadCommonState>> fullKeyEntries = GetCommonStateLifo(ref npadState.InternalState).ReadEntries(MaxEntries);
+
+            int firstEntryNum;
+
+            // Scan the LIFO for the first entry that is newer that what's already processed.
+            for (firstEntryNum = fullKeyEntries.Length - 1;
+                 firstEntryNum >= 0 && fullKeyEntries[firstEntryNum].Object.SamplingNumber <= lastEntry.SamplingNumber;
+                 firstEntryNum--)
+            {
+            }
+
+            if (firstEntryNum == -1)
+            {
+                return;
+            }
+
+            for (; firstEntryNum >= 0; firstEntryNum--)
+            {
+                AtomicStorage<NpadCommonState> entry = fullKeyEntries[firstEntryNum];
+
+                // The interval of valid entries should be contiguous.
+                if (entry.SamplingNumber < lastEntry.SamplingNumber)
+                {
+                    break;
+                }
+
+                if (!suppressEvents)
+                {
+                    ProcessNpadButtons(npadIndex, entry.Object.Buttons);
+                }
+
+                lastEntry = entry.Object;
+            }
+        }
+
+        private void ProcessNpadButtons(int npadIndex, NpadButton buttons)
+        {
+            NpadButton lastButtons = _lastStates[npadIndex].Buttons;
+
+            for (ulong buttonMask = 1; buttonMask != 0; buttonMask <<= 1)
+            {
+                NpadButton currentButton = (NpadButton)buttonMask & buttons;
+                NpadButton lastButton = (NpadButton)buttonMask & lastButtons;
+
+                if (lastButton != 0)
+                {
+                    if (currentButton == 0)
+                    {
+                        NpadButtonUpEvent?.Invoke(npadIndex, lastButton);
+                    }
+                }
+                else
+                {
+                    if (currentButton != 0)
+                    {
+                        NpadButtonDownEvent?.Invoke(npadIndex, currentButton);
+                    }
+                }
+            }
+        }
+    }
+}

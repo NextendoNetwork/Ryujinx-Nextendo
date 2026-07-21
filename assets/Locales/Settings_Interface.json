@@ -1,0 +1,79 @@
+{
+  "Locales": [
+    {
+      "ID": "StartGamesInFullscreenCheckboxLabel",
+      "Translations": {
+        "ar_SA": "ابدأ الألعاب بملء الشاشة",
+        "de_DE": "Spiele im Vollbild starten",
+        "el_GR": "Εκκίνηση Παιχνιδιών σε Πλήρη Οθόνη",
+        "en_US": "Start Games in Fullscreen",
+        "es_ES": "Iniciar Juegos en Pantalla Completa",
+        "fr_FR": "Démarrer les Jeux en Plein Écran",
+        "he_IL": "התחל משחקים במסך מלא",
+        "it_IT": "Avvia i giochi a schermo intero",
+        "ja_JP": "全画面でゲームを開始",
+        "ko_KR": "전체 화면으로 게임 시작",
+        "no_NO": "Start spill i fullskjerm",
+        "pl_PL": "Uruchamiaj gry na pełnym ekranie",
+        "pt_BR": "Iniciar Jogos em Tela Cheia",
+        "ru_RU": "Запускать игры в полноэкранном режиме",
+        "sv_SE": "Starta spel i helskärm",
+        "th_TH": "เริ่มเกมแบบเต็มหน้าจอ",
+        "tr_TR": "Oyunları Tam Ekranda Başlat",
+        "uk_UA": "Запускати ігри в повноекранному режимі",
+        "zh_CN": "全屏启动游戏",
+        "zh_TW": "以全螢幕啟動遊戲"
+      }
+    },
+    {
+      "ID": "StartGamesWithoutUICheckboxLabel",
+      "Translations": {
+        "ar_SA": "",
+        "de_DE": "Benutzeroberfläche beim Spielstart ausblenden",
+        "el_GR": "",
+        "en_US": "Hide UI on Game Start",
+        "es_ES": "Ocultar la Interfaz al Iniciar el Juego",
+        "fr_FR": "Masquer l’Interface au Lancement du Jeu",
+        "he_IL": "",
+        "it_IT": "Nascondi l’interfaccia all’avvio del gioco",
+        "ja_JP": "",
+        "ko_KR": "게임 시작 시 UI 숨기기",
+        "no_NO": "Skjul brukergrensesnitt ved spillstart",
+        "pl_PL": "",
+        "pt_BR": "Ocultar a interface ao iniciar o jogo",
+        "ru_RU": "Скрывать интерфейс при запуске игры",
+        "sv_SE": "Dölj användargränssnitt vid spelstart",
+        "th_TH": "ซ่อน UI เมื่อเริ่มเกม",
+        "tr_TR": "",
+        "uk_UA": "Приховувати інтерфейс під час запуску гри",
+        "zh_CN": "启动游戏时隐藏界面",
+        "zh_TW": "啟動遊戲時隱藏介面"
+      }
+    },
+    {
+      "ID": "StartGamesWithoutUICheckboxLabelToolTip",
+      "Translations": {
+        "ar_SA": "",
+        "de_DE": "Blendet die Benutzeroberfläche von Ryujinx automatisch aus, sobald ein Spiel gestartet wird. Während des Spiels kann die Oberfläche mit F4 eingeblendet werden.",
+        "el_GR": "",
+        "en_US": "Automatically hides Ryujinx's UI whenever a game launches. While in-game, press F4 to show the UI.",
+        "es_ES": "",
+        "fr_FR": "Masque automatiquement l'interface de Ryujinx au lancement d'un jeu. En jeu, appuyez sur F4 pour afficher l'interface.",
+        "he_IL": "",
+        "it_IT": "",
+        "ja_JP": "",
+        "ko_KR": "",
+        "no_NO": "",
+        "pl_PL": "",
+        "pt_BR": "",
+        "ru_RU": "Автоматически скрывает интерфейс Ryujinx при запуске игры. Во время игры нажмите F4, чтобы показать интерфейс.",
+        "sv_SE": "",
+        "th_TH": "",
+        "tr_TR": "",
+        "uk_UA": "",
+        "zh_CN": "",
+        "zh_TW": ""
+      }
+    }
+  ]
+}

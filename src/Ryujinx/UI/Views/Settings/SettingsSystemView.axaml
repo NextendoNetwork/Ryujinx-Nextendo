@@ -1,0 +1,299 @@
+<UserControl
+    x:Class="Ryujinx.Ava.UI.Views.Settings.SettingsSystemView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+    xmlns:ext="clr-namespace:Ryujinx.Ava.Common.Markup"
+    xmlns:viewModels="clr-namespace:Ryujinx.Ava.UI.ViewModels"
+    xmlns:helpers="clr-namespace:Ryujinx.Ava.UI.Helpers"
+    mc:Ignorable="d"
+    x:DataType="viewModels:SettingsViewModel">
+    <Design.DataContext>
+        <viewModels:SettingsViewModel />
+    </Design.DataContext>
+    <ScrollViewer
+        Name="SystemPage"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto">
+        <Border Classes="settings">
+            <StackPanel
+                Margin="10"
+                HorizontalAlignment="Stretch"
+                Orientation="Vertical"
+                Spacing="10">
+                <TextBlock
+                    Classes="h1"
+                    Text="{ext:Locale SettingsTabSystemCore}" />
+                <StackPanel
+                    Margin="10,0,0,0"
+                    Orientation="Vertical">
+                    <StackPanel
+                        Margin="0,0,0,10"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Text="{ext:Locale SettingsTabSystemSystemRegion}"
+                            Width="250" />
+                        <ComboBox
+                            SelectedIndex="{Binding Region}"
+                            HorizontalContentAlignment="Left"
+                            Width="350">
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemRegionJapan}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemRegionUSA}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemRegionEurope}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemRegionAustralia}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemRegionChina}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemRegionKorea}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemRegionTaiwan}" />
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel
+                        Margin="0,0,0,10"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Text="{ext:Locale SettingsTabSystemSystemLanguage}"
+                            Width="250" />
+                        <ComboBox
+                            SelectedIndex="{Binding Language}"
+                            HorizontalContentAlignment="Left"
+                            Width="350">
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageJapanese}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageAmericanEnglish}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageFrench}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageGerman}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageItalian}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageSpanish}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageChinese}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageKorean}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageDutch}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguagePortuguese}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageRussian}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageTaiwanese}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageBritishEnglish}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageCanadianFrench}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageLatinAmericanSpanish}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageSimplifiedChinese}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageTraditionalChinese}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemSystemLanguageBrazilianPortuguese}" />
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel
+                        Margin="0,0,0,10"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Text="{ext:Locale SettingsTabSystemSystemTimeZone}"
+                            Width="250" />
+                        <AutoCompleteBox
+                            Name="TimeZoneBox"
+                            Width="350"
+                            MaxDropDownHeight="500"
+                            FilterMode="Contains"
+                            ItemsSource="{Binding TimeZones}"
+                            SelectionChanged="TimeZoneBox_OnSelectionChanged"
+                            Text="{Binding Path=TimeZone, Mode=OneWay}"
+                            TextChanged="TimeZoneBox_OnTextChanged"
+                            ValueMemberBinding="{Binding Mode=OneWay, Converter={x:Static helpers:TimeZoneConverter.Instance}}" />
+                    </StackPanel>
+                    <StackPanel
+                        IsEnabled="{Binding !IsGameTitleNotNull}"
+                        Opacity="{Binding PanelOpacity}"
+                        Margin="0,0,0,10"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Text="{ext:Locale SettingsTabSystemSystemTime}"
+                            Width="250"/>
+                        <DatePicker
+                            VerticalAlignment="Center"
+                            IsEnabled="{Binding !MatchSystemTime}"
+                            SelectedDate="{Binding CurrentDate}"
+                            Width="350" />
+                        <TextBlock  Classes="globalConfigMarker" IsVisible="{Binding IsGameTitleNotNull}"/>
+                    </StackPanel>
+                    <StackPanel
+                        IsEnabled="{Binding !IsGameTitleNotNull}"
+                        Opacity="{Binding PanelOpacity}"
+                        Margin="250,0,0,10"
+                        Orientation="Horizontal">
+                        <TimePicker
+                            VerticalAlignment="Center"
+                            ClockIdentifier="24HourClock"
+                            IsEnabled="{Binding !MatchSystemTime}"
+                            SelectedTime="{Binding CurrentTime}"
+                            Width="350" />
+                        <TextBlock  Classes="globalConfigMarker" IsVisible="{Binding IsGameTitleNotNull}"/>
+                    </StackPanel>
+                    <StackPanel
+                        IsEnabled="{Binding !IsGameTitleNotNull}"
+                        Opacity="{Binding PanelOpacity}"
+                        Orientation="Horizontal">
+                        <CheckBox
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding MatchSystemTime}"
+                            ToolTip.Tip="{ext:Locale MatchTimeTooltip}">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Text="{ext:Locale SettingsTabSystemSystemTimeMatch}"
+                                Width="250"/>
+                        </CheckBox>
+                        <TextBlock Classes="globalConfigMarker" IsVisible="{Binding IsGameTitleNotNull}"/>
+                    </StackPanel>
+                    <Separator />
+                    <StackPanel Margin="0,10,0,10"
+                                Orientation="Horizontal">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Text="{ext:Locale SettingsTabSystemVSyncMode}"
+                            ToolTip.Tip="{ext:Locale SettingsTabSystemVSyncModeTooltip}"
+                            Width="250" />
+                        <ComboBox
+                            IsVisible="{Binding EnableCustomVSyncInterval}"
+                            SelectedIndex="{Binding VSyncMode}"
+                            ToolTip.Tip="{ext:Locale SettingsTabSystemVSyncModeTooltipCustom}"
+                            HorizontalContentAlignment="Left"
+                            Width="350">
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemVSyncModeSwitch}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemVSyncModeUnbounded}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemVSyncModeCustom}" />
+                        </ComboBox>
+                        <ComboBox
+                            IsVisible="{Binding !EnableCustomVSyncInterval}"
+                            SelectedIndex="{Binding VSyncMode}"
+                            ToolTip.Tip="{ext:Locale SettingsTabSystemVSyncModeTooltip}"
+                            HorizontalContentAlignment="Left"
+                            Width="350">
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemVSyncModeSwitch}" />
+                            <ComboBoxItem
+                                Content="{ext:Locale SettingsTabSystemVSyncModeUnbounded}" />
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel IsVisible="{Binding EnableCustomVSyncInterval}"
+                                Margin="0,0,0,10"
+                                Orientation="Horizontal">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Text="{ext:Locale SettingsTabSystemCustomVSyncIntervalPercentage}"
+                            ToolTip.Tip="{ext:Locale SettingsTabSystemCustomVSyncIntervalValueTooltip}"
+                            Width="250" />
+                        <Slider Value="{Binding CustomVSyncIntervalPercentageProxy}"
+                                ToolTip.Tip="{ext:Locale SettingsTabSystemCustomVSyncIntervalSliderTooltip}"
+                                MinWidth="175"
+                                Margin="10,-3,0,0"
+                                Height="32"
+                                Padding="0,-5"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                LargeChange="10"
+                                SmallChange="1"
+                                VerticalAlignment="Center"
+                                Minimum="10"
+                                Maximum="400" />
+                        <TextBlock Margin="5,0"
+                                   Width="40"
+                                   Text="{Binding CustomVSyncIntervalPercentageText}"/>
+                    </StackPanel>
+                    <CheckBox IsChecked="{Binding EnableFsIntegrityChecks}">
+                        <TextBlock
+                            Text="{ext:Locale SettingsTabSystemEnableFsIntegrityChecks}"
+                            ToolTip.Tip="{ext:Locale FsIntegrityToggleTooltip}" />
+                    </CheckBox>
+                </StackPanel>
+                <Separator Height="1" />
+                <StackPanel
+                    Orientation="Vertical"
+                    Spacing="5">
+                    <TextBlock
+                        Classes="h1"
+                        Text="{ext:Locale SettingsTabSystemHacks}" />
+                    <TextBlock
+                        Foreground="{DynamicResource SecondaryTextColor}"
+                        TextDecorations="Underline"
+                        Text="{ext:Locale SettingsTabSystemHacksNote}" />
+                </StackPanel>
+                <StackPanel
+                    Margin="10,0,0,0"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Text="{ext:Locale SettingsTabSystemDramSize}"
+                        ToolTip.Tip="{ext:Locale DRamTooltip}"
+                        Width="250" />
+                    <ComboBox
+                        SelectedIndex="{Binding DramSize}"
+                        ToolTip.Tip="{ext:Locale DRamTooltip}"
+                        HorizontalContentAlignment="Left"
+                        Width="350">
+                        <ComboBoxItem
+                            Content="{ext:Locale SettingsTabSystemDramSize4GiB}" />
+                        <ComboBoxItem
+                            Content="{ext:Locale SettingsTabSystemDramSize6GiB}" />
+                        <ComboBoxItem
+                            Content="{ext:Locale SettingsTabSystemDramSize8GiB}" />
+                        <ComboBoxItem
+                            Content="{ext:Locale SettingsTabSystemDramSize12GiB}" />
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel
+                    Margin="10,0,0,0"
+                    HorizontalAlignment="Stretch"
+                    Orientation="Vertical">
+                    <CheckBox
+                        IsChecked="{Binding IgnoreMissingServices}"
+                        ToolTip.Tip="{ext:Locale IgnoreMissingServicesTooltip}">
+                        <TextBlock Text="{ext:Locale SettingsTabSystemIgnoreMissingServices}" />
+                    </CheckBox>
+                    <CheckBox 
+                        IsChecked="{Binding IgnoreApplet}"
+                        ToolTip.Tip="{ext:Locale IgnoreControllerAppletTooltip}">
+                        <TextBlock Text="{ext:Locale SettingsTabSystemIgnoreControllerApplet}" />
+                    </CheckBox>
+                    <CheckBox
+                        IsChecked="{Binding EnableCustomVSyncInterval}"
+                        ToolTip.Tip="{ext:Locale SettingsTabSystemEnableCustomVSyncIntervalTooltip}">
+                        <TextBlock Text="{ext:Locale SettingsTabSystemEnableCustomVSyncInterval}" />
+                    </CheckBox>
+                    <CheckBox
+                        IsChecked="{Binding SkipUserProfiles}"
+                        ToolTip.Tip="{ext:Locale SkipUserProfilesTooltip}">
+                        <TextBlock Text="{ext:Locale SettingsTabSystemSkipUserProfilesManager}" />
+                    </CheckBox>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </ScrollViewer>
+</UserControl>

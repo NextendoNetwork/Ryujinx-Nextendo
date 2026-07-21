@@ -1,0 +1,104 @@
+{
+  "Locales": [
+    {
+      "ID": "AssociationSuccessMessage",
+      "Translations": {
+        "ar_SA": "تم ربط أنواع الملفات بنجاح.",
+        "de_DE": "Dateitypen erfolgreich zugeordnet.",
+        "el_GR": "Οι τύποι αρχείων συσχετίστηκαν με επιτυχία.",
+        "en_US": "Successfully associated file types.",
+        "es_ES": "¡Tipos de archivo asociados con éxito.",
+        "fr_FR": "Types de fichiers associés avec succès.",
+        "he_IL": "שיוך סוגי הקבצים בוצע בהצלחה.",
+        "it_IT": "Tipi di file associati con successo.",
+        "ja_JP": "ファイルの種類の関連付けに成功しました。",
+        "ko_KR": "파일 형식 연결에 성공했습니다.",
+        "no_NO": "Filtyper ble tilknyttet.",
+        "pl_PL": "Pomyślnie powiązano typy plików.",
+        "pt_BR": "Tipos de arquivo associados com sucesso.",
+        "ru_RU": "Типы файлов успешно связаны.",
+        "sv_SE": "Filtyper har kopplats.",
+        "th_TH": "เชื่อมโยงประเภทไฟล์สำเร็จแล้ว",
+        "tr_TR": "Dosya türleri başarıyla ilişkilendirildi.",
+        "uk_UA": "Типи файлів успішно пов’язані.",
+        "zh_CN": "文件类型关联成功。",
+        "zh_TW": "檔案類型關聯成功。"
+      }
+    },
+    {
+      "ID": "RemoveAssociationSuccessMessage",
+      "Translations": {
+        "ar_SA": "تمت إزالة ارتباطات أنواع الملفات بنجاح.",
+        "de_DE": "Dateitypzuordnungen erfolgreich entfernt.",
+        "el_GR": "Οι συσχετίσεις τύπων αρχείων αφαιρέθηκαν με επιτυχία.",
+        "en_US": "Successfully removed file type associations.",
+        "es_ES": "Asociaciones de tipos de archivo eliminadas con éxito.",
+        "fr_FR": "Associations de types de fichiers supprimées avec succès.",
+        "he_IL": "שיוכי סוגי הקבצים הוסרו בהצלחה.",
+        "it_IT": "Associazioni dei tipi di file rimosse con successo.",
+        "ja_JP": "ファイルの種類の関連付けの削除に成功しました。",
+        "ko_KR": "파일 형식 연결이 성공적으로 제거되었습니다.",
+        "no_NO": "Filtype-tilknytninger ble fjernet.",
+        "pl_PL": "Pomyślnie usunięto skojarzenia typów plików.",
+        "pt_BR": "Associações de tipos de arquivo removidas com sucesso.",
+        "ru_RU": "Связи типов файлов успешно удалены.",
+        "sv_SE": "Filtypsassociationer har tagits bort.",
+        "th_TH": "ลบการเชื่อมโยงประเภทไฟล์สำเร็จแล้ว",
+        "tr_TR": "Dosya türü ilişkilendirmeleri başarıyla kaldırıldı.",
+        "uk_UA": "Прив’язки типів файлів успішно видалено.",
+        "zh_CN": "文件类型关联已成功移除。",
+        "zh_TW": "檔案類型關聯已成功移除。"
+      }
+    },
+    {
+      "ID": "AssociationFailedMessage",
+      "Translations": {
+        "ar_SA": "فشل ربط أنواع الملفات.",
+        "de_DE": "Fehler beim Zuordnen der Dateitypen.",
+        "el_GR": "Απέτυχε η συσχέτιση των τύπων αρχείων.",
+        "en_US": "Failed to associate file types.",
+        "es_ES": "No se pudieron asociar los tipos de archivo.",
+        "fr_FR": "Échec de l’association des types de fichiers.",
+        "he_IL": "שיוך סוגי הקבצים נכשל.",
+        "it_IT": "Associazione dei tipi di file non riuscita.",
+        "ja_JP": "ファイルの種類の関連付けに失敗しました。",
+        "ko_KR": "파일 형식 연결에 실패했습니다.",
+        "no_NO": "Klarte ikke å tilknytte filtyper.",
+        "pl_PL": "Nie udało się powiązać typów plików.",
+        "pt_BR": "Falha ao associar tipos de arquivo.",
+        "ru_RU": "Не удалось связать типы файлов.",
+        "sv_SE": "Det gick inte att koppla filtyper.",
+        "th_TH": "เชื่อมโยงประเภทไฟล์ไม่สำเร็จ",
+        "tr_TR": "Dosya türleri ilişkilendirilemedi.",
+        "uk_UA": "Не вдалося пов’язати типи файлів.",
+        "zh_CN": "文件类型关联失败。",
+        "zh_TW": "檔案類型關聯失敗。"
+      }
+    },
+    {
+      "ID": "RemoveAssociationFailedMessage",
+      "Translations": {
+        "ar_SA": "فشلت إزالة ارتباطات أنواع الملفات.",
+        "de_DE": "Das Entfernen der Dateitypzuordnungen ist fehlgeschlagen.",
+        "el_GR": "Η αφαίρεση των συσχετίσεων τύπων αρχείων απέτυχε.",
+        "en_US": "Failed to remove file type associations.",
+        "es_ES": "No se pudieron eliminar las asociaciones de tipos de archivo.",
+        "fr_FR": "Échec de la suppression des associations de types de fichiers.",
+        "he_IL": "הסרת שיוכי סוגי הקבצים נכשלה.",
+        "it_IT": "Rimozione delle associazioni dei tipi di file non riuscita.",
+        "ja_JP": "ファイルの種類の関連付けの削除に失敗しました。",
+        "ko_KR": "파일 형식 연결 제거에 실패했습니다.",
+        "no_NO": "Fjerning av filtype-tilknytninger mislyktes.",
+        "pl_PL": "Nie udało się usunąć skojarzeń typów plików.",
+        "pt_BR": "Falha ao remover associações de tipos de arquivo.",
+        "ru_RU": "Не удалось удалить связи типов файлов.",
+        "sv_SE": "Det gick inte att ta bort filtypsassociationer.",
+        "th_TH": "ไม่สามารถลบการเชื่อมโยงประเภทไฟล์ได้",
+        "tr_TR": "Dosya türü ilişkilendirmeleri kaldırılamadı.",
+        "uk_UA": "Не вдалося видалити прив’язки типів файлів.",
+        "zh_CN": "文件类型关联移除失败。",
+        "zh_TW": "無法移除檔案類型關聯。"
+      }
+    }
+  ]
+}

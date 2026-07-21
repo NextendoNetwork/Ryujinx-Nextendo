@@ -1,0 +1,104 @@
+{
+  "Locales": [
+    {
+      "ID": "OptionsLabel",
+      "Translations": {
+        "ar_SA": "_خيارات",
+        "de_DE": "_Optionen",
+        "el_GR": "_Επιλογές",
+        "en_US": "_Options",
+        "es_ES": "_Opciones",
+        "fr_FR": null,
+        "he_IL": "_אפשרויות",
+        "it_IT": "_Opzioni",
+        "ja_JP": "オプション(_O)",
+        "ko_KR": "옵션(_O)",
+        "no_NO": "_Alternativer",
+        "pl_PL": "_Opcje",
+        "pt_BR": "_Opções",
+        "ru_RU": "_Настройки",
+        "sv_SE": "_Inställningar",
+        "th_TH": "_ตัวเลือก",
+        "tr_TR": "_Seçenekler",
+        "uk_UA": "_Параметри",
+        "zh_CN": "选项(_O)",
+        "zh_TW": "選項(_O)"
+      }
+    },
+    {
+      "ID": "LanguageButton",
+      "Translations": {
+        "ar_SA": "اللغة",
+        "de_DE": "Sprache",
+        "el_GR": "Γλώσσα",
+        "en_US": "Language",
+        "es_ES": "Idioma",
+        "fr_FR": "Langue",
+        "he_IL": "שפה",
+        "it_IT": "Lingua",
+        "ja_JP": "言語",
+        "ko_KR": "언어",
+        "no_NO": "Språk",
+        "pl_PL": "Język",
+        "pt_BR": "Idioma",
+        "ru_RU": "Язык",
+        "sv_SE": "Språk",
+        "th_TH": "ภาษา",
+        "tr_TR": "Dil",
+        "uk_UA": "Мова",
+        "zh_CN": "语言",
+        "zh_TW": "語言"
+      }
+    },
+    {
+      "ID": "UserProfilesButton",
+      "Translations": {
+        "ar_SA": "_ملفات المستخدمين",
+        "de_DE": "_Benutzerprofile",
+        "el_GR": "_Προφίλ Χρηστών",
+        "en_US": "_User Profiles",
+        "es_ES": "_Perfiles de Usuario",
+        "fr_FR": "_Profils d'Utilisateurs",
+        "he_IL": "_פרופילי משתמש",
+        "it_IT": "_Profili utente",
+        "ja_JP": "ユーザプロファイル(_M)",
+        "ko_KR": "사용자 프로필(_M)",
+        "no_NO": "_Brukerprofiler",
+        "pl_PL": "_Profile użytkowników",
+        "pt_BR": "_Perfis de usuário",
+        "ru_RU": "_Профили пользователей",
+        "sv_SE": "_Användarprofiler",
+        "th_TH": "_โปรไฟล์ผู้ใช้งาน",
+        "tr_TR": "_Kullanıcı Profilleri",
+        "uk_UA": "_Профілі користувачів",
+        "zh_CN": "用户配置文件(_M)",
+        "zh_TW": "使用者設定檔(_M)"
+      }
+    },
+    {
+      "ID": "SettingsButton",
+      "Translations": {
+        "ar_SA": "_الإعدادات",
+        "de_DE": "_Einstellungen",
+        "el_GR": "_Ρυθμίσεις",
+        "en_US": "_Settings",
+        "es_ES": "_Configuración",
+        "fr_FR": "_Paramètres",
+        "he_IL": "_הגדרות",
+        "it_IT": "_Impostazioni",
+        "ja_JP": "設定(_S)",
+        "ko_KR": "설정(_S)",
+        "no_NO": "_Innstillinger",
+        "pl_PL": "_Ustawienia",
+        "pt_BR": "_Configurações",
+        "ru_RU": "_Параметры",
+        "sv_SE": "_Inställningar",
+        "th_TH": "_ตั้งค่า",
+        "tr_TR": "_Seçenekler",
+        "uk_UA": "_Налаштування",
+        "zh_CN": "设置(_S)",
+        "zh_TW": "設定(_S)"
+      }
+    }
+  ]
+}

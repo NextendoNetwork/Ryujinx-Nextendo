@@ -1,0 +1,177 @@
+<window:StyleableAppWindow
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:window="clr-namespace:Ryujinx.Ava.UI.Windows"
+    xmlns:viewModels="clr-namespace:Ryujinx.Ava.UI.ViewModels"
+    xmlns:ext="clr-namespace:Ryujinx.Ava.Common.Markup"
+    xmlns:controls="clr-namespace:Ryujinx.Ava.UI.Controls"
+    xmlns:pt="using:Projektanker.Icons.Avalonia"
+    mc:Ignorable="d"
+    d:DesignWidth="400"
+    d:DesignHeight="350"
+    x:Class="Ryujinx.Ava.UI.Windows.AmiiboWindow"
+    x:DataType="viewModels:AmiiboWindowViewModel"
+    CanResize="False"
+    WindowStartupLocation="CenterOwner"
+    Width="950"
+    MinHeight="650"
+    Height="700"
+    SizeToContent="Manual"
+    MinWidth="600"
+    Focusable="True">
+    <Design.DataContext>
+        <viewModels:AmiiboWindowViewModel />
+    </Design.DataContext>
+    <Grid Grid.Row="0" RowDefinitions="Auto,Auto,*,Auto" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+
+        <!-- UI FlushControls -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" Name="FlushControls">
+            <controls:RyujinxLogo Grid.Column="0" Margin="15,0,7,0" ToolTip.Tip="{ext:WindowTitle Amiibo_WindowTitle}" />
+            <TextBox Grid.Column="1" 
+                Margin="0,5,0,7" 
+                Width="250"
+                Watermark="{ext:Locale Common_Search_SearchAmiiboWatermark}"
+                Text="{Binding SearchText}" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <ComboBox Margin="10,5,0,5" SelectedIndex="{Binding SeriesSelectedIndex}" ItemsSource="{Binding AmiiboSeries}" MinWidth="140" />
+            </StackPanel>
+            <DropDownButton Grid.Column="3" Margin="10,5,0,5" Content="{Binding SortingFieldName}">
+                <DropDownButton.Flyout>
+                    <Flyout Placement="Bottom">
+                        <StackPanel Margin="0" HorizontalAlignment="Stretch" Orientation="Vertical">
+                            <StackPanel>
+                                <RadioButton GroupName="AmiiboSort" IsChecked="{Binding IsSortedByName}" Content="{ext:Locale Common_Sort_NameLabel}" Tag="Name" Checked="Sort_Checked" />
+                            </StackPanel>
+                            <Border Width="60" Height="2" Margin="5" HorizontalAlignment="Stretch" BorderBrush="White" BorderThickness="0,1,0,0">
+                                <Separator Height="0" HorizontalAlignment="Stretch" />
+                            </Border>
+                            <RadioButton GroupName="AmiiboOrder" IsChecked="{Binding SortingAscending}" Content="{ext:Locale Common_Sort_OrderAscending}" Tag="Ascending" Checked="Order_Checked" />
+                            <RadioButton GroupName="AmiiboOrder" IsChecked="{Binding !SortingAscending}" Content="{ext:Locale Common_Sort_OrderDescending}" Tag="Descending" Checked="Order_Checked" />
+                        </StackPanel>
+                    </Flyout>
+                </DropDownButton.Flyout>
+            </DropDownButton>
+            <Button
+                Grid.Column="4"
+                Margin="10,5,0,5"
+                MinWidth="32" 
+                MinHeight="32" 
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Click="SettingsButton_Click">
+                <pt:Icon Value="fa-solid fa-gear" />
+                <FlyoutBase.AttachedFlyout>
+                    <Flyout Placement="Bottom">
+                        <StackPanel>
+                            <CheckBox
+                                IsChecked="{Binding UseRandomUuid}">
+                                <TextBlock Text="{ext:Locale Amiibo_UseRandomUuidLabel}" />
+                            </CheckBox>
+                            <CheckBox
+                                IsChecked="{Binding PauseEmulationWhileScanningAmiibo}">
+                                <TextBlock Text="{ext:Locale Amiibo_PauseEmulationWhileScanningAmiibo}" />
+                            </CheckBox>
+                        </StackPanel>
+                    </Flyout>
+                </FlyoutBase.AttachedFlyout>
+            </Button>
+            <CheckBox Grid.Column="5" Margin="10,5,0,5" IsChecked="{Binding ShowAllAmiibo}">
+                <TextBlock Text="{ext:Locale Amiibo_ShowAllAmiiboLabel}" />
+            </CheckBox>
+        </Grid>
+
+        <!-- UI NormalControls -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" Name="NormalControls">
+            <TextBox Grid.Column="0" 
+                    Margin="15,5,0,7" 
+                    Width="250"
+                    Watermark="{ext:Locale Common_Search_SearchAmiiboWatermark}"
+                    Text="{Binding SearchText}" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <ComboBox Margin="10,5,0,5" SelectedIndex="{Binding SeriesSelectedIndex}" ItemsSource="{Binding AmiiboSeries}" MinWidth="140" />
+            </StackPanel>
+            <DropDownButton Grid.Column="2" Margin="10,5,0,5" Content="{Binding SortingFieldName}">
+                <DropDownButton.Flyout>
+                    <Flyout Placement="Bottom">
+                        <StackPanel Margin="0" HorizontalAlignment="Stretch" Orientation="Vertical">
+                            <StackPanel>
+                                <RadioButton GroupName="AmiiboSort" IsChecked="{Binding IsSortedByName}" Content="{ext:Locale Common_Sort_NameLabel}" Tag="Name" Checked="Sort_Checked" />
+                            </StackPanel>
+                            <Border Width="60" Height="2" Margin="5" HorizontalAlignment="Stretch" BorderBrush="White" BorderThickness="0,1,0,0">
+                                <Separator Height="0" HorizontalAlignment="Stretch" />
+                            </Border>
+                            <RadioButton GroupName="AmiiboOrder" IsChecked="{Binding SortingAscending}" Content="{ext:Locale Common_Sort_OrderAscending}" Tag="Ascending" Checked="Order_Checked" />
+                            <RadioButton GroupName="AmiiboOrder" IsChecked="{Binding !SortingAscending}" Content="{ext:Locale Common_Sort_OrderDescending}" Tag="Descending" Checked="Order_Checked" />
+                        </StackPanel>
+                    </Flyout>
+                </DropDownButton.Flyout>
+            </DropDownButton>
+            <Button
+                Grid.Column="3"
+                Margin="10,5,0,5"
+                MinWidth="32" 
+                MinHeight="32" 
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Click="SettingsButton_Click">
+                <pt:Icon Value="fa-solid fa-gear" />
+                <FlyoutBase.AttachedFlyout>
+                    <Flyout Placement="Bottom">
+                        <StackPanel>
+                            <CheckBox
+                                IsChecked="{Binding UseRandomUuid}">
+                                <TextBlock Text="{ext:Locale Amiibo_UseRandomUuidLabel}" />
+                            </CheckBox>
+                            <CheckBox
+                                IsChecked="{Binding PauseEmulationWhileScanningAmiibo}">
+                                <TextBlock Text="{ext:Locale Amiibo_PauseEmulationWhileScanningAmiibo}" />
+                            </CheckBox>
+                        </StackPanel>
+                    </Flyout>
+                </FlyoutBase.AttachedFlyout>
+            </Button>
+            <CheckBox Grid.Column="4" Margin="10,5,0,5" IsChecked="{Binding ShowAllAmiibo}">
+                <TextBlock Text="{ext:Locale Amiibo_ShowAllAmiiboLabel}" />
+            </CheckBox>
+        </Grid>
+
+        <!-- Amiibo list, images, and usage  -->
+        <StackPanel Grid.Row="2" Margin="0,20,0,20" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="50">
+            <ListBox
+                Width="300"
+                Padding="5"
+                SelectionMode="Single"
+                ItemsSource="{Binding AmiiboList}"
+                SelectedIndex="{Binding AmiiboSelectedIndex}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Margin="10,0,0,0" Text="{Binding Name}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <StackPanel Width="300">
+                <Image Source="{Binding AmiiboImage}" Height="400" Width="200" />
+                <ScrollViewer MaxHeight="120" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" Margin="20" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+                    <TextBlock TextWrapping="Wrap" Text="{Binding Usage}" HorizontalAlignment="Center" TextAlignment="Center" />
+                </ScrollViewer>
+            </StackPanel>
+        </StackPanel>
+        <Grid Grid.Row="3" Margin="0,0,10,10" ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+            <Button Grid.Column="3" 
+                    IsEnabled="{Binding EnableScanning}" 
+                    Name="ScanButton"
+                    HotKey="Return"
+                    Content="{ext:Locale Amiibo_ScanButton}"
+                    Click="ScanButton_Click" />
+            <Button Grid.Column="4" 
+                    Margin="10,0,0,0" 
+                    Width="80"
+                    Name="CancelButton"
+                    HotKey="Escape"
+                    Content="{ext:Locale Common_Buttons_Cancel}"
+                    Click="CancelButton_Click" />
+        </Grid>
+    </Grid>
+</window:StyleableAppWindow>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+	<id>app.ryujinx.Ryujinx</id>
+	<metadata_license>MIT</metadata_license>
+	<project_license>MIT</project_license>
+	<name>Ryujinx</name>
+	<summary>Nintendo Switch 1 emulator written in C#</summary>
+	<description>
+		<p>Ryujinx is an open-source Nintendo Switch emulator, originally created by gdkchan, written in C#.</p>
+	</description>
+	<launchable type="desktop-id">app.ryujinx.Ryujinx.desktop</launchable>
+	<url type="homepage">https://ryujinx.app/</url>
+	<developer id="app.ryujinx">
+		<name>Ryubing</name>
+	</developer>
+	<screenshots>
+		<screenshot type="default">
+			<image>https://git.ryujinx.app/projects/Ryubing/raw/branch/master/docs/shell.png</image>
+		</screenshot>
+	</screenshots>
+	<provides>
+		<id>app.ryujinx.Ryujinx.desktop</id>
+	</provides>
+	<content_rating type="oars-1.1" />
+</component>

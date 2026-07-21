@@ -1,0 +1,44 @@
+<!-- [Nextendo] Signaler un problème : le joueur décrit ce qui a cassé, la fenêtre joint la
+     fin du log automatiquement, et le tout part dans la boîte de réception admin. -->
+<window:StyleableAppWindow xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ext="using:Ryujinx.Ava.Common.Markup"
+             xmlns:window="clr-namespace:Ryujinx.Ava.UI.Windows"
+             mc:Ignorable="d"
+             Width="480"
+             Height="440"
+             MinWidth="420"
+             MinHeight="400"
+             x:Class="Ryujinx.Ava.UI.Windows.NextendoReportWindow">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto" Margin="16">
+
+        <TextBlock Grid.Row="0" Classes="h1" Text="{ext:Locale Dialog_Nextendo_ReportTitle}" />
+        <TextBlock Grid.Row="1" Margin="0,4,0,12" TextWrapping="Wrap" Opacity="0.75" FontSize="12"
+                   Text="{ext:Locale Dialog_Nextendo_ReportIntro}" />
+
+        <StackPanel Grid.Row="2" Spacing="4" Margin="0,0,0,10">
+            <TextBlock FontSize="12" Opacity="0.85" Text="{ext:Locale Dialog_Nextendo_ReportErrorCodeLabel}" />
+            <TextBox Name="ErrorCodeBox" Watermark="2618-0006" MaxLength="32" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="3" FontSize="12" Opacity="0.85" Margin="0,0,0,4"
+                   Text="{ext:Locale Dialog_Nextendo_ReportCommentLabel}" />
+        <TextBox Grid.Row="4" Name="CommentBox" AcceptsReturn="True" TextWrapping="Wrap"
+                 MaxLength="500" VerticalContentAlignment="Top"
+                 Watermark="{ext:Locale Dialog_Nextendo_ReportCommentWatermark}" />
+
+        <CheckBox Grid.Row="5" Name="AttachLogCheck" IsChecked="True" Margin="0,10,0,0"
+                  Content="{ext:Locale Dialog_Nextendo_ReportAttachLog}" />
+
+        <Grid Grid.Row="6" ColumnDefinitions="*,Auto,Auto" Margin="0,12,0,0">
+            <TextBlock Grid.Column="0" Name="StatusText" VerticalAlignment="Center"
+                       TextWrapping="Wrap" FontSize="12" IsVisible="False" />
+            <Button Grid.Column="1" Name="CancelButton" Margin="0,0,8,0"
+                    Content="{ext:Locale Dialog_Nextendo_ReportCancel}" />
+            <Button Grid.Column="2" Name="SendButton" Classes="accent"
+                    Content="{ext:Locale Dialog_Nextendo_ReportSend}" />
+        </Grid>
+    </Grid>
+</window:StyleableAppWindow>

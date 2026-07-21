@@ -1,0 +1,129 @@
+{
+  "Locales": [
+    {
+      "ID": "NameLabel",
+      "Translations": {
+        "ar_SA": "الاسم",
+        "de_DE": "",
+        "el_GR": "Όνομα",
+        "en_US": "Name",
+        "es_ES": "Nombre",
+        "fr_FR": "Nom",
+        "he_IL": "שם",
+        "it_IT": "Nome",
+        "ja_JP": "名称",
+        "ko_KR": "이름",
+        "no_NO": "Navn",
+        "pl_PL": "Nazwa",
+        "pt_BR": "Nome",
+        "ru_RU": "Название",
+        "sv_SE": "Namn",
+        "th_TH": "ชื่อ",
+        "tr_TR": "İsim",
+        "uk_UA": "Назва",
+        "zh_CN": "名称",
+        "zh_TW": "名稱"
+      }
+    },
+    {
+      "ID": "SavingsLabel",
+      "Translations": {
+        "ar_SA": "التوفير",
+        "de_DE": "Einsparung",
+        "el_GR": "Εξοικονόμηση",
+        "en_US": "Savings",
+        "es_ES": "Ahorro",
+        "fr_FR": "Économies",
+        "he_IL": "חיסכון",
+        "it_IT": "Risparmio",
+        "ja_JP": "節約",
+        "ko_KR": "절약",
+        "no_NO": "Besparelse",
+        "pl_PL": "Oszczędność",
+        "pt_BR": "Economia",
+        "ru_RU": "Экономия",
+        "sv_SE": "Besparing",
+        "th_TH": "การประหยัด",
+        "tr_TR": "Tasarruf",
+        "uk_UA": "Економія",
+        "zh_CN": "节省",
+        "zh_TW": "節省"
+      }
+    },
+    {
+      "ID": "TrimStatusLabel",
+      "Translations": {
+        "ar_SA": "",
+        "de_DE": "Trimmstatus",
+        "el_GR": "",
+        "en_US": "Trim Status",
+        "es_ES": "Estado del recorte",
+        "fr_FR": "État de réduction",
+        "he_IL": "",
+        "it_IT": "Stato della riduzione",
+        "ja_JP": "",
+        "ko_KR": "",
+        "no_NO": "",
+        "pl_PL": "",
+        "pt_BR": "",
+        "ru_RU": "Статус обрезки",
+        "sv_SE": "",
+        "th_TH": "",
+        "tr_TR": "",
+        "uk_UA": "Статус обрізки",
+        "zh_CN": "",
+        "zh_TW": ""
+      }
+    },
+    {
+      "ID": "OrderAscending",
+      "Translations": {
+        "ar_SA": "تصاعدي",
+        "de_DE": "Aufsteigend",
+        "el_GR": "Αύξουσα",
+        "en_US": "Ascending",
+        "es_ES": "Ascendente",
+        "fr_FR": "Croissant",
+        "he_IL": "סדר עולה",
+        "it_IT": "Crescente",
+        "ja_JP": "昇順",
+        "ko_KR": "오름차순",
+        "no_NO": "Stigende",
+        "pl_PL": "Rosnąco",
+        "pt_BR": "Ascendente",
+        "ru_RU": "По Возрастанию",
+        "sv_SE": "Stigande",
+        "th_TH": "จากน้อยไปมาก",
+        "tr_TR": "Artan",
+        "uk_UA": "За зростанням",
+        "zh_CN": "升序",
+        "zh_TW": "從小到大"
+      }
+    },
+    {
+      "ID": "OrderDescending",
+      "Translations": {
+        "ar_SA": "تنازلي",
+        "de_DE": "Absteigend",
+        "el_GR": "Φθίνουσα",
+        "en_US": "Descending",
+        "es_ES": "Descendente",
+        "fr_FR": "Décroissant",
+        "he_IL": "סדר יורד",
+        "it_IT": "Decrescente",
+        "ja_JP": "降順",
+        "ko_KR": "내림차순",
+        "no_NO": "Synkende",
+        "pl_PL": "Malejąco",
+        "pt_BR": "Descendente",
+        "ru_RU": "По Убыванию",
+        "sv_SE": "Fallande",
+        "th_TH": "จากมากไปน้อย",
+        "tr_TR": "Azalan",
+        "uk_UA": "За спаданням",
+        "zh_CN": "降序",
+        "zh_TW": "從大到小"
+      }
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "Locales": [
+    {
+      "ID": "ScanSkylanderFilePickerTitle",
+      "Translations": {
+        "ar_SA": "",
+        "de_DE": "Wähle eine BIN-, SKY-, DMP- oder DUMP-Datei aus, um einen Skylander zu scannen.",
+        "el_GR": "",
+        "en_US": "Select a BIN, SKY, DMP, or DUMP file to scan a Skylander from",
+        "es_ES": "Selecciona un archivo BIN, SKY, DMP o DUMP para escanear un Skylander",
+        "fr_FR": "Sélectionnez un fichier BIN, SKY, DMP ou DUMP pour scanner un Skylander",
+        "he_IL": "",
+        "it_IT": "Seleziona un file BIN, SKY, DMP o DUMP da cui scansionare uno Skylander",
+        "ja_JP": "",
+        "ko_KR": "",
+        "no_NO": "",
+        "pl_PL": "",
+        "pt_BR": "Selecione um arquivo BIN, SKY, DMP ou DUMP para escanear um Skylander",
+        "ru_RU": "Выберите файл BIN, SKY, DMP или DUMP для сканирования Skylander",
+        "sv_SE": "",
+        "th_TH": "",
+        "tr_TR": "",
+        "uk_UA": "Виберіть файл BIN, SKY, DMP або DUMP для сканування Skylander",
+        "zh_CN": "",
+        "zh_TW": ""
+      }
+    }
+  ]
+}

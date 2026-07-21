@@ -1,0 +1,405 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:i="clr-namespace:Projektanker.Icons.Avalonia;assembly=Projektanker.Icons.Avalonia"
+        x:Class="Ryujinx.Ava.Shell.ShellWindow"
+        x:CompileBindings="False"
+        Width="1320" Height="820" MinWidth="1024" MinHeight="640"
+        Title="Nextendo"
+        Background="{DynamicResource HarborCanvas}"
+        FontFamily="{DynamicResource HarborFontSans}"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <MergeResourceInclude Source="/Shell/Theme/HarborTokens.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <SolidColorBrush x:Key="Canvas85" Color="#D9111213" />
+            <SolidColorBrush x:Key="Canvas55" Color="#8C111213" />
+
+            <LinearGradientBrush x:Key="HeroBackdrop" StartPoint="100%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#4C3521" />
+                <GradientStop Offset="0.5" Color="#262228" />
+                <GradientStop Offset="1" Color="#161519" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="SideScrim" StartPoint="0%,50%" EndPoint="100%,50%">
+                <GradientStop Offset="0" Color="#FF111213" />
+                <GradientStop Offset="0.5" Color="#D9111213" />
+                <GradientStop Offset="1" Color="#00111213" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="BottomScrim" StartPoint="0%,100%" EndPoint="0%,0%">
+                <GradientStop Offset="0" Color="#FF111213" />
+                <GradientStop Offset="0.5" Color="#B3111213" />
+                <GradientStop Offset="1" Color="#00111213" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="CardCover" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#2B2B2F" />
+                <GradientStop Offset="1" Color="#191A1C" />
+            </LinearGradientBrush>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="Button.nav">
+            <Setter Property="Height" Value="56" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="Margin" Value="0,3" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource HarborInkMuted}" />
+        </Style>
+        <Style Selector="Button.nav:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource HarborElevated}" />
+        </Style>
+        <Style Selector="Button.nav.active">
+            <Setter Property="Background" Value="{DynamicResource HarborElevated}" />
+            <Setter Property="Foreground" Value="{DynamicResource HarborInk}" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
+
+        <Style Selector="Button.railbtn">
+            <Setter Property="Height" Value="42" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource HarborInkSubtle}" />
+        </Style>
+        <Style Selector="Button.railbtn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource HarborElevated}" />
+        </Style>
+
+        <Style Selector="Button.wc">
+            <Setter Property="Width" Value="46" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource HarborInkMuted}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+        <Style Selector="Button.wc:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource HarborElevated}" />
+        </Style>
+        <Style Selector="Button.wc.close:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource HarborDanger}" />
+        </Style>
+
+        <Style Selector="Button.pill-primary">
+            <Setter Property="Height" Value="48" />
+            <Setter Property="CornerRadius" Value="24" />
+            <Setter Property="Padding" Value="26,0" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="{DynamicResource HarborInk}" />
+            <Setter Property="Foreground" Value="{DynamicResource HarborCanvas}" />
+        </Style>
+        <Style Selector="Button.pill-outline">
+            <Setter Property="Height" Value="48" />
+            <Setter Property="CornerRadius" Value="24" />
+            <Setter Property="Padding" Value="22,0" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource HarborEdge}" />
+            <Setter Property="Background" Value="{DynamicResource Canvas55}" />
+            <Setter Property="Foreground" Value="{DynamicResource HarborInk}" />
+        </Style>
+
+        <Style Selector="TextBlock.section">
+            <Setter Property="FontSize" Value="19" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="Foreground" Value="{DynamicResource HarborInk}" />
+            <Setter Property="Margin" Value="0,0,0,14" />
+        </Style>
+
+        <Style Selector="Border.cover">
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="ClipToBounds" Value="True" />
+            <Setter Property="Background" Value="{DynamicResource CardCover}" />
+        </Style>
+
+        <Style Selector="Border.collapsed TextBlock.exp">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Border.collapsed StackPanel.exp">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+    </Window.Styles>
+
+    <Grid x:Name="RootGrid">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="240" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ==================== SIDEBAR ==================== -->
+        <Border x:Name="Sidebar" Grid.Column="0" Background="{DynamicResource HarborCanvas}"
+                BorderBrush="{DynamicResource HarborEdgeSoft}" BorderThickness="0,0,1,0">
+            <DockPanel Margin="14,16,14,16">
+
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="11"
+                            Margin="6,4,0,22" VerticalAlignment="Center">
+                    <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource HarborAccent}">
+                        <TextBlock Text="N" FontSize="20" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource HarborCanvas}" />
+                    </Border>
+                    <TextBlock Classes="exp" Text="Nextendo" VerticalAlignment="Center"
+                               FontFamily="{DynamicResource HarborFontDisplay}"
+                               FontSize="24" FontWeight="Medium"
+                               Foreground="{DynamicResource HarborInk}" />
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Bottom" Spacing="4">
+                    <Button Classes="railbtn" Click="OnToggleCollapse">
+                        <StackPanel Orientation="Horizontal" Spacing="14">
+                            <i:Icon x:Name="CollapseIcon" Value="fa-solid fa-angles-left" FontSize="15" />
+                            <TextBlock Classes="exp" Text="Réduire" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Border Height="1" Background="{DynamicResource HarborEdgeSoft}" Margin="6,6,6,8" />
+                    <StackPanel Orientation="Horizontal" Spacing="11" Margin="6,0,0,0">
+                        <Ellipse Width="38" Height="38" Fill="{DynamicResource HarborRaised}" />
+                        <StackPanel Classes="exp" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="Joueur" FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource HarborInk}" />
+                            <TextBlock Text="Connecté à Nextendo" FontSize="11.5"
+                                       Foreground="{DynamicResource HarborInkSubtle}" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Top" Spacing="0">
+                    <Button Classes="nav active">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <i:Icon Value="fa-solid fa-house" FontSize="19" />
+                            <TextBlock Classes="exp" Text="Accueil" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <i:Icon Value="fa-solid fa-gamepad" FontSize="19" />
+                            <TextBlock Classes="exp" Text="Bibliothèque" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <i:Icon Value="fa-solid fa-globe" FontSize="19" />
+                            <TextBlock Classes="exp" Text="En ligne" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <i:Icon Value="fa-solid fa-users" FontSize="19" />
+                            <TextBlock Classes="exp" Text="Amis" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <i:Icon Value="fa-solid fa-puzzle-piece" FontSize="19" />
+                            <TextBlock Classes="exp" Text="Mods" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <i:Icon Value="fa-solid fa-gear" FontSize="19" />
+                            <TextBlock Classes="exp" Text="Réglages" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+            </DockPanel>
+        </Border>
+
+        <!-- ==================== MAIN ==================== -->
+        <Grid Grid.Column="1" RowDefinitions="80,*">
+
+            <Grid x:Name="TitleBar" Grid.Row="0" Background="Transparent" PointerPressed="OnTitleBarPressed">
+                <Border Height="44" CornerRadius="22" MaxWidth="560" Width="560"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Background="{DynamicResource HarborElevated}"
+                        BorderBrush="{DynamicResource HarborEdgeSoft}" BorderThickness="1" Padding="18,0">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <i:Icon Grid.Column="0" Value="fa-solid fa-magnifying-glass" FontSize="14"
+                                VerticalAlignment="Center" Foreground="{DynamicResource HarborInkSubtle}" />
+                        <TextBlock Grid.Column="1" Text="Rechercher un jeu…" Margin="12,0,0,0"
+                                   VerticalAlignment="Center" FontSize="14"
+                                   Foreground="{DynamicResource HarborInkSubtle}" />
+                        <Border Grid.Column="2" CornerRadius="6" Padding="7,2" VerticalAlignment="Center"
+                                Background="{DynamicResource Canvas55}"
+                                BorderBrush="{DynamicResource HarborEdgeSoft}" BorderThickness="1">
+                            <TextBlock Text="/" FontFamily="{DynamicResource HarborFontMono}"
+                                       FontSize="11" Foreground="{DynamicResource HarborInkSubtle}" />
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Margin="0,5,6,0" Spacing="2">
+                    <Button Classes="wc" Click="OnMinimize">
+                        <TextBlock Text="&#x2013;" />
+                    </Button>
+                    <Button Classes="wc" Click="OnMaximizeRestore">
+                        <TextBlock x:Name="MaxGlyph" Text="&#x25A1;" FontSize="12" />
+                    </Button>
+                    <Button Classes="wc close" Click="OnClose">
+                        <TextBlock Text="&#x2715;" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="48,4,48,56" Spacing="40">
+
+                    <!-- ===== HERO (real game art) ===== -->
+                    <Border Height="500" CornerRadius="28" ClipToBounds="True"
+                            Background="{DynamicResource HarborCanvas}">
+                        <Grid>
+                            <Border Margin="2" CornerRadius="26" Background="{DynamicResource HeroBackdrop}" />
+                            <Image Source="{Binding HeroIcon}" Stretch="UniformToFill" IsVisible="{Binding HasHero}">
+                                <Image.Effect>
+                                    <BlurEffect Radius="90" />
+                                </Image.Effect>
+                            </Image>
+                            <Border Background="#59111213" IsVisible="{Binding HasHero}" />
+                            <Border Width="300" Height="300" CornerRadius="22" ClipToBounds="True"
+                                    HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,72,0"
+                                    IsVisible="{Binding HasHero}"
+                                    BorderBrush="{DynamicResource HarborEdgeSoft}" BorderThickness="1">
+                                <Image Source="{Binding HeroIcon}" Stretch="UniformToFill" />
+                            </Border>
+                            <Border Background="{DynamicResource SideScrim}" />
+                            <Border Background="{DynamicResource BottomScrim}" VerticalAlignment="Bottom" Height="200" />
+
+                            <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Left"
+                                        Margin="44,0,44,40" MaxWidth="620">
+                                <Border CornerRadius="6" Padding="10,5" HorizontalAlignment="Left"
+                                        Background="{DynamicResource Canvas85}" Margin="0,0,0,18">
+                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                        <i:Icon Value="fa-solid fa-arrow-trend-up" FontSize="11"
+                                                VerticalAlignment="Center" Foreground="{DynamicResource HarborAccent}" />
+                                        <TextBlock Text="Tendance · le plus joué" FontSize="12"
+                                                   VerticalAlignment="Center" Foreground="{DynamicResource HarborInk}" />
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="{Binding HeroName}" FontSize="44" FontWeight="Bold"
+                                           TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource HarborInk}" />
+                                <TextBlock Text="{Binding HeroSubtitle}" Margin="0,18,0,0" FontSize="16"
+                                           TextWrapping="Wrap" MaxWidth="560"
+                                           Foreground="{DynamicResource HarborInkMuted}" />
+                                <StackPanel Orientation="Horizontal" Spacing="26" Margin="0,18,0,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <i:Icon Value="fa-solid fa-globe" FontSize="13"
+                                                VerticalAlignment="Center" Foreground="{DynamicResource HarborAccent}" />
+                                        <TextBlock Text="{Binding HeroMeta}" FontSize="14"
+                                                   Foreground="{DynamicResource HarborInkMuted}" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,24,0,0">
+                                    <Button Classes="pill-primary">
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <i:Icon Value="fa-solid fa-play" FontSize="13" VerticalAlignment="Center" />
+                                            <TextBlock Text="Jouer" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Classes="pill-outline">
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <i:Icon Value="fa-solid fa-layer-group" FontSize="13" VerticalAlignment="Center" />
+                                            <TextBlock Text="Ma bibliothèque" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- ===== RAIL: Reprendre ===== -->
+                    <StackPanel>
+                        <TextBlock Classes="section" Text="Reprendre" />
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding Recents}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="20" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Width="150" Spacing="10">
+                                            <Border Classes="cover" Width="150" Height="150">
+                                                <Grid>
+                                                    <Image Source="{Binding Icon}" Stretch="UniformToFill" />
+                                                    <i:Icon Value="fa-solid fa-gamepad" FontSize="30"
+                                                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                            Foreground="{DynamicResource HarborInkSubtle}"
+                                                            IsVisible="{Binding !HasIcon}" />
+                                                    <Border Height="4" VerticalAlignment="Bottom"
+                                                            Background="{DynamicResource HarborElevated}"
+                                                            IsVisible="{Binding ShowProgress}">
+                                                        <Border HorizontalAlignment="Left" Width="{Binding ProgressWidth}"
+                                                                Background="{DynamicResource HarborAccent}" />
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                            <TextBlock Text="{Binding Name}" FontSize="13" MaxWidth="150"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource HarborInk}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
+
+                    <!-- ===== RAIL: Ma bibliothèque ===== -->
+                    <StackPanel>
+                        <TextBlock Classes="section" Text="Ma bibliothèque" />
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding Library}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="18" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Width="150" Spacing="10">
+                                            <Border Classes="cover" Width="150" Height="150">
+                                                <Grid>
+                                                    <Image Source="{Binding Icon}" Stretch="UniformToFill" />
+                                                    <i:Icon Value="fa-solid fa-gamepad" FontSize="30"
+                                                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                            Foreground="{DynamicResource HarborInkSubtle}"
+                                                            IsVisible="{Binding !HasIcon}" />
+                                                </Grid>
+                                            </Border>
+                                            <TextBlock Text="{Binding Name}" FontSize="13" MaxWidth="150"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource HarborInk}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Window>

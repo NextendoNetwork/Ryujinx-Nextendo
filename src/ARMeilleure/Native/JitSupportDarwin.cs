@@ -1,0 +1,12 @@
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+
+namespace ARMeilleure.Native
+{
+    [SupportedOSPlatform("macos")]
+    static partial class JitSupportDarwin
+    {
+        [LibraryImport("libarmeilleure-jitsupport", EntryPoint = "armeilleure_jit_memcpy")]
+        public static partial void Copy(nint dst, nint src, ulong n);
+    }
+}

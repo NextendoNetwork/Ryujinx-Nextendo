@@ -1,0 +1,83 @@
+<UserControl
+    x:Class="Ryujinx.Ava.UI.Views.Settings.SettingsInputView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ext="clr-namespace:Ryujinx.Ava.Common.Markup"
+    xmlns:views="clr-namespace:Ryujinx.Ava.UI.Views.Input"
+    xmlns:viewModels="clr-namespace:Ryujinx.Ava.UI.ViewModels"
+    mc:Ignorable="d"
+    x:DataType="viewModels:SettingsViewModel">
+    <Design.DataContext>
+        <viewModels:SettingsViewModel />
+    </Design.DataContext>
+    <ScrollViewer
+        Name="InputPage"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto">
+        <Border Classes="settings">
+            <Panel
+                Margin="10">
+                <Grid RowDefinitions="Auto,*,Auto">
+                    <StackPanel>
+                        <!--
+                           Opacity="{Binding PanelOpacityInput}">
+                       
+                            IsEnabled="{Binding !EnableConfigGlobal}">
+                            -->
+                        <views:InputView
+                            Grid.Row="0"
+                            Name="InputView" />
+                    </StackPanel>
+                    <StackPanel
+                        Orientation="Vertical"
+                        Grid.Row="2">
+                        <Separator
+                            Margin="0 10"
+                            Height="1" />
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="10">
+                            <CheckBox
+                                ToolTip.Tip="{ext:Locale DockModeToggleTooltip}"
+                                MinWidth="0"
+                                IsChecked="{Binding EnableDockedMode}">
+                                <TextBlock
+                                    Text="{ext:Locale SettingsTabInputEnableDockedMode}" />
+                            </CheckBox>
+                            <CheckBox                          
+                                ToolTip.Tip="{ext:Locale UseGlobalInputTooltip}"
+                                MinWidth="0"
+                                IsChecked="{Binding UseGlobalInputConfig}">
+                                <TextBlock
+                                    Text="{ext:Locale SettingsTabInputUseGlobalInput}" />
+                            </CheckBox>
+                            <CheckBox
+                                ToolTip.Tip="{ext:Locale ControllerSettingsDynamicInputSwapTooltip}"
+                                IsChecked="{Binding ElementName=InputView, Path=ViewModel.EnableDynamicGamepadSwap, Mode=TwoWay}"
+                                IsEnabled="{Binding ElementName=InputView, Path=ViewModel.ShowSettings}">
+                                <TextBlock
+                                    Text="{ext:Locale ControllerSettingsDynamicInputSwap}" />
+                            </CheckBox>
+                            <CheckBox
+                                ToolTip.Tip="{ext:Locale DirectKeyboardTooltip}"
+                                IsChecked="{Binding EnableKeyboard}">
+                                <TextBlock
+                                    Text="{ext:Locale SettingsTabInputDirectKeyboardAccess}" />
+                            </CheckBox>
+                            <CheckBox
+                                ToolTip.Tip="{ext:Locale DirectMouseTooltip}"
+                                IsChecked="{Binding EnableMouse}">
+                                <TextBlock
+                                    Text="{ext:Locale SettingsTabInputDirectMouseAccess}" />
+                            </CheckBox>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Panel>
+        </Border>
+    </ScrollViewer>
+</UserControl>

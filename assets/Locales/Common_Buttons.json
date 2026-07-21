@@ -1,0 +1,29 @@
+{
+  "Locales": [
+    {
+      "ID": "Cancel",
+      "Translations": {
+        "ar_SA": "إلغاء",
+        "de_DE": "Abbrechen",
+        "el_GR": "Ακύρωση",
+        "en_US": "Cancel",
+        "es_ES": "Cancelar",
+        "fr_FR": "Annuler",
+        "he_IL": "ביטול",
+        "it_IT": "Annulla",
+        "ja_JP": "キャンセル",
+        "ko_KR": "취소",
+        "no_NO": "Avbryt",
+        "pl_PL": "Anuluj",
+        "pt_BR": "Cancelar",
+        "ru_RU": "Отмена",
+        "sv_SE": "Avbryt",
+        "th_TH": "ยกเลิก",
+        "tr_TR": "İptal",
+        "uk_UA": "Скасувати",
+        "zh_CN": "取消",
+        "zh_TW": "取消"
+      }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "Locales": [
+    {
+      "ID": "SearchAmiiboWatermark",
+      "Translations": {
+        "ar_SA": "بحث Amiibo...",
+        "de_DE": "Amiibo suchen...",
+        "el_GR": "Αναζήτηση Amiibo...",
+        "en_US": "Search Amiibo...",
+        "es_ES": "Buscar Amiibo...",
+        "fr_FR": "Rechercher Amiibo...",
+        "he_IL": "חפש Amiibo...",
+        "it_IT": "Cerca Amiibo...",
+        "ja_JP": "Amiiboを検索...",
+        "ko_KR": "Amiibo 검색...",
+        "no_NO": "Søk Amiibo...",
+        "pl_PL": "Wyszukaj Amiibo...",
+        "pt_BR": "Buscar Amiibo...",
+        "ru_RU": "Поиск Amiibo...",
+        "sv_SE": "Sök Amiibo...",
+        "th_TH": "ค้นหา Amiibo...",
+        "tr_TR": "Amiibo Ara...",
+        "uk_UA": "Пошук Amiibo...",
+        "zh_CN": "搜索 Amiibo...",
+        "zh_TW": "搜尋 Amiibo..."
+      }
+    },
+    {
+      "ID": "SearchWatermark",
+      "Translations": {
+        "ar_SA": "بحث",
+        "de_DE": "Suche",
+        "el_GR": "Αναζήτηση",
+        "en_US": "Search",
+        "es_ES": "Buscar",
+        "fr_FR": "Rechercher",
+        "he_IL": "חפש",
+        "it_IT": "Cerca",
+        "ja_JP": "検索",
+        "ko_KR": "찾기",
+        "no_NO": "Søk",
+        "pl_PL": "Wyszukaj",
+        "pt_BR": "Buscar",
+        "ru_RU": "Поиск",
+        "sv_SE": "Sök",
+        "th_TH": "ค้นหา",
+        "tr_TR": "Ara",
+        "uk_UA": "Пошук",
+        "zh_CN": "搜索",
+        "zh_TW": "搜尋"
+      }
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+<Window
+    x:Class="Ryujinx.Ava.UI.Applet.ErrorAppletWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:ext="clr-namespace:Ryujinx.Ava.Common.Markup"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="{ext:Locale ErrorWindowTitle}"
+    xmlns:views="using:Ryujinx.Ava.UI.Applet"
+    Width="450"
+    Height="340"
+    CanResize="False"
+    x:DataType="views:ErrorAppletWindow"
+    SizeToContent="Height"
+    mc:Ignorable="d"
+    Focusable="True">
+    <Grid
+        Margin="20"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch" RowDefinitions="Auto,*,Auto" ColumnDefinitions="Auto,*">
+        <Image
+            Grid.Row="1"
+            Grid.RowSpan="2"
+            Grid.Column="0"
+            Height="80"
+            MinWidth="50"
+            Margin="5,10,20,10"
+            Source="resm:Ryujinx.Assets.UIImages.Logo_Ryujinx.png?assembly=Ryujinx" />
+        <TextBlock
+            Grid.Row="1"
+            Grid.Column="1"
+            Margin="10"
+            VerticalAlignment="Stretch"
+            Text="{Binding Message}"
+            TextWrapping="Wrap" />
+        <StackPanel
+            Name="ButtonStack"
+            Grid.Row="2"
+            Grid.Column="1"
+            Margin="10"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal"
+            Spacing="10" />
+    </Grid>
+</Window>

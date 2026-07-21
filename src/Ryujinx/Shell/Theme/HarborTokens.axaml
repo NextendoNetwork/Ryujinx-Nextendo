@@ -1,0 +1,66 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         Harbor design tokens — ported 1:1 from Harbor's src/index.css
+         (Tailwind v4 @theme, authored in OKLCH).
+         Colors converted OKLCH -> sRGB (Ottosson matrices).
+         Source of truth: github.com/harborstremio/harbor
+         Do NOT hand-tweak values here; re-derive from Harbor's index.css.
+         ============================================================ -->
+
+    <!-- Surfaces: neutral dark ladder (canvas -> raised) -->
+    <Color x:Key="HarborCanvasColor">#111213</Color>
+    <Color x:Key="HarborSurfaceColor">#191B1C</Color>
+    <Color x:Key="HarborElevatedColor">#252628</Color>
+    <Color x:Key="HarborRaisedColor">#323335</Color>
+
+    <!-- Ink: text on dark surfaces -->
+    <Color x:Key="HarborInkColor">#F4F5F7</Color>
+    <Color x:Key="HarborInkMutedColor">#A3A5A6</Color>
+    <Color x:Key="HarborInkSubtleColor">#626365</Color>
+
+    <!-- Edges: borders/dividers (alpha baked in, #AARRGGBB) -->
+    <Color x:Key="HarborEdgeColor">#8C3C3D3F</Color>
+    <Color x:Key="HarborEdgeSoftColor">#403C3D3F</Color>
+
+    <!-- Accent (warm amber) + semantic -->
+    <Color x:Key="HarborAccentColor">#F4A25C</Color>
+    <Color x:Key="HarborAccentSoftColor">#2EF4A25C</Color>
+    <Color x:Key="HarborDangerColor">#C53637</Color>
+    <Color x:Key="HarborSuccessColor">#45B164</Color>
+
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="HarborCanvas" Color="{StaticResource HarborCanvasColor}" />
+    <SolidColorBrush x:Key="HarborSurface" Color="{StaticResource HarborSurfaceColor}" />
+    <SolidColorBrush x:Key="HarborElevated" Color="{StaticResource HarborElevatedColor}" />
+    <SolidColorBrush x:Key="HarborRaised" Color="{StaticResource HarborRaisedColor}" />
+    <SolidColorBrush x:Key="HarborInk" Color="{StaticResource HarborInkColor}" />
+    <SolidColorBrush x:Key="HarborInkMuted" Color="{StaticResource HarborInkMutedColor}" />
+    <SolidColorBrush x:Key="HarborInkSubtle" Color="{StaticResource HarborInkSubtleColor}" />
+    <SolidColorBrush x:Key="HarborEdge" Color="{StaticResource HarborEdgeColor}" />
+    <SolidColorBrush x:Key="HarborEdgeSoft" Color="{StaticResource HarborEdgeSoftColor}" />
+    <SolidColorBrush x:Key="HarborAccent" Color="{StaticResource HarborAccentColor}" />
+    <SolidColorBrush x:Key="HarborAccentSoft" Color="{StaticResource HarborAccentSoftColor}" />
+    <SolidColorBrush x:Key="HarborDanger" Color="{StaticResource HarborDangerColor}" />
+    <SolidColorBrush x:Key="HarborSuccess" Color="{StaticResource HarborSuccessColor}" />
+
+    <!-- Radii (Harbor radius scale) -->
+    <CornerRadius x:Key="HarborRadiusSm">6</CornerRadius>
+    <CornerRadius x:Key="HarborRadiusMd">10</CornerRadius>
+    <CornerRadius x:Key="HarborRadiusLg">14</CornerRadius>
+    <CornerRadius x:Key="HarborRadiusXl">20</CornerRadius>
+    <CornerRadius x:Key="HarborRadius2xl">28</CornerRadius>
+
+    <!-- Typography (Harbor font tokens). Sentient/Switzer are custom webfonts;
+         until we bundle them as avares assets these fall back to the
+         closest system faces so layout metrics stay stable. -->
+    <FontFamily x:Key="HarborFontDisplay">Georgia</FontFamily>
+    <FontFamily x:Key="HarborFontSans">Inter, Segoe UI</FontFamily>
+    <FontFamily x:Key="HarborFontMono">Cascadia Mono, Consolas</FontFamily>
+
+    <!-- Motion reference (Harbor duration/ease tokens), applied in animations:
+         fast 150ms / base 250ms / slow 400ms
+         ease-out cubic-bezier(0.16,1,0.3,1) / ease-in-out cubic-bezier(0.65,0,0.35,1) -->
+
+</ResourceDictionary>

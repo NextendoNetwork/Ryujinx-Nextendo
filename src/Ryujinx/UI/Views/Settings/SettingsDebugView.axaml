@@ -1,0 +1,66 @@
+<UserControl
+    x:Class="Ryujinx.Ava.UI.Views.Settings.SettingsDebugView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ext="clr-namespace:Ryujinx.Ava.Common.Markup"
+    xmlns:helper="clr-namespace:Ryujinx.Common.Helper;assembly=Ryujinx.Common"
+    xmlns:ui="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+    xmlns:viewModels="clr-namespace:Ryujinx.Ava.UI.ViewModels"
+    mc:Ignorable="d"
+    x:DataType="viewModels:SettingsViewModel">
+    <Design.DataContext>
+        <viewModels:SettingsViewModel />
+    </Design.DataContext>
+    <ScrollViewer
+        Name="DebugPage"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto">
+        <Border Classes="settings">
+            <StackPanel
+                Margin="10"
+                HorizontalAlignment="Stretch"
+                Orientation="Vertical"
+                Spacing="10">
+                <TextBlock Classes="h1" Text="{ext:Locale SettingsTabDebugTitle}" />
+                <TextBlock Foreground="{DynamicResource SecondaryTextColor}" Text="{ext:Locale SettingsTabDebugNote}" />
+                <StackPanel
+                    Margin="10,0,0,0"
+                    HorizontalAlignment="Stretch"
+                    Orientation="Vertical">
+                    <CheckBox IsChecked="{Binding EnableGdbStub}">
+                        <TextBlock Text="{ext:Locale SettingsTabDebugEnableGDBStub}"
+                                   ToolTip.Tip="{ext:Locale SettingsTabDebugGDBStubToggleTooltip}" />
+                    </CheckBox>
+                </StackPanel>
+                <StackPanel
+                    Margin="10,0,0,0"
+                    Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center"
+                               Text="{ext:Locale SettingsTabDebugGDBStubPort}"
+                               Width="250" />
+                    <ui:NumberBox Value="{Binding GDBStubPort}"
+                                  Width="350"
+                                  SmallChange="1"
+                                  LargeChange="10"
+                                  SimpleNumberFormat="F0"
+                                  SpinButtonPlacementMode="Inline"
+                                  Minimum="1024"
+                                  Maximum="65535" />
+                </StackPanel>
+                <StackPanel
+                    Margin="10,0,0,0"
+                    HorizontalAlignment="Stretch"
+                    Orientation="Vertical">
+                    <CheckBox IsChecked="{Binding DebuggerSuspendOnStart}">
+                        <TextBlock Text="{ext:Locale SettingsTabDebugSuspendOnStart}"
+                                   ToolTip.Tip="{ext:Locale SettingsTabDebugSuspendOnStartTooltip}" />
+                    </CheckBox>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </ScrollViewer>
+</UserControl>

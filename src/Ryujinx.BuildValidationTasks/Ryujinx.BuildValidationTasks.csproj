@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <Target Name="PostBuildTarget" AfterTargets="AfterBuild">
+    <Message Text="Running Validation Project" Importance="high" />
+
+    <Exec WorkingDirectory="$(ProjectDir)bin\Debug\$(TargetFramework)\"
+      Command="dotnet Ryujinx.BuildValidationTasks.dll &quot;$(ProjectDir)..\..\\&quot;" 
+      ConsoleToMsBuild="true"
+      Condition="'$(RuntimeIdentifier)' == ''" 
+      IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
+      <Output TaskParameter="ExitCode" PropertyName="BuildExitCode"/>
+    </Exec>
+
+    <PropertyGroup Condition=" '$(OutputOfExec.IndexOf(Unhandled exception))' != '-1'">
+      <ErrorOutput>$(OutputOfExec.Substring($(OutputOfExec.IndexOf("Unhandled exception"))))</ErrorOutput>
+      <ErrorOutput>$(ErrorOutput.Substring(0, $(ErrorOutput.IndexOf(';'))))</ErrorOutput>
+    </PropertyGroup>
+
+    <Error Text="$(ErrorOutput)" Condition=" '$(BuildExitCode)' != '0'"/>
+  </Target>
+
+</Project>

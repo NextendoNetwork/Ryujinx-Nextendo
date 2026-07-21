@@ -1,0 +1,178 @@
+<MenuFlyout
+    x:Class="Ryujinx.Ava.UI.Controls.ApplicationContextMenu"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ext="clr-namespace:Ryujinx.Ava.Common.Markup"
+    xmlns:viewModels="clr-namespace:Ryujinx.Ava.UI.ViewModels"
+    x:DataType="viewModels:MainWindowViewModel">
+    <MenuItem
+        Command="{Binding RunApplication}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuRunApplication}"
+        Icon="{ext:Icon fa-solid fa-play}"/>
+    <MenuItem
+        Command="{Binding ToggleFavorite}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuToggleFavorite}"
+        Icon="{ext:Icon fa-solid fa-star}" />
+    <MenuItem
+        Command="{Binding CreateApplicationShortcut}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuCreateShortcut}"
+        Icon="{ext:Icon fa-solid fa-bookmark}"
+        ToolTip.Tip="{OnPlatform Default={ext:Locale GameListContextMenuCreateShortcutToolTip}, macOS={ext:Locale GameListContextMenuCreateShortcutToolTipMacOS}}" />
+    <MenuItem
+        Command="{Binding EditGameConfiguration}"
+        CommandParameter="{Binding}"
+        IsVisible="{Binding SelectedApplication.HasIndependentConfiguration}"
+        Header="{ext:Locale GameListContextMenuEditCustomConfiguration}"
+        Icon="{ext:Icon fa-solid fa-gear}"
+        ToolTip.Tip="{ext:Locale EditCustomConfigurationToolTip}" />
+    <MenuItem
+        Command="{Binding EditGameConfiguration}"
+       CommandParameter="{Binding}"
+       IsVisible="{Binding !SelectedApplication.HasIndependentConfiguration}"
+       Header="{ext:Locale GameListContextMenuCreateCustomConfiguration}"
+       Icon="{ext:Icon fa-solid fa-gear}"
+       ToolTip.Tip="{ext:Locale CreateCustomConfigurationToolTip}" />
+    <MenuItem
+        IsVisible="{Binding HasCompatibilityEntry}"
+        Command="{Binding OpenApplicationCompatibility}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuShowCompatEntry}"
+        Icon="{ext:Icon fa-solid fa-database}"
+        ToolTip.Tip="{ext:Locale GameListContextMenuShowCompatEntryToolTip}"/>
+    <MenuItem
+        Command="{Binding OpenApplicationData}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuShowGameData}"
+        Icon="{ext:Icon fa-solid fa-chart-line}" />
+    <Separator />
+    <MenuItem
+        Command="{Binding OpenUserSaveDirectory}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuOpenUserSaveDirectory}"
+        Icon="{ext:Icon fa-solid fa-sd-card}"
+        IsEnabled="{Binding OpenUserSaveDirectoryEnabled}" />
+    <MenuItem
+        Command="{Binding OpenDeviceSaveDirectory}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuOpenDeviceSaveDirectory}"
+        Icon="{ext:Icon fa-solid fa-hard-drive}"
+        IsEnabled="{Binding OpenDeviceSaveDirectoryEnabled}" />
+    <MenuItem
+        Command="{Binding OpenBcatSaveDirectory}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuOpenBcatSaveDirectory}"
+        Icon="{ext:Icon fa-solid fa-box-archive}"
+        IsEnabled="{Binding OpenBcatSaveDirectoryEnabled}" />
+    <Separator />
+    <MenuItem
+        Command="{Binding OpenTitleUpdateManager}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuManageTitleUpdates}"
+        Icon="{ext:Icon fa-solid fa-diagram-predecessor}" />
+    <MenuItem
+        Command="{Binding OpenDownloadableContentManager}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuManageDlc}"
+        Icon="{ext:Icon fa-solid fa-puzzle-piece}" />
+    <MenuItem
+        Command="{Binding OpenCheatManager}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuManageCheat}"
+        Icon="{ext:Icon fa-solid fa-code}" />
+    <MenuItem
+        Command="{Binding OpenModManager}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuManageMod}"
+        Icon="{ext:Icon fa-solid fa-sliders}" />
+    <Separator />
+    <MenuItem
+        Command="{Binding OpenModsDirectory}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuOpenModsDirectory}"
+        Icon="{ext:Icon fa-solid fa-folder-closed}" />
+    <MenuItem
+        Command="{Binding OpenSdModsDirectory}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale GameListContextMenuOpenSdModsDirectory}"
+        Icon="{ext:Icon fa-solid fa-folder-closed}"
+        ToolTip.Tip="{ext:Locale GameListContextMenuOpenSdModsDirectoryToolTip}" />
+    <Separator />
+	<MenuItem
+        Command="{Binding TrimXci}"
+        CommandParameter="{Binding}"
+		Header="{ext:Locale GameListContextMenu_TrimXCIButton}"
+        IsEnabled="{Binding TrimXCIEnabled}"
+        IsVisible="{Binding IsXCIFile}"
+        Icon="{ext:Icon fa-solid fa-scissors}" />
+    <MenuItem Header="{ext:Locale GameListContextMenuCacheManagement}" Icon="{ext:Icon fa-solid fa-memory}">
+        <MenuItem
+            Command="{Binding PurgePtcCache}"
+            CommandParameter="{Binding}"
+            Header="{ext:Locale GameListContextMenuCacheManagementPurgePptc}"
+            Icon="{ext:Icon fa-solid fa-arrow-rotate-right}"
+            ToolTip.Tip="{ext:Locale GameListContextMenuCacheManagementPurgePptcToolTip}" />
+        <Separator/>
+        <MenuItem
+            Command="{Binding NukePtcCache}"
+            CommandParameter="{Binding}"
+            Header="{ext:Locale GameListContextMenuCacheManagementNukePptc}"
+            Icon="{ext:Icon fa-solid fa-trash-can}"
+            IsEnabled="{Binding SelectedApplication.HasPtcCacheFiles, FallbackValue=False}" />
+        <MenuItem
+            Command="{Binding PurgeShaderCache}"
+            CommandParameter="{Binding}"
+            Header="{ext:Locale GameListContextMenuCacheManagementPurgeShaderCache}"
+            Icon="{ext:Icon fa-solid fa-trash-can}"
+            IsEnabled="{Binding SelectedApplication.HasShaderCacheFiles, FallbackValue=False}" />
+        <Separator/>
+        <MenuItem
+            Command="{Binding OpenPtcDirectory}"
+            CommandParameter="{Binding}"
+            Header="{ext:Locale GameListContextMenuCacheManagementOpenPptcDirectory}"
+            Icon="{ext:Icon fa-solid fa-folder-closed}" />
+        <MenuItem
+            Command="{Binding OpenShaderCacheDirectory}"
+            CommandParameter="{Binding}"
+            Header="{ext:Locale GameListContextMenuCacheManagementOpenShaderCacheDirectory}"
+            Icon="{ext:Icon fa-solid fa-folder-closed}" />
+    </MenuItem>
+    <MenuItem Header="{ext:Locale GameListContextMenuExtractData}" Icon="{ext:Icon fa-solid fa-file-export}">
+        <MenuItem
+            Command="{Binding ExtractApplicationExeFs}"
+            CommandParameter="{Binding}"
+            Header="{ext:Locale GameListContextMenuExtractDataExeFS}"
+            ToolTip.Tip="{ext:Locale GameListContextMenuExtractDataExeFSToolTip}" />
+        <MenuItem
+            Command="{Binding ExtractApplicationRomFs}"
+            CommandParameter="{Binding}"
+            Header="{ext:Locale GameListContextMenuExtractDataRomFS}"
+            ToolTip.Tip="{ext:Locale GameListContextMenuExtractDataRomFSToolTip}" />
+        <MenuItem
+            IsVisible="{Binding HasDlc}"
+            Command="{Binding ExtractApplicationAocRomFs}"
+            CommandParameter="{Binding}"
+            Header="{ext:Locale GameListContextMenuExtractDataAocRomFS}"
+            ToolTip.Tip="{ext:Locale GameListContextMenuExtractDataAocRomFSToolTip}" />
+        <MenuItem
+            Command="{Binding ExtractApplicationLogo}"
+            CommandParameter="{Binding}"
+            Header="{ext:Locale GameListContextMenuExtractDataLogo}"
+            ToolTip.Tip="{ext:Locale GameListContextMenuExtractDataLogoToolTip}" />
+    </MenuItem>
+    <Separator />
+    <MenuItem
+        IsVisible="{Binding SelectedApplication.RequiresNextendoByaml, FallbackValue=False}"
+        Command="{Binding DownloadNextendoByaml}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale Dialog_Nextendo_ContextMenuDownloadByaml}"
+        Icon="{ext:Icon fa-solid fa-cloud-arrow-down}" />
+    <MenuItem
+        IsVisible="{Binding SelectedApplication.IsNextendoCompatible, FallbackValue=False}"
+        Command="{Binding OpenModStore}"
+        CommandParameter="{Binding}"
+        Header="{ext:Locale Dialog_Nextendo_ContextMenuModStore}"
+        Icon="{ext:Icon fa-solid fa-store}" />
+</MenuFlyout>

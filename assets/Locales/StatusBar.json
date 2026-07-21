@@ -1,0 +1,54 @@
+{
+  "Locales": [
+    {
+      "ID": "TrimmingXCILabel",
+      "Translations": {
+        "ar_SA": "جاري تقليم: {0}",
+        "de_DE": "Schneide: {0}",
+        "el_GR": "Κόβει το: {0}",
+        "en_US": "Trimming: {0}",
+        "es_ES": "Recortando: {0}",
+        "fr_FR": "Réduction de: {0}",
+        "he_IL": "חיתוך: {0}",
+        "it_IT": "Riduzione di: {0}",
+        "ja_JP": "{0} をトリミング中:",
+        "ko_KR": "{0} 트리밍:",
+        "no_NO": "Trimming av: {0}",
+        "pl_PL": "Przycinanie: {0}",
+        "pt_BR": "Reduzindo: {0}",
+        "ru_RU": "Обрезка: {0}",
+        "sv_SE": "Trimmar: {0}",
+        "th_TH": "กำลังตัด: {0}",
+        "tr_TR": "{0} Kısaltılıyor:",
+        "uk_UA": "Обрізка: {0}",
+        "zh_CN": "正在修剪: {0}",
+        "zh_TW": "正在修剪: {0}"
+      }
+    },
+    {
+      "ID": "FirmwareVersionLabel",
+      "Translations": {
+        "ar_SA": "",
+        "de_DE": "",
+        "el_GR": "",
+        "en_US": "Firmware Version: {0}",
+        "es_ES": "Versión del Firmware: {0}",
+        "fr_FR": "Version du Firmware : {0}",
+        "he_IL": "",
+        "it_IT": "Versione firmware: {0}",
+        "ja_JP": "",
+        "ko_KR": "펌웨어 버전 : {0}",
+        "no_NO": "Fastvareversjon: {0}",
+        "pl_PL": "",
+        "pt_BR": "Versão do Firmware: {0}",
+        "ru_RU": "Версия прошивки: {0}",
+        "sv_SE": "Firmware-version: {0}",
+        "th_TH": "เวอร์ชันเฟิร์มแวร์: {0}",
+        "tr_TR": "",
+        "uk_UA": "Версія прошивки: {0}",
+        "zh_CN": "系统固件版本：{0}",
+        "zh_TW": "系統韌體版本: {0}"
+      }
+    }
+  ]
+}

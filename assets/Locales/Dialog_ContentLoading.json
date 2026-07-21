@@ -1,0 +1,104 @@
+{
+  "Locales": [
+    {
+      "ID": "UpdatesAddedMessage",
+      "Translations": {
+        "ar_SA": "",
+        "de_DE": "Updates hinzugefügt: {0}",
+        "el_GR": "",
+        "en_US": "Updates Added: {0}",
+        "es_ES": "Actualizaciones Añadidas: {0}",
+        "fr_FR": "Mises à Jour Ajoutées : {0}",
+        "he_IL": "",
+        "it_IT": "Aggiornamenti aggiunti: {0}",
+        "ja_JP": "",
+        "ko_KR": "추가된 업데이트: {0}",
+        "no_NO": "Oppdateringer lagt til: {0}",
+        "pl_PL": "",
+        "pt_BR": "Atualizações adicionadas: {0}",
+        "ru_RU": "Добавлено обновлений: {0}",
+        "sv_SE": "Tillagda uppdateringar: {0}",
+        "th_TH": "การอัปเดตที่เพิ่มเข้ามา: {0}",
+        "tr_TR": "",
+        "uk_UA": "Додані оновлення: {0}",
+        "zh_CN": "已添加更新：{0}",
+        "zh_TW": "已新增更新：{0}"
+      }
+    },
+    {
+      "ID": "UpdatesRemovedMessage",
+      "Translations": {
+        "ar_SA": "",
+        "de_DE": "Updates entfernt: {0}",
+        "el_GR": "",
+        "en_US": "Updates Removed: {0}",
+        "es_ES": "Actualizaciones Eliminadas: {0}",
+        "fr_FR": "Mises à Jour Supprimées : {0}",
+        "he_IL": "",
+        "it_IT": "Aggiornamenti rimossi: {0}",
+        "ja_JP": "",
+        "ko_KR": "제거된 업데이트: {0}",
+        "no_NO": "Fjernede oppdateringer: {0}",
+        "pl_PL": "",
+        "pt_BR": "Atualizações removidas: {0}",
+        "ru_RU": "Удалено обновлений: {0}",
+        "sv_SE": "Borttagna uppdateringar: {0}",
+        "th_TH": "การอัปเดตที่ถูกลบ: {0}",
+        "tr_TR": "",
+        "uk_UA": "Видалені оновлення: {0}",
+        "zh_CN": "已移除更新：{0}",
+        "zh_TW": "已移除更新：{0}"
+      }
+    },
+    {
+      "ID": "DLCAddedMessage",
+      "Translations": {
+        "ar_SA": "",
+        "de_DE": "DLC hinzugefügt: {0}",
+        "el_GR": "",
+        "en_US": "DLC Added: {0}",
+        "es_ES": "DLC Añadidos: {0}",
+        "fr_FR": "DLC Ajoutés : {0}",
+        "he_IL": "",
+        "it_IT": "DLC aggiunti: {0}",
+        "ja_JP": "",
+        "ko_KR": "추가된 DLC: {0}",
+        "no_NO": "DLC lagt til: {0}",
+        "pl_PL": "",
+        "pt_BR": "DLC adicionados: {0}",
+        "ru_RU": "Добавлено DLC: {0}",
+        "sv_SE": "Tillagda DLC: {0}",
+        "th_TH": "DLC ที่เพิ่มเข้ามา: {0}",
+        "tr_TR": "",
+        "uk_UA": "Додані DLC: {0}",
+        "zh_CN": "已添加 DLC：{0}",
+        "zh_TW": "已新增 DLC：{0}"
+      }
+    },
+    {
+      "ID": "DLCRemovedMessage",
+      "Translations": {
+        "ar_SA": "",
+        "de_DE": "DLC entfernt: {0}",
+        "el_GR": "",
+        "en_US": "DLC Removed: {0}",
+        "es_ES": "DLC Eliminados: {0}",
+        "fr_FR": "DLC Supprimés : {0}",
+        "he_IL": "",
+        "it_IT": "DLC rimossi: {0}",
+        "ja_JP": "",
+        "ko_KR": "제거된 DLC: {0}",
+        "no_NO": "DLC fjernet: {0}",
+        "pl_PL": "",
+        "pt_BR": "DLC removidos: {0}",
+        "ru_RU": "Удалено DLC: {0}",
+        "sv_SE": "DLC borttaget: {0}",
+        "th_TH": "ลบ DLC: {0}",
+        "tr_TR": "",
+        "uk_UA": "Видалено DLC: {0}",
+        "zh_CN": "已移除 DLC：{0}",
+        "zh_TW": "已移除 DLC：{0}"
+      }
+    }
+  ]
+}

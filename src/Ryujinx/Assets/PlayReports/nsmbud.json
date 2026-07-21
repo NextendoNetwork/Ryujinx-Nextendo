@@ -1,0 +1,216 @@
+{
+  "mario": {
+    "1": {
+      "1": "Acorn Plains Way",
+      "2": "Tilted Tunnel",
+      "21": "Crushing-Cogs Tower",
+      "3": "Yoshi Hill",
+      "4": "Mushroom Heights",
+      "5": "Rise of the Piranha Plants",
+      "23": "Lemmy's Swingback Castle",
+      "13": "Blooper's Secret Lair"
+    },
+    "2": {
+      "1": "Stone-Eye Zone",
+      "2": "Perilous Pokey Cave",
+      "3": "Fire Snake Cavern",
+      "21": "Stoneslide Tower",
+      "4": "Spike's Spouting Sands",
+      "5": "Dry Desert Mushrooms",
+      "6": "Blooming Lakitus",
+      "23": "Morton's Compactor Castle",
+      "14": "Piranha Plants on Ice"
+    },
+    "3": {
+      "1": "Waterspout Beach",
+      "2": "Tropical Refresher",
+      "21": "Giant Skewer Tower",
+      "20": "Haunted Shipwreck",
+      "3": "Above the Cheep Cheep Seas",
+      "4": "Urchin Shoals",
+      "5": "Dragoneel's Undersea Grotto",
+      "23": "Larry's Torpedo Castle",
+      "15": "Skyward Stalk"
+    },
+    "4": {
+      "1": "Spinning-Star Sky",
+      "2": "Cooligan Fields",
+      "21": "Freezing-Rain Tower",
+      "3": "Prickly Goombas!",
+      "4": "Scaling the Mountainside",
+      "5": "Icicle Caverns",
+      "20": "Swaying Ghost House",
+      "23": "Wendy's Shifting Castle",
+      "16": "Fliprus Lake"
+    },
+    "5": {
+      "37": "The Mighty Cannonship",
+      "1": "Jungle of the Giants",
+      "2": "Bridge over Poisoned Waters",
+      "3": "Bramball Woods",
+      "21": "Snake Block Tower",
+      "20": "Which-Way Labyrinth",
+      "4": "Painted Swampland",
+      "5": "Deepsea Ruins",
+      "6": "Seesaw Bridge",
+      "7": "Wiggler Stampede",
+      "23": "Iggy's Volcanic Castle",
+      "17": "Flight of the Para-Beetles"
+    },
+    "6": {
+      "1": "Fuzzy Clifftop",
+      "2": "Porcupuffer Falls",
+      "21": "Grinding-Stone Tower",
+      "3": "Wadlewing's Nest",
+      "4": "Light Blocks, Dark Tower",
+      "5": "Walking Piranha Plants!",
+      "6": "Thrilling Spine Coaster",
+      "22": "Screwtop Tower",
+      "7": "Shifting-Floor Cave",
+      "23": "Roy's Conveyor Castle"
+    },
+    "7": {
+      "1": "Land of Flying Blocks",
+      "2": "Seesaw Shrooms",
+      "3": "Switchback Hill",
+      "21": "Slide Lift Tower",
+      "20": "Spinning Spirit House",
+      "4": "Bouncy Cloud Boomerangs",
+      "5": "A Quick Dip in the Sky",
+      "6": "Snaking above Mist Valley",
+      "23": "Ludwig's Clockwork Castle",
+      "37": "Boarding the Airship"
+
+    },
+    "8": {
+      "1": "Meteor Moat",
+      "2": "Magma-River Cruise",
+      "3": "Rising Tides of Lava",
+      "4": "firefall Cliffs",
+      "42": "Red-Hot Elevator Ride",
+      "43": "The Final Battle"
+    },
+    "9": {
+      "1": "Spine-Tingling Spine Coaster",
+      "2": "Run for It",
+      "3": "Swim for Your Life!",
+      "4": "Hammerswing Caverns",
+      "5": "Spinning Platforms of Doom",
+      "6": "Fire Bar Cliffs",
+      "7": "Lakitu! Lakitu! Lakitu!",
+      "8": "Pendulum Castle",
+      "9": "Follow That Shell!"
+    },
+    "11": {
+      "1": "",
+      "2": "",
+      "3": "",
+      "4": "",
+      "5": "",
+      "6": "",
+      "7": "",
+      "8": ""
+    }
+  },
+  "luigi": {
+    "1": {
+      "1": "Waddlewing Warning!",
+      "2": "Crooked Cavern",
+      "21": "Flame-Gear Tower",
+      "3": "Rolling Yoshi Hills",
+      "4": "Piranha Heights",
+      "5": "Piranha Gardens",
+      "23": "Lemmy's Lights-Out Castle",
+      "13": "Cheep Chomp Chase"
+    },
+    "2": {
+      "1": "Spike's Tumbling Desert",
+      "2": "Underground Grrrols",
+      "3": "Piranhas in the Dark",
+      "21": "Wind-Up Tower",
+      "4": "The Walls Have Eyes",
+      "5": "Stone Spike Conveyors",
+      "6": "Spinning Sandstones",
+      "23": "Morton's Lava-Block Castle",
+      "14": "Slippery Rope Ladders"
+    },
+    "3": {
+      "1": "Huckit Beach Resort",
+      "2": "Urchin Reef Romp",
+      "21": "Shish-Kebab Tower",
+      "20": "Haunted Cargo Hold",
+      "3": "Waterspout Sprint",
+      "4": "The Great Geysers",
+      "5": "Dragoneel Depths",
+      "23": "Larry's Trigger-Happy Castle",
+      "15": "Beanstalk Jungle"
+    },
+    "4": {
+      "1": "Broozers and Barrels",
+      "2": "Cooligan Shrooms",
+      "21": "Icicle Tower",
+      "3": "Fire and Ice",
+      "4": "Weighty Waddlewings",
+      "5": "Ice-Slide Expressway",
+      "20": "Peek-a-Boo Ghost House",
+      "23": "Wendy's Thwomp Castle",
+      "16": "Fliprus Floes"
+    },
+    "5": {
+      "1": "Giant Swing-Along",
+      "2": "Dancing Blocks, Poison Swamp",
+      "3": "Heart of Bramball Woods",
+      "21": "Stone-Snake Tower",
+      "20": "Boo's Favorite Haunt",
+      "4": "Painted Pipeworks",
+      "5": "Deepsea Stone-Eyes",
+      "6": "Sumo Bro Bridge",
+      "7": "Wiggler Floodlands",
+      "23": "Iggy's Swinging-Chains Castle",
+      "17": "Para-Beetle Parade"
+    },
+    "6": {
+      "1": "Mount Fuzzy",
+      "2": "Porcupuffer Cavern",
+      "21": "Smashing-Stone Tower",
+      "3": "Spike's Seesaws",
+      "4": "Light-Up-Lift Tower",
+      "5": "Rising Piranhas",
+      "6": "Spine Coaster Stowaways",
+      "22": "Sumo Bro's Spinning Tower",
+      "7": "Switch-Lift Express",
+      "23": "Roy's Ironclad Castle"
+    },
+    "7": {
+      "1": "Frozen Fuzzies",
+      "2": "Wiggler Rodeo",
+      "3": "Rainbow Skywalk",
+      "21": "Stonecrush Tower",
+      "20": "Vanishing Ghost House",
+      "4": "Above The Bouncy Clouds",
+      "5": "Flame Chomp Ferris Wheel",
+      "6": "Three-Headed Snake Block",
+      "23": "Ludwig's Block-Press Castle",
+      "37": "Bowser Jr. Showdown"
+    },
+    "8": {
+      "1": "Magma Moat",
+      "2": "Magmaw River Cruise",
+      "3": "Hot Cogs",
+      "4": "Firefall Rising",
+      "42": "Current Event",
+      "43": "The Final Battle"
+    },
+    "9": {
+      "1": "Spine Coaster Connections",
+      "2": "P Switch Peril",
+      "3": "Star Coin Deep Dive",
+      "4": "Hammerswing Hideout",
+      "5": "Under Construction",
+      "6": "Fire Bar Sprint",
+      "7": "Cloudy Capers",
+      "8": "Impossible Pendulums",
+      "9": "Flying Squirrel Ovation"
+    }
+  }
+}

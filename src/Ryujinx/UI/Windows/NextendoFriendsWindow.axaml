@@ -1,0 +1,149 @@
+<!-- [Nextendo] Standalone friends window: everything a player needs mid-session without
+     digging through Settings or leaving the game running. Ctrl+F, or Nextendo > Friends. -->
+<window:StyleableAppWindow xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ext="using:Ryujinx.Ava.Common.Markup"
+             xmlns:helpers="using:Ryujinx.Ava.UI.Helpers"
+             xmlns:models="using:Ryujinx.Ava.UI.Models"
+             xmlns:window="clr-namespace:Ryujinx.Ava.UI.Windows"
+             mc:Ignorable="d"
+             Width="560"
+             Height="720"
+             MinWidth="480"
+             MinHeight="500"
+             x:Class="Ryujinx.Ava.UI.Windows.NextendoFriendsWindow">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="16,8,16,16">
+
+        <!-- Who am I: avatar, name, friend code (the code is what you hand to people). -->
+        <Border Grid.Row="0" Background="#1A808080" CornerRadius="8" Padding="12">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Border Grid.Column="0" Width="56" Height="56" CornerRadius="6" ClipToBounds="True" Background="#33000000">
+                    <Image Name="MyAvatar" Stretch="UniformToFill" />
+                </Border>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Name="MyName" FontSize="16" FontWeight="Bold" Text="…" />
+                    <TextBlock Name="MyFriendCode" Opacity="0.85" FontSize="12" Text="SW-…" />
+                    <!-- Own presence: what the friends see of you, shown back to you. -->
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <Ellipse Name="MyStatusDot" Width="8" Height="8" VerticalAlignment="Center" />
+                        <TextBlock Name="MyStatusText" FontSize="11" Opacity="0.8" />
+                    </StackPanel>
+                </StackPanel>
+                <Button Grid.Column="2" Name="CopyCodeButton" VerticalAlignment="Center"
+                        Content="{ext:Locale Dialog_Nextendo_CopyFriendCodeButton}" />
+            </Grid>
+        </Border>
+
+        <!-- Connection: latency + NAT, measured on demand against the NAT-check servers. -->
+        <Border Grid.Row="1" Margin="0,10,0,0" Background="#1A808080" CornerRadius="8" Padding="12">
+            <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Classes="h1" VerticalAlignment="Center"
+                               Text="{ext:Locale Dialog_Nextendo_NetworkCheckTitle}" />
+                    <Button Grid.Column="1" Name="CheckButton"
+                            Content="{ext:Locale Dialog_Nextendo_NetworkCheckButton}" />
+                </Grid>
+                <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto" Name="CheckResults" IsVisible="False">
+                    <TextBlock Grid.Row="0" Grid.Column="0" Opacity="0.7" VerticalAlignment="Center"
+                               Text="{ext:Locale Dialog_Nextendo_LatencyLabel}" />
+                    <TextBlock Grid.Row="0" Grid.Column="1" Name="LatencyValue" Margin="8,0,0,0"
+                               FontWeight="SemiBold" VerticalAlignment="Center" Text="—" />
+                    <TextBlock Grid.Row="0" Grid.Column="2" Opacity="0.7" VerticalAlignment="Center"
+                               Text="{ext:Locale Dialog_Nextendo_NatLabel}" />
+                    <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal" Margin="8,0,0,0" Spacing="5">
+                        <Ellipse Name="NatDot" Width="8" Height="8" VerticalAlignment="Center" />
+                        <TextBlock Name="NatValue" FontWeight="SemiBold" VerticalAlignment="Center" Text="—" />
+                    </StackPanel>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,6,0,0"
+                               Name="ExternalValue" FontSize="11" Opacity="0.5" />
+                </Grid>
+                <TextBlock Name="NatHint" TextWrapping="Wrap" FontSize="11" Opacity="0.75" IsVisible="False" />
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Grid.Row="2" Margin="0,10,0,0">
+            <StackPanel Spacing="10">
+
+                <!-- Incoming requests, only when there are any. -->
+                <StackPanel Name="RequestsPanel" Spacing="6" IsVisible="False">
+                    <TextBlock Classes="h1" Text="{ext:Locale Dialog_Nextendo_FriendRequestsReceivedTitle}" />
+                    <ItemsControl Name="RequestsList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="models:NextendoFriendModel">
+                                <Border Background="#14808080" CornerRadius="6" Padding="8" Margin="0,0,0,4">
+                                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                        <Border Grid.Column="0" Width="34" Height="34" CornerRadius="4"
+                                                ClipToBounds="True" Background="#33000000">
+                                            <Image Source="{Binding Image, Converter={x:Static helpers:BitmapArrayValueConverter.Instance}}"
+                                                   Stretch="UniformToFill" />
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding FriendCode}" FontSize="11" Opacity="0.6" />
+                                        </StackPanel>
+                                        <Button Grid.Column="2" Click="AcceptRequest_Click" Tag="{Binding Pid}"
+                                                Content="{ext:Locale Dialog_Nextendo_AcceptRequestButton}" />
+                                        <Button Grid.Column="3" Margin="6,0,0,0" Click="DeclineRequest_Click" Tag="{Binding Pid}"
+                                                Content="{ext:Locale Dialog_Nextendo_DeclineRequestButton}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- The list itself. Online friends sort to the top: that is who you can play with now. -->
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Classes="h1" VerticalAlignment="Center"
+                               Text="{ext:Locale Dialog_Nextendo_MyFriendsTitle}" />
+                    <TextBlock Grid.Column="1" Name="OnlineCountText" VerticalAlignment="Center"
+                               FontSize="11" Foreground="#33E86B" />
+                </Grid>
+
+                <TextBlock Name="NoFriendsText" TextWrapping="Wrap" Opacity="0.7" IsVisible="False"
+                           Text="{ext:Locale Dialog_Nextendo_NoFriendsYetMessage}" />
+
+                <ItemsControl Name="FriendsList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="models:NextendoFriendModel">
+                            <Border Background="#14808080" CornerRadius="6" Padding="8" Margin="0,0,0,4">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Panel Grid.Column="0">
+                                        <Border Width="40" Height="40" CornerRadius="4" ClipToBounds="True" Background="#33000000">
+                                            <Image Source="{Binding Image, Converter={x:Static helpers:BitmapArrayValueConverter.Instance}}"
+                                                   Stretch="UniformToFill" />
+                                        </Border>
+                                        <!-- Presence dot, bottom-right of the avatar, like every friends list ever. -->
+                                        <Ellipse Width="11" Height="11" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                                 Margin="0,0,-2,-2" Stroke="#1E1E1E" StrokeThickness="2"
+                                                 Fill="{Binding StatusColor}" />
+                                    </Panel>
+                                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding StatusText}" FontSize="11" Opacity="0.7" />
+                                        <TextBlock Text="{Binding FriendCode}" FontSize="10" Opacity="0.45" />
+                                    </StackPanel>
+                                    <Button Grid.Column="2" VerticalAlignment="Center" Click="RemoveFriend_Click"
+                                            Tag="{Binding Pid}" Content="{ext:Locale Dialog_Nextendo_RemoveFriendButton}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Add by friend code. -->
+        <StackPanel Grid.Row="3" Margin="0,10,0,0" Spacing="6">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBox Grid.Column="0" Name="AddFriendBox"
+                         Watermark="{ext:Locale Dialog_Nextendo_FriendCodeBoxWatermark}" />
+                <Button Grid.Column="1" Name="AddFriendButton" Margin="8,0,0,0"
+                        Content="{ext:Locale Dialog_Nextendo_AddFriendButton}" />
+            </Grid>
+            <TextBlock Name="StatusText" TextWrapping="Wrap" FontSize="11" IsVisible="False" />
+        </StackPanel>
+    </Grid>
+</window:StyleableAppWindow>

@@ -1,0 +1,79 @@
+{
+  "Locales": [
+    {
+      "ID": "LoadApplicationFromFileFilePickerTitle",
+      "Translations": {
+        "ar_SA": "",
+        "de_DE": "Wähle eine Switch-Anwendungsdatei zum Laden aus",
+        "el_GR": "",
+        "en_US": "Select a Switch application file to load",
+        "es_ES": "Selecciona un archivo de aplicación de Switch para cargar",
+        "fr_FR": "Sélectionnez un fichier d’application Switch à charger",
+        "he_IL": "",
+        "it_IT": "Seleziona un file applicazione Switch da caricare",
+        "ja_JP": "",
+        "ko_KR": "로드할 Switch 애플리케이션 파일을 선택하세요",
+        "no_NO": "",
+        "pl_PL": "",
+        "pt_BR": "Selecione um arquivo de aplicativo Switch para carregar",
+        "ru_RU": "Выберите файл приложения Switch для загрузки",
+        "sv_SE": "Välj en Switch-applikationsfil att läsa in",
+        "th_TH": "",
+        "tr_TR": "",
+        "uk_UA": "Виберіть файл застосунку Switch для завантаження",
+        "zh_CN": "请选择要加载的 Switch 应用程序文件",
+        "zh_TW": "請選擇要載入的 Switch 應用程式檔案"
+      }
+    },
+    {
+      "ID": "LoadUnpackedApplicationFromFolderFilePickerTitle",
+      "Translations": {
+        "ar_SA": "",
+        "de_DE": "Wähle einen Ordner mit einer entpackten Switch-Anwendung zum Laden",
+        "el_GR": "",
+        "en_US": "Select a folder containing an unpacked Switch application to load",
+        "es_ES": "Selecciona una carpeta que contenga una aplicación de Switch descomprimida para cargar",
+        "fr_FR": "Sélectionnez un dossier contenant une application Switch décompressée à charger",
+        "he_IL": "",
+        "it_IT": "Seleziona una cartella contenente un’applicazione Switch non compressa da caricare",
+        "ja_JP": "",
+        "ko_KR": "압축 해제된 Switch 애플리케이션이 포함된 폴더를 선택하여 로드하세요",
+        "no_NO": "",
+        "pl_PL": "",
+        "pt_BR": "Selecione uma pasta que contenha um aplicativo Switch descompactado para carregar",
+        "ru_RU": "Выберите папку, содержащую распакованное приложение Switch, для загрузки",
+        "sv_SE": "Välj en mapp som innehåller en uppackad Switch-applikation att läsa in",
+        "th_TH": "",
+        "tr_TR": "",
+        "uk_UA": "Виберіть папку, що містить розпакований застосунок Switch, для завантаження",
+        "zh_CN": "请选择包含未打包 Switch 应用程序的文件夹以加载",
+        "zh_TW": "請選擇包含未解壓縮 Switch 應用程式的資料夾以載入"
+      }
+    },
+    {
+      "ID": "LoadUpdatesAndDLCFromFolderFilePickerTitle",
+      "Translations": {
+        "ar_SA": "",
+        "de_DE": "Wähle einen oder mehrere Ordner zum Laden von Updates und DLC aus",
+        "el_GR": "",
+        "en_US": "Select one or more folders to bulk load updates and DLC from",
+        "es_ES": "Selecciona una o más carpetas para cargar de forma masiva actualizaciones y DLC",
+        "fr_FR": "Sélectionnez un ou plusieurs dossiers pour charger en masse des mises à jour et des DLC",
+        "he_IL": "",
+        "it_IT": "Seleziona una o più cartelle da cui caricare in blocco aggiornamenti e DLC",
+        "ja_JP": "",
+        "ko_KR": "업데이트 및 DLC를 대량으로 로드할 폴더를 하나 이상 선택하세요",
+        "no_NO": "",
+        "pl_PL": "",
+        "pt_BR": "Selecione uma ou mais pastas para carregar em massa atualizações e DLC",
+        "ru_RU": "Выберите одну или несколько папок для массовой загрузки обновлений и DLC",
+        "sv_SE": "Välj en eller flera mappar för att massinläsa uppdateringar och DLC",
+        "th_TH": "",
+        "tr_TR": "",
+        "uk_UA": "Виберіть одну або кілька папок для масового завантаження оновлень і DLC",
+        "zh_CN": "请选择一个或多个文件夹以批量加载更新和 DLC",
+        "zh_TW": "請選擇一個或多個資料夾以批次載入更新與 DLC"
+      }
+    }
+  ]
+}

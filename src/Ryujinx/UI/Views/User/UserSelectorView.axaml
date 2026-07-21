@@ -1,0 +1,177 @@
+<UserControl
+    x:Class="Ryujinx.Ava.UI.Views.User.UserSelectorViews"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ext="clr-namespace:Ryujinx.Ava.Common.Markup"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:helpers="clr-namespace:Ryujinx.Ava.UI.Helpers"
+    xmlns:models="clr-namespace:Ryujinx.Ava.UI.Models"
+    xmlns:viewModels="clr-namespace:Ryujinx.Ava.UI.ViewModels"
+    xmlns:ui="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+    d:DesignHeight="450"
+    MinWidth="500"
+    d:DesignWidth="800"
+    mc:Ignorable="d"
+    Focusable="True"
+    x:DataType="viewModels:UserProfileViewModel">
+    <Design.DataContext>
+        <viewModels:UserProfileViewModel />
+    </Design.DataContext>
+    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" RowDefinitions="*,Auto">
+        <Border
+            CornerRadius="5"
+            BorderBrush="{DynamicResource AppListHoverBackgroundColor}"
+            BorderThickness="1">
+            <ListBox
+                MaxHeight="300"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Center"
+                SelectionChanged="ProfilesList_SelectionChanged"
+                Background="Transparent"
+                ItemsSource="{Binding Profiles}">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.Styles>
+                    <Style Selector="ListBoxItem">
+                        <Setter Property="Margin" Value="5 5 0 5" />
+                        <Setter Property="CornerRadius" Value="5" />
+                    </Style>
+                    <Style Selector="Rectangle#SelectionIndicator">
+                        <Setter Property="Opacity" Value="0" />
+                    </Style>
+                </ListBox.Styles>
+                <ListBox.DataTemplates>
+                    <DataTemplate
+                        DataType="models:UserProfile">
+                        <Grid
+                            PointerEntered="Grid_PointerEntered"
+                            PointerExited="Grid_OnPointerExited">
+                            <Border
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                ClipToBounds="True"
+                                CornerRadius="5"
+                                Background="{Binding BackgroundColor}">
+                                <StackPanel
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch">
+                                    <Image
+                                        Width="96"
+                                        Height="96"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Top"
+                                        Source="{Binding Image, Converter={x:Static helpers:BitmapArrayValueConverter.Instance}}" />
+                                    <TextBlock
+                                        HorizontalAlignment="Stretch"
+                                        MaxWidth="90"
+                                        Text="{Binding Name}"
+                                        TextAlignment="Center"
+                                        TextWrapping="Wrap"
+                                        TextTrimming="CharacterEllipsis"
+                                        MaxLines="2"
+                                        Margin="5" />
+                                </StackPanel>
+                            </Border>
+                            <Border
+                                Margin="2"
+                                Height="24"
+                                Width="24"
+                                CornerRadius="12"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Background="{DynamicResource ThemeContentBackgroundColor}"
+                                IsVisible="{Binding IsPointerOver}">
+                                <Button
+                                    MaxHeight="24"
+                                    MaxWidth="24"
+                                    MinHeight="24"
+                                    MinWidth="24"
+                                    CornerRadius="12"
+                                    Padding="0"
+                                    Click="EditUser">
+                                    <ui:SymbolIcon Symbol="Edit" />
+                                </Button>
+                            </Border>
+                            <!-- [Nextendo] Badge: this profile is linked to the Nextendo account (online-enabled). -->
+                            <Border
+                                Margin="2"
+                                Height="22"
+                                Width="22"
+                                CornerRadius="11"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Top"
+                                Background="#FF2EA043"
+                                ToolTip.Tip="Profil lié au compte Nextendo Network (jeu en ligne)"
+                                IsVisible="{Binding IsNextendoLinked}">
+                                <TextBlock
+                                    Text="N"
+                                    FontWeight="Bold"
+                                    FontSize="13"
+                                    Foreground="White"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                    <DataTemplate
+                        DataType="viewModels:BaseModel">
+                        <Panel
+                            Height="118"
+                            Width="96">
+                            <Button
+                                MinWidth="50"
+                                MinHeight="50"
+                                MaxWidth="50"
+                                MaxHeight="50"
+                                CornerRadius="25"
+                                Margin="10"
+                                Padding="0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Click="AddUser">
+                                <ui:SymbolIcon Symbol="Add" />
+                            </Button>
+                            <Panel.Styles>
+                                <Style Selector="Panel">
+                                    <Setter Property="Background" Value="{DynamicResource ListBoxBackground}"/>
+                                </Style>
+                            </Panel.Styles>
+                        </Panel>
+                    </DataTemplate>
+                </ListBox.DataTemplates>
+            </ListBox>
+        </Border>
+        <StackPanel
+            Grid.Row="1"
+            Margin="0 24 0 0"
+            HorizontalAlignment="Left"
+            Orientation="Horizontal"
+            Spacing="10">
+            <Button
+                Click="ManageSaves">
+                <TextBlock Text="{ext:Locale UserProfilesManageSaves}" />
+            </Button>
+            <Button
+                Click="RecoverLostAccounts">
+                <TextBlock Text="{ext:Locale UserProfilesRecoverLostAccounts}" />
+            </Button>
+        </StackPanel>
+        <StackPanel
+            Grid.Row="1"
+            Margin="0 24 0 0"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal">
+            <Button
+                Click="Close">
+                <TextBlock Text="{ext:Locale UserProfilesClose}" />
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,29 @@
+{
+  "Locales": [
+    {
+      "ID": "AllSupportedFormats",
+      "Translations": {
+        "ar_SA": "كل التنسيقات المدعومة",
+        "de_DE": "Alle unterstützten Formate",
+        "el_GR": "Όλες Οι Υποστηριζόμενες Μορφές",
+        "en_US": "All Supported Formats",
+        "es_ES": "Todos los Formatos Soportados",
+        "fr_FR": "Tous les Formats Supportés",
+        "he_IL": "כל הפורמטים הנתמכים",
+        "it_IT": "Tutti i formati supportati",
+        "ja_JP": "すべての対応フォーマット",
+        "ko_KR": "지원되는 모든 형식",
+        "no_NO": "Alle støttede formater",
+        "pl_PL": "Wszystkie Obsługiwane Formaty",
+        "pt_BR": "Todos os Formatos Suportados",
+        "ru_RU": "Все поддерживаемые форматы",
+        "sv_SE": "Alla format som stöds",
+        "th_TH": "รูปแบบที่รองรับทั้งหมด",
+        "tr_TR": "Tüm Desteklenen Formatlar",
+        "uk_UA": "Усі підтримувані формати",
+        "zh_CN": "所有支持的格式",
+        "zh_TW": "所有支援的格式"
+      }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "Locales": [
+    {
+      "ID": "ToggleFullscreenButton",
+      "Translations": {
+        "ar_SA": "التبديل إلى وضع ملء الشاشة",
+        "de_DE": "Vollbild",
+        "el_GR": "Λειτουργία Πλήρους Οθόνης",
+        "en_US": "Toggle Fullscreen",
+        "es_ES": "Cambiar a Pantalla Completa.",
+        "fr_FR": "Basculer en Plein Écran",
+        "he_IL": "שנה מצב- מסך מלא",
+        "it_IT": "Schermo intero",
+        "ja_JP": "全画面切り替え",
+        "ko_KR": "전체 화면 전환",
+        "no_NO": "Fullskjermsvisning av/på",
+        "pl_PL": "Przełącz na tryb pełnoekranowy",
+        "pt_BR": "Mudar para Tela Cheia",
+        "ru_RU": "Переключить полноэкранный режим",
+        "sv_SE": "Växla helskärm",
+        "th_TH": "สลับเป็นโหมดเต็มหน้าจอ",
+        "tr_TR": "Tam Ekran Modunu Aç",
+        "uk_UA": "На весь екран",
+        "zh_CN": "切换全屏",
+        "zh_TW": "切換全螢幕模式"
+      }
+    },
+    {
+      "ID": "ShowConsoleButton",
+      "Translations": {
+        "ar_SA": "عرض وحدة التحكم",
+        "de_DE": "Zeige Konsole",
+        "el_GR": "Εμφάνιση Κονσόλας",
+        "en_US": "Show Console",
+        "es_ES": "Mostrar Consola",
+        "fr_FR": "Afficher la Console",
+        "he_IL": "הצג שורת פקודות",
+        "it_IT": "Mostra console",
+        "ja_JP": "コンソールを表示",
+        "ko_KR": "콘솔 표시",
+        "no_NO": "Vis konsoll",
+        "pl_PL": "Pokaż Konsolę",
+        "pt_BR": "Exibir Console",
+        "ru_RU": "Показать консоль",
+        "sv_SE": "Visa konsoll",
+        "th_TH": "แสดง คอนโซล",
+        "tr_TR": "Konsol'u Göster",
+        "uk_UA": "Показати консоль",
+        "zh_CN": "显示控制台",
+        "zh_TW": "顯示控制台"
+      }
+    }
+  ]
+}

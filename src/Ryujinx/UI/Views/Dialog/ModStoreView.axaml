@@ -1,0 +1,98 @@
+<UserControl
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:viewModels="clr-namespace:Ryujinx.Ava.UI.ViewModels"
+    xmlns:models="clr-namespace:Ryujinx.Ava.UI.Models"
+    Width="560"
+    Height="500"
+    mc:Ignorable="d"
+    x:Class="Ryujinx.Ava.UI.Views.Dialog.ModStoreView"
+    x:CompileBindings="True"
+    x:DataType="viewModels:ModStoreViewModel"
+    Focusable="True">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <StackPanel Grid.Row="0" Margin="0 0 0 10" Spacing="6">
+            <Border
+                Background="#33E0A030"
+                BorderBrush="#E0A030"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="8 6">
+                <TextBlock
+                    TextWrapping="Wrap"
+                    FontSize="12"
+                    Foreground="#F0C060"
+                    Text="⚠️ Attention : la compatibilité de ces mods n'a PAS été vérifiée — ni avec ta version du jeu (ex. 3.0.5 / 13.0.4), ni entre eux. Certains peuvent ne pas fonctionner ensemble ou planter le jeu. Installe-les à tes propres risques." />
+            </Border>
+            <TextBlock
+                Opacity="0.8"
+                Text="{Binding Status}" />
+        </StackPanel>
+        <Border
+            Grid.Row="1"
+            Margin="0 0 0 16"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            BorderBrush="{DynamicResource AppListHoverBackgroundColor}"
+            BorderThickness="1"
+            CornerRadius="5"
+            Padding="2.5">
+            <ListBox
+                Background="Transparent"
+                SelectionMode="Single"
+                ItemsSource="{Binding Mods}">
+                <ListBox.DataTemplates>
+                    <DataTemplate DataType="models:ModStoreItem">
+                        <Grid ColumnDefinitions="*,Auto" Margin="8">
+                            <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+                                <TextBlock
+                                    Text="{Binding Description}"
+                                    TextWrapping="Wrap"
+                                    MaxLines="3"
+                                    Opacity="0.75" />
+                                <TextBlock Text="{Binding SizeText}" FontSize="11" Opacity="0.5" />
+                            </StackPanel>
+                            <StackPanel
+                                Grid.Column="1"
+                                Orientation="Horizontal"
+                                Spacing="6"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Right">
+                                <Button
+                                    Padding="14 6"
+                                    IsEnabled="{Binding !Busy}"
+                                    IsVisible="{Binding !Installed}"
+                                    Click="Download">
+                                    <TextBlock Text="Télécharger" />
+                                </Button>
+                                <Button
+                                    Padding="14 6"
+                                    IsEnabled="{Binding !Busy}"
+                                    IsVisible="{Binding Installed}"
+                                    Click="Delete">
+                                    <TextBlock Text="Supprimer" />
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.DataTemplates>
+                <ListBox.Styles>
+                    <Style Selector="ListBoxItem">
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
+                </ListBox.Styles>
+            </ListBox>
+        </Border>
+        <Button
+            Grid.Row="2"
+            HorizontalAlignment="Right"
+            MinWidth="90"
+            Margin="5"
+            Click="CloseDialog">
+            <TextBlock Text="Fermer" />
+        </Button>
+    </Grid>
+</UserControl>

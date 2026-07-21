@@ -1,0 +1,29 @@
+{
+  "Locales": [
+    {
+      "ID": "TrimXCIButton",
+      "Translations": {
+        "ar_SA": "تقليم XCI",
+        "de_DE": "Zuschneiden der XCI",
+        "el_GR": "Κοπή XCI",
+        "en_US": "Trim XCI",
+        "es_ES": "Recortar XCI",
+        "fr_FR": "Réduire le XCI",
+        "he_IL": "חתוך XCI",
+        "it_IT": "Riduci il XCI",
+        "ja_JP": "XCIをトリム",
+        "ko_KR": "XCI 트림",
+        "no_NO": "Trim XCI-filen",
+        "pl_PL": "Przytnij XCI",
+        "pt_BR": "Reduzir o XCI",
+        "ru_RU": "Обрезать XCI",
+        "sv_SE": "Optimera XCI",
+        "th_TH": "ลดขนาด XCI",
+        "tr_TR": "XCI'yi Kırp",
+        "uk_UA": "Нарізка XCI",
+        "zh_CN": "精简 XCI",
+        "zh_TW": "修剪 XCI"
+      }
+    }
+  ]
+}

@@ -91,8 +91,8 @@ version). See [COMPILING.md](COMPILING.md) for details. In short:
 
 ```sh
 git clone <this-repository>
-cd Nextendo
-dotnet build src/Ryujinx/Ryujinx.csproj -c Release
+cd Nextendo-Ryujinx
+./build.ps1
 ```
 
 ## License

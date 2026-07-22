@@ -153,6 +153,39 @@ namespace Ryujinx.Ava.Common
         }
 
         /// <summary>
+        /// [Nextendo] Raised when the server definitively rejects our stored token (HTTP 401) and the
+        /// local session is auto-wiped as a result. The UI subscribes to refresh the account panel and
+        /// invite the player to sign in again.
+        /// </summary>
+        public static event Action SessionRevoked;
+
+        /// <summary>
+        /// [Nextendo] Auto-heal. A 401 on an authenticated call means the locally stored NEX token is
+        /// no good — expired, or REVOKED. (2026-07-22 incident: the 1.6.5 Windows package accidentally
+        /// shipped the maintainer's live session file — portable/nextendo_account.txt — so every
+        /// download booted logged in as him and carried HIS token; that token is now denylisted on the
+        /// server.) Left in place, such a client keeps presenting someone else's PID as its identity —
+        /// in the account panel AND, worse, as the bare NEX login id in-game. So on a definitive 401 we
+        /// wipe the local session: the identity falls back to the anonymous 0xcafe stub (no longer
+        /// impersonating anyone) and the player is prompted to sign in as themselves. Only a real 401
+        /// triggers this — network failures and 5xx surface as exceptions and must NEVER clear a valid
+        /// session. Returns true when a session was cleared.
+        /// </summary>
+        private static bool HealIfRejected(HttpResponseMessage resp)
+        {
+            if (resp is null || resp.StatusCode != HttpStatusCode.Unauthorized || string.IsNullOrEmpty(NextendoAccount.NexToken))
+            {
+                return false;
+            }
+
+            Logger.Warning?.Print(LogClass.Application,
+                "[Nextendo] jeton rejeté par le serveur (401) — session locale purgée (compte révoqué ou expiré). Reconnexion requise.");
+            NextendoAccount.Clear();
+            try { SessionRevoked?.Invoke(); } catch { /* UI not ready yet */ }
+            return true;
+        }
+
+        /// <summary>
         /// [Nextendo] Sends a bug report — the error code the player hit, what they were doing, and
         /// the tail of the emulator log — to the account server, where it lands in the admin inbox.
         ///
@@ -316,6 +349,7 @@ namespace Ryujinx.Ava.Common
                 HttpResponseMessage resp = await http.GetAsync($"{BaseUrl()}/api/profile");
                 if (!resp.IsSuccessStatusCode)
                 {
+                    HealIfRejected(resp); // 401 → session locale invalide, on purge (anti-usurpation)
                     return (null, null);
                 }
 
@@ -459,7 +493,8 @@ namespace Ryujinx.Ava.Common
             {
                 using HttpClient http = Client();
                 using StringContent body = new("{}", Encoding.UTF8, "application/json");
-                await http.PostAsync($"{BaseUrl()}/api/nex-session", body);
+                using HttpResponseMessage resp = await http.PostAsync($"{BaseUrl()}/api/nex-session", body);
+                HealIfRejected(resp); // token révoqué/expiré → purge la session locale (anti-usurpation)
             }
             catch { /* best-effort */ }
         }
@@ -473,6 +508,7 @@ namespace Ryujinx.Ava.Common
             {
                 using HttpClient http = Client();
                 HttpResponseMessage resp = await http.GetAsync($"{BaseUrl()}/api/friends");
+                HealIfRejected(resp); // 401 → jeton révoqué/expiré, purge la session locale (anti-usurpation)
                 using JsonDocument doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
                 if (doc.RootElement.TryGetProperty("friends", out JsonElement fa) && fa.ValueKind == JsonValueKind.Array)
                 {

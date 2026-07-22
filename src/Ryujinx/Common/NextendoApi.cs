@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Ryujinx.Ava.Common.Locale;
 
 namespace Ryujinx.Ava.Common
 {
@@ -504,7 +505,7 @@ namespace Ryujinx.Ava.Common
                 {
                     string name = ParseFriend(f).Name;
                     bool already = doc.RootElement.TryGetProperty("already", out JsonElement a) && a.ValueKind == JsonValueKind.True;
-                    return (true, already ? $"Vous êtes déjà amis avec {name}." : $"Demande envoyée à {name}.");
+                    return (true, already ? LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_FriendAlreadyFriends] : LocaleManager.Instance.UpdateAndGetDynamicValue(LocaleKeys.Dialog_Nextendo_FriendRequestSent, name));
                 }
 
                 return (false, doc.RootElement.TryGetProperty("error", out JsonElement e) ? (e.GetString() ?? "Erreur") : "Erreur");

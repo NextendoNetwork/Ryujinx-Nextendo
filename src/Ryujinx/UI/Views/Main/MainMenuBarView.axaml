@@ -210,15 +210,15 @@
                     <MenuItem Name="XCITrimmerMenuItem" Header="{ext:Locale MenuBar_Actions_XCITrimmerButton}" Icon="{ext:Icon fa-solid fa-scissors}" />
                 </MenuItem>
                 <Separator />
-                <MenuItem
-                    Name="NextendoLoginMenuItem"
-                    Header="{ext:Locale Dialog_Nextendo_NextendoAccountMenuHeader}"
-                    Icon="{ext:Icon fa-solid fa-user-astronaut}" />
             </MenuItem>
             <!-- [Nextendo] Top-level, and deliberately WITHOUT EnableNonGameRunningControls: the
                  Actions menu above hides itself while a game runs, which is precisely why players
                  had to stop emulation to reach their friends list. -->
             <MenuItem VerticalAlignment="Center" Header="{ext:Locale Dialog_Nextendo_MenuBarNextendo}">
+                <MenuItem
+                    Name="NextendoLoginMenuItem"
+                    Header="{ext:Locale Dialog_Nextendo_NextendoAccountMenuHeader}"
+                    Icon="{ext:Icon fa-solid fa-user-astronaut}" />
                 <MenuItem
                     Name="NextendoFriendsMenuItem"
                     Header="{ext:Locale Dialog_Nextendo_MenuBarFriends}"

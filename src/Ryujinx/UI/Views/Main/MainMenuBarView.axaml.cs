@@ -452,16 +452,54 @@ namespace Ryujinx.Ava.UI.Views.Main
             if (NextendoAccount.IsLinked)
             {
                 await ShowNextendoAccountPanel();
+                return;
             }
-            else
+
+            // [Nextendo] Sign in through the browser (OAuth loopback + PKCE) — the emulator never
+            // handles the e-mail/password. Opens nextendo.network, waits for the loopback callback,
+            // then links the account. Password login on /api/login stays website-only (Turnstile).
+            Task<(bool ok, string error)> signIn = Ryujinx.Ava.Common.NextendoApi.SignInWithBrowserAsync();
+
+            // Tell the user where the flow went: a page just opened in their browser, and that is
+            // where they finish — without this popup people just see the emulator "do nothing".
+            ContentDialog waiting = new()
             {
-                await ShowNextendoLoginDialog();
+                Title = LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_LoginDialogTitle],
+                Content = new TextBlock
+                {
+                    Text = LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_OAuthBrowserOpened],
+                    TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                    MaxWidth = 360,
+                },
+                CloseButtonText = LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_DialogCloseButton],
+            };
+            // Close the waiting popup automatically once the browser flow finishes.
+            _ = signIn.ContinueWith(_ => Avalonia.Threading.Dispatcher.UIThread.Post(waiting.Hide), TaskScheduler.Default);
+            await ContentDialogHelper.ShowAsync(waiting);
+
+            if (!signIn.IsCompleted)
+            {
+                return; // user closed the popup before finishing in the browser
+            }
+
+            (bool ok, string error) = await signIn;
+            if (ok)
+            {
+                await ShowNextendoAccountPanel();
+            }
+            else if (!string.IsNullOrEmpty(error))
+            {
+                await ContentDialogHelper.CreateErrorDialog(error);
             }
         }
 
         // Settings panel shown when a Nextendo account is already linked.
         private async Task ShowNextendoAccountPanel()
         {
+            // Profile photo — the same picture the website and your friends see of you.
+            byte[] avatar = null;
+            try { (_, avatar) = await Ryujinx.Ava.Common.NextendoApi.GetProfileSyncAsync(); } catch { /* cosmetic */ }
+
             TextBlock status = new() { Text = "", TextWrapping = Avalonia.Media.TextWrapping.Wrap, MaxWidth = 360, IsVisible = false };
 
             StackPanel panel = new()
@@ -477,6 +515,23 @@ namespace Ryujinx.Ava.UI.Views.Main
                     status,
                 },
             };
+
+            if (avatar is { Length: > 0 })
+            {
+                panel.Children.Insert(0, new Avalonia.Controls.Border
+                {
+                    Width = 76,
+                    Height = 76,
+                    CornerRadius = new Avalonia.CornerRadius(38),
+                    ClipToBounds = true,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                    Child = new Avalonia.Controls.Image
+                    {
+                        Source = new Avalonia.Media.Imaging.Bitmap(new System.IO.MemoryStream(avatar)),
+                        Stretch = Avalonia.Media.Stretch.UniformToFill,
+                    },
+                });
+            }
 
             ContentDialog dialog = new()
             {

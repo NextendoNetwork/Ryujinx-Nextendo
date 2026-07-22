@@ -211,7 +211,9 @@ namespace Ryujinx.Ava.UI.Windows
             // Online first, then by name: the people you can actually play with right now belong at
             // the top, and stable alphabetical ordering keeps the list from jumping around on each
             // refresh.
-            Fill(_friends, friends.OrderByDescending(f => f.IsOnline).ThenBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase).ToList());
+            // Favorites first, then online, then alphabetical: the people you care about most and
+            // can play with right now belong at the top.
+            Fill(_friends, friends.OrderByDescending(f => f.Favorite).ThenByDescending(f => f.IsOnline).ThenBy(f => f.Name, StringComparer.CurrentCultureIgnoreCase).ToList());
             Fill(_requests, requests);
 
             // Tell the background watcher what is on screen: a request the player is looking at
@@ -247,6 +249,7 @@ namespace Ryujinx.Ava.UI.Windows
                     OnlineStatus = f.OnlineStatus,
                     AppId = f.AppId,
                     AppDetail = f.AppDetail,
+                    Favorite = f.Favorite,
                 });
             }
         }
@@ -355,6 +358,18 @@ namespace Ryujinx.Ava.UI.Windows
             if (sender is Button { Tag: ulong pid })
             {
                 await NextendoApi.RemoveFriendAsync(pid);
+                await LoadSocial();
+            }
+        }
+
+        private async void Favorite_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button { Tag: ulong pid })
+            {
+                // Toggle from the current state; the server persists it and both the emulator and
+                // the website read it back from /api/friends, so the star stays in sync everywhere.
+                bool newState = _friends.FirstOrDefault(f => f.Pid == pid) is not { Favorite: true };
+                await NextendoApi.SetFavoriteAsync(pid, newState);
                 await LoadSocial();
             }
         }

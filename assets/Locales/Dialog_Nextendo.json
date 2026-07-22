@@ -5024,6 +5024,31 @@
         "zh_CN": "Nextendo — 快速上手",
         "zh_TW": "Nextendo — 快速上手"
       }
+    },
+    {
+      "ID": "OAuthBrowserOpened",
+      "Translations": {
+        "en_US": "A page just opened in your browser.\n\nSign in on nextendo.network and authorize the emulator, then come back here.",
+        "fr_FR": "Une page vient de s'ouvrir dans ton navigateur.\n\nConnecte-toi sur nextendo.network et autorise l'émulateur, puis reviens ici.",
+        "es_ES": "Se acaba de abrir una página en tu navegador.\n\nInicia sesión en nextendo.network y autoriza el emulador, luego vuelve aquí.",
+        "de_DE": "In deinem Browser wurde gerade eine Seite geöffnet.\n\nMelde dich auf nextendo.network an und autorisiere den Emulator, dann komm hierher zurück.",
+        "it_IT": "Si è appena aperta una pagina nel tuo browser.\n\nAccedi su nextendo.network e autorizza l'emulatore, poi torna qui.",
+        "pt_BR": "Uma página acabou de abrir no seu navegador.\n\nEntre em nextendo.network e autorize o emulador, depois volte aqui.",
+        "ru_RU": "В вашем браузере только что открылась страница.\n\nВойдите на nextendo.network и авторизуйте эмулятор, затем вернитесь сюда.",
+        "zh_CN": "浏览器中刚刚打开了一个页面。\n\n请在 nextendo.network 上登录并授权模拟器，然后返回这里。",
+        "zh_TW": "瀏覽器中剛剛開啟了一個頁面。\n\n請在 nextendo.network 上登入並授權模擬器，然後返回這裡。",
+        "ja_JP": "ブラウザでページが開きました。\n\nnextendo.network でサインインしてエミュレーターを承認し、ここに戻ってください。",
+        "ko_KR": "브라우저에서 페이지가 열렸습니다.\n\nnextendo.network에서 로그인하고 에뮬레이터를 승인한 다음 여기로 돌아오세요.",
+        "ar_SA": "لقد فُتحت صفحة للتو في متصفحك.\n\nسجّل الدخول على nextendo.network وامنح الإذن للمحاكي، ثم عُد إلى هنا.",
+        "el_GR": "Μια σελίδα μόλις άνοιξε στο πρόγραμμα περιήγησής σου.\n\nΣυνδέσου στο nextendo.network και εξουσιοδότησε τον εξομοιωτή, μετά επίστρεψε εδώ.",
+        "he_IL": "עמוד נפתח כעת בדפדפן שלך.\n\nהתחבר ב-nextendo.network ואשר את האמולטור, ואז חזור לכאן.",
+        "no_NO": "En side ble nettopp åpnet i nettleseren din.\n\nLogg inn på nextendo.network og autoriser emulatoren, kom deretter tilbake hit.",
+        "pl_PL": "W Twojej przeglądarce właśnie otworzyła się strona.\n\nZaloguj się na nextendo.network i autoryzuj emulator, a następnie wróć tutaj.",
+        "sv_SE": "En sida öppnades precis i din webbläsare.\n\nLogga in på nextendo.network och godkänn emulatorn, kom sedan tillbaka hit.",
+        "th_TH": "เพิ่งมีหน้าเปิดขึ้นในเบราว์เซอร์ของคุณ\n\nลงชื่อเข้าใช้ที่ nextendo.network และอนุญาตอีมูเลเตอร์ แล้วกลับมาที่นี่",
+        "tr_TR": "Tarayıcında az önce bir sayfa açıldı.\n\nnextendo.network üzerinde giriş yap ve emülatörü yetkilendir, sonra buraya geri dön.",
+        "uk_UA": "У вашому браузері щойно відкрилася сторінка.\n\nУвійдіть на nextendo.network і авторизуйте емулятор, потім поверніться сюди."
+      }
     }
   ]
 }

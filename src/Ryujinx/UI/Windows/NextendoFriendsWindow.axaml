@@ -109,7 +109,7 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="models:NextendoFriendModel">
                             <Border Background="#14808080" CornerRadius="6" Padding="8" Margin="0,0,0,4">
-                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Grid ColumnDefinitions="Auto,*,Auto,Auto">
                                     <Panel Grid.Column="0">
                                         <Border Width="40" Height="40" CornerRadius="4" ClipToBounds="True" Background="#33000000">
                                             <Image Source="{Binding Image, Converter={x:Static helpers:BitmapArrayValueConverter.Instance}}"
@@ -125,7 +125,11 @@
                                         <TextBlock Text="{Binding StatusText}" FontSize="11" Opacity="0.7" />
                                         <TextBlock Text="{Binding FriendCode}" FontSize="10" Opacity="0.45" />
                                     </StackPanel>
-                                    <Button Grid.Column="2" VerticalAlignment="Center" Click="RemoveFriend_Click"
+                                    <!-- ⭐ Favori : or quand actif, synchronisé avec le site (même API compte). -->
+                                    <Button Grid.Column="2" VerticalAlignment="Center" Click="Favorite_Click" Tag="{Binding Pid}"
+                                            Background="Transparent" BorderThickness="0" Padding="6,2" FontSize="18"
+                                            Foreground="{Binding FavoriteColor}" Content="★" />
+                                    <Button Grid.Column="3" VerticalAlignment="Center" Click="RemoveFriend_Click"
                                             Tag="{Binding Pid}" Content="{ext:Locale Dialog_Nextendo_RemoveFriendButton}" />
                                 </Grid>
                             </Border>

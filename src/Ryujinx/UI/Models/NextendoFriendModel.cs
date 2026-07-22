@@ -34,6 +34,15 @@ namespace Ryujinx.Ava.UI.Models
         private static readonly IBrush OnlineBrush = Brush.Parse("#33E86B");
         private static readonly IBrush OfflineBrush = Brush.Parse("#55808080");
 
+        /// <summary>True when this friend is starred as a favorite (synced with the website).</summary>
+        public bool Favorite { get; init; }
+
+        /// <summary>Gold when favorited, dim grey otherwise — the star's colour.</summary>
+        public IBrush FavoriteColor => Favorite ? FavoriteBrush : FavoriteDimBrush;
+
+        private static readonly IBrush FavoriteBrush = Brush.Parse("#F5C518");
+        private static readonly IBrush FavoriteDimBrush = Brush.Parse("#55808080");
+
         /// <summary>
         /// "Playing Splatoon 2" / "Online" / "Offline". Naming the game is the whole point of a
         /// friends list: it tells you whether it is worth inviting them right now.

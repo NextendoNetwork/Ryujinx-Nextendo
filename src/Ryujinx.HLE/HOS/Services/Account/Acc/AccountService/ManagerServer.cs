@@ -128,16 +128,28 @@ namespace Ryujinx.HLE.HOS.Services.Account.Acc.AccountService
                 TokenType = "id_token",
                 IssuedAt = DateTime.UtcNow,
                 Expires = DateTime.UtcNow + TimeSpan.FromHours(3),
-                Claims = new Dictionary<string, object>
-                {
-                    { "jku", "https://e0d67c509fb203858ebcb2fe3f88c2aa.baas.nintendo.com/1.0.0/certificates" },
-                    { "jti", Guid.NewGuid().ToString() },
-                    { "di", Convert.ToHexString(deviceId).ToLower() },
-                    { "sn", "XAW10000000000" },
-                    { "bs:did", Convert.ToHexString(deviceAccountId).ToLower() },
-                    // NSO membership flag — Splatoon 2 reads this LOCALLY to gate online entry.
-                    { "hm", true },
-                }
+            Claims = new Dictionary<string, object>
+            {
+                { "jku", "https://e0d67c509fb203858ebcb2fe3f88c2aa.baas.nintendo.com/1.0.0/certificates" },
+                { "jti", Guid.NewGuid().ToString() },
+                { "di", Convert.ToHexString(deviceId).ToLower() },
+                { "sn", "XAW10000000000" },
+                { "bs:did", Convert.ToHexString(deviceAccountId).ToLower() },
+                // NSO membership flag — Splatoon 2 reads this LOCALLY to gate online entry.
+                { "hm", true },
+                // [Fix 2124-3121] The console's nnAccount expects a "nintendo" claim dictionary
+                // with device metadata. Without it, the console receives HTTP 200 but rejects
+                // the body because the JWT schema doesn't match what nnAccount expects.
+                { "nintendo", new Dictionary<string, object>
+                    {
+                        { "dt", "NX Prod 1" },
+                        { "pc", "HAC" },
+                        { "di", Convert.ToHexString(deviceId).ToLower() },
+                        { "sn", "XAW10000000000" },
+                        { "ist", false },
+                    }
+                },
+            }
             };
 
             return new JsonWebTokenHandler().CreateToken(descriptor);

@@ -44,7 +44,14 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Sfdnsres.Proxy
         {
             string value = Environment.GetEnvironmentVariable(envVar);
 
-            return IPAddress.TryParse(value, out IPAddress address) ? address : IPAddress.Loopback;
+            if (!IPAddress.TryParse(value, out IPAddress address))
+            {
+                Logger.Warning?.PrintMsg(LogClass.ServiceBsd, $"DnsMitmResolver: {envVar} not set, falling back to loopback — Nintendo hosts will resolve to 127.0.0.1");
+
+                return IPAddress.Loopback;
+            }
+
+            return address;
         }
 
         private static bool TryMatchBuiltin(string host, out IPAddress address)

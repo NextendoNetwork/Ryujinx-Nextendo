@@ -46,7 +46,7 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Sfdnsres.Proxy
 
             if (!IPAddress.TryParse(value, out IPAddress address))
             {
-                Logger.Warning?.PrintMsg(LogClass.ServiceBsd, $"DnsMitmResolver: {envVar} not set, falling back to loopback — Nintendo hosts will resolve to 127.0.0.1");
+                Logger.Warning?.PrintMsg(LogClass.ServiceBsd, $"DnsMitmResolver: {envVar} not set, falling back to loopback — Nintendo hosts will resolve to 127.0.0.1. P2P connections will be forced through the server relay instead of direct UDP, significantly increasing latency ({envVar == "NEXTENDO_NAT_IP" ? "NAT-check second resolver missing — matches will route via relay" : "set this env var to point at your Nextendo server"}).");
 
                 return IPAddress.Loopback;
             }

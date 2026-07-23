@@ -62,6 +62,12 @@ namespace Ryujinx.Ava.Common
         // NAT check). Addresses come from environment variables, not baked into this open-source tree.
         private static readonly string Nncs1 = Environment.GetEnvironmentVariable("NEXTENDO_SERVER_IP") ?? "127.0.0.1";
         private static readonly string Nncs2 = Environment.GetEnvironmentVariable("NEXTENDO_NAT_IP") ?? "127.0.0.1";
+
+        /// <summary>True when NEXTENDO_NAT_IP was configured; false when falling back to loopback.</summary>
+        public static bool HasNatIp => Environment.GetEnvironmentVariable("NEXTENDO_NAT_IP") is { Length: > 0 } nat && IPAddress.TryParse(nat, out _);
+
+        /// <summary>True when NEXTENDO_SERVER_IP was configured; false when falling back to loopback.</summary>
+        public static bool HasServerIp => Environment.GetEnvironmentVariable("NEXTENDO_SERVER_IP") is { Length: > 0 } srv && IPAddress.TryParse(srv, out _);
         private static readonly int[] _nncsPorts = [10025, 10125];
 
         // Test id the responder echoes back. The Switch sends 101/102/103; any id it knows is
@@ -118,6 +124,11 @@ namespace Ryujinx.Ava.Common
 
                 if (result.ProbesAnswered == 0)
                 {
+                    if (!HasNatIp)
+                    {
+                        Logger.Warning?.Print(LogClass.Application, "[Nextendo] NAT-check: NEXTENDO_NAT_IP not set — both NNCS probes hit loopback. P2P will fall back to relay; matches will route through the main server. Set NEXTENDO_NAT_IP to the second public IP of your Nextendo server to enable direct peer-to-peer connections.");
+                    }
+
                     return result;
                 }
 
@@ -126,9 +137,28 @@ namespace Ryujinx.Ava.Common
 
                 // One probe answering says nothing about mapping — it takes at least two
                 // destinations to compare. Leave it Unknown rather than call it Open.
-                result.Nat = result.ProbesAnswered < 2
-                    ? NatType.Unknown
-                    : externalPorts.Count == 1 ? NatType.Open : NatType.Strict;
+                if (result.ProbesAnswered < 2)
+                {
+                    if (!HasNatIp)
+                    {
+                        Logger.Warning?.Print(LogClass.Application, "[Nextendo] NAT-check: only one NNCS responder reached — NEXTENDO_NAT_IP is not set. Direct P2P likely disabled; matches will route through the server relay. Latency will be significantly higher than a direct connection.");
+                    }
+
+                    result.Nat = NatType.Unknown;
+                }
+                else
+                {
+                    result.Nat = externalPorts.Count == 1 ? NatType.Open : NatType.Strict;
+
+                    if (result.Nat == NatType.Open)
+                    {
+                        Logger.Info?.Print(LogClass.Application, "[Nextendo] NAT-check: Open NAT detected — direct P2P connections should succeed. UDP port mapping is endpoint-independent.");
+                    }
+                    else
+                    {
+                        Logger.Warning?.Print(LogClass.Application, "[Nextendo] NAT-check: Strict (symmetric) NAT detected — direct P2P hole-punching may fail. The server relay will be used if P2P cannot establish.");
+                    }
+                }
             }
             catch (Exception ex)
             {

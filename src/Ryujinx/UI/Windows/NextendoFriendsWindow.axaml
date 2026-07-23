@@ -60,6 +60,9 @@
                                Name="ExternalValue" FontSize="11" Opacity="0.5" />
                 </Grid>
                 <TextBlock Name="NatHint" TextWrapping="Wrap" FontSize="11" Opacity="0.75" IsVisible="False" />
+                <Border Name="NatConfigWarningPanel" Background="#33E8833E" CornerRadius="6" Padding="8" IsVisible="False">
+                    <TextBlock Name="NatConfigWarningText" TextWrapping="Wrap" FontSize="11" />
+                </Border>
             </StackPanel>
         </Border>
 

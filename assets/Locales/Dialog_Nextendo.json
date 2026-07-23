@@ -1551,6 +1551,15 @@
       }
     },
     {
+      "ID": "NatConfigWarning",
+      "Translations": {
+        "en_US": "⚠ NAT-check second server (NEXTENDO_NAT_IP) is not configured. Direct P2P connections will be unavailable — all matches will route through the server relay, adding ~100-200ms of extra latency. Set the NEXTENDO_NAT_IP environment variable before launching the emulator.",
+        "es_ES": "⚠ El segundo servidor NAT-check (NEXTENDO_NAT_IP) no está configurado. Las conexiones P2P directas no estarán disponibles — todas las partidas se enrutarán a través del relé del servidor, añadiendo ~100-200ms de latencia extra. Configura la variable de entorno NEXTENDO_NAT_IP antes de iniciar el emulador.",
+        "fr_FR": "⚠ Le second serveur NAT-check (NEXTENDO_NAT_IP) n'est pas configuré. Les connexions P2P directes seront indisponibles — tous les matchs passeront par le relais du serveur, ajoutant ~100-200ms de latence supplémentaire. Définissez la variable d'environnement NEXTENDO_NAT_IP avant de lancer l'émulateur.",
+        "pt_BR": "⚠ O segundo servidor NAT-check (NEXTENDO_NAT_IP) não está configurado. As conexões P2P diretas não estarão disponíveis — todas as partidas serão roteadas através do relé do servidor, adicionando ~100-200ms de latência extra. Defina a variável de ambiente NEXTENDO_NAT_IP antes de iniciar o emulador."
+      }
+    },
+    {
       "ID": "LatencyLabel",
       "Translations": {
         "ar_SA": "زمن الاستجابة",

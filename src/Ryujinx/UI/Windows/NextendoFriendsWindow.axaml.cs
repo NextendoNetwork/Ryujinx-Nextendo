@@ -298,6 +298,19 @@ namespace Ryujinx.Ava.UI.Windows
                 ExternalValue.Text = string.IsNullOrEmpty(result.ExternalEndpoint)
                     ? ""
                     : $"{LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_ExternalAddressLabel]}: {result.ExternalEndpoint}";
+
+                // [Nextendo] Warn when NEXTENDO_NAT_IP is not configured: the second NAT-check
+                // responder is unreachable, so P2P hole-punching will fail and all matches will
+                // route through the server relay, adding significant latency.
+                if (!NextendoNetworkCheck.HasNatIp)
+                {
+                    NatConfigWarningPanel.IsVisible = true;
+                    NatConfigWarningText.Text = LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NatConfigWarning];
+                }
+                else
+                {
+                    NatConfigWarningPanel.IsVisible = false;
+                }
             }
             finally
             {

@@ -155,6 +155,10 @@ namespace Ryujinx.Ava.Systems.Configuration
 
             Hid.EnableKeyboard.Value = cff.EnableKeyboard;
             Hid.EnableMouse.Value = cff.EnableMouse;
+            Hid.EnableMousePanning.Value = cff.EnableMousePanning;
+            Hid.MousePanningSensitivity.Value = cff.MousePanningSensitivity;
+            Hid.MousePanningInvertX.Value = cff.MousePanningInvertX;
+            Hid.MousePanningInvertY.Value = cff.MousePanningInvertY;
             Hid.DisableInputWhenOutOfFocus.Value = shouldLoadFromFile ? cff.DisableInputWhenOutOfFocus : Hid.DisableInputWhenOutOfFocus.Value; // Get from global config only
             Hid.Hotkeys.Value = shouldLoadFromFile ? cff.Hotkeys : Hid.Hotkeys.Value; // Get from global config only
             Hid.InputConfig.Value = cff.InputConfig ?? [] ;
@@ -542,7 +546,15 @@ namespace Ryujinx.Ava.Systems.Configuration
                     if (cff.AudioBackend is AudioBackend.SDL2)
                         cff.AudioBackend = AudioBackend.SDL3;
                 }),
-                (72, static cff => cff.GCLowLatency = false)
+                (72, static cff => cff.GCLowLatency = false),
+                // [Nextendo] mouse-panning (right stick from mouse): default off, sensitivity 1.0
+                (74, static cff =>
+                {
+                    cff.EnableMousePanning = false;
+                    cff.MousePanningSensitivity = 1f;
+                    cff.MousePanningInvertX = false;
+                    cff.MousePanningInvertY = false;
+                })
             );
     }
 }

@@ -181,7 +181,11 @@ namespace Ryujinx.Ava.UI.ViewModels
         public bool EnableDockedMode { get; set; }
         public bool EnableKeyboard { get; set; }
         public bool EnableMouse { get; set; }
-        public bool DisableInputWhenOutOfFocus { get; set; }        
+        public bool EnableMousePanning { get; set; }
+        public float MousePanningSensitivity { get; set; }
+        public bool MousePanningInvertX { get; set; }
+        public bool MousePanningInvertY { get; set; }
+        public bool DisableInputWhenOutOfFocus { get; set; }
         public int FocusLostActionType { get; set; }
 
         public bool UseGlobalInputConfig
@@ -685,6 +689,10 @@ namespace Ryujinx.Ava.UI.ViewModels
             EnableDockedMode = config.System.EnableDockedMode;
             EnableKeyboard = config.Hid.EnableKeyboard;
             EnableMouse = config.Hid.EnableMouse;
+            EnableMousePanning = config.Hid.EnableMousePanning;
+            MousePanningSensitivity = config.Hid.MousePanningSensitivity;
+            MousePanningInvertX = config.Hid.MousePanningInvertX;
+            MousePanningInvertY = config.Hid.MousePanningInvertY;
             DisableInputWhenOutOfFocus = config.Hid.DisableInputWhenOutOfFocus;
 
             // Keyboard Hotkeys
@@ -801,6 +809,10 @@ namespace Ryujinx.Ava.UI.ViewModels
             config.System.EnableDockedMode.Value = EnableDockedMode;
             config.Hid.EnableKeyboard.Value = EnableKeyboard;
             config.Hid.EnableMouse.Value = EnableMouse;
+            config.Hid.EnableMousePanning.Value = EnableMousePanning;
+            config.Hid.MousePanningSensitivity.Value = MousePanningSensitivity;
+            config.Hid.MousePanningInvertX.Value = MousePanningInvertX;
+            config.Hid.MousePanningInvertY.Value = MousePanningInvertY;
             config.Hid.DisableInputWhenOutOfFocus.Value = DisableInputWhenOutOfFocus;
 
             // Keyboard Hotkeys

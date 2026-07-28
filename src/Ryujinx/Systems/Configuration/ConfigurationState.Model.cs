@@ -511,6 +511,22 @@ namespace Ryujinx.Ava.Systems.Configuration
             public ReactiveObject<bool> EnableMouse { get; private set; }
 
             /// <summary>
+            /// [Nextendo] Emulate the right stick from mouse movement (mouse-look aiming, e.g. Splatoon).
+            /// </summary>
+            public ReactiveObject<bool> EnableMousePanning { get; private set; }
+
+            /// <summary>
+            /// [Nextendo] Sensitivity multiplier for mouse-panning (right-stick deflection per mouse movement).
+            /// </summary>
+            public ReactiveObject<float> MousePanningSensitivity { get; private set; }
+
+            /// <summary>[Nextendo] Invert the horizontal axis of mouse-panning.</summary>
+            public ReactiveObject<bool> MousePanningInvertX { get; private set; }
+
+            /// <summary>[Nextendo] Invert the vertical axis of mouse-panning.</summary>
+            public ReactiveObject<bool> MousePanningInvertY { get; private set; }
+
+            /// <summary>
             /// Enable/disable the ability to control Ryujinx when it's not the currently focused window.
             /// </summary>
             public ReactiveObject<bool> DisableInputWhenOutOfFocus { get; private set; }
@@ -549,6 +565,10 @@ namespace Ryujinx.Ava.Systems.Configuration
             {
                 EnableKeyboard = new ReactiveObject<bool>();
                 EnableMouse = new ReactiveObject<bool>();
+                EnableMousePanning = new ReactiveObject<bool>();
+                MousePanningSensitivity = new ReactiveObject<float>();
+                MousePanningInvertX = new ReactiveObject<bool>();
+                MousePanningInvertY = new ReactiveObject<bool>();
                 DisableInputWhenOutOfFocus = new ReactiveObject<bool>();
                 Hotkeys = new ReactiveObject<KeyboardHotkeys>();
                 InputConfig = new ReactiveObject<List<InputConfig>>();

@@ -480,6 +480,8 @@ namespace Ryujinx.Input.HLE
                 (float leftAxisX, float leftAxisY) = State.GetStick(StickInputId.Left);
                 (float rightAxisX, float rightAxisY) = State.GetStick(StickInputId.Right);
 
+                (rightAxisX, rightAxisY) = ApplyMousePanning(rightAxisX, rightAxisY);
+
                 state.LStick = new JoystickPosition
                 {
                     Dx = ClampAxis(leftAxisX),
@@ -496,6 +498,8 @@ namespace Ryujinx.Input.HLE
             {
                 (float leftAxisX, float leftAxisY) = State.GetStick(StickInputId.Left);
                 (float rightAxisX, float rightAxisY) = State.GetStick(StickInputId.Right);
+
+                (rightAxisX, rightAxisY) = ApplyMousePanning(rightAxisX, rightAxisY);
 
                 state.LStick = ClampToCircle(ApplyDeadzone(leftAxisX, leftAxisY, controllerConfig.DeadzoneLeft), controllerConfig.RangeLeft);
                 state.RStick = ClampToCircle(ApplyDeadzone(rightAxisX, rightAxisY, controllerConfig.DeadzoneRight), controllerConfig.RangeRight);
@@ -519,6 +523,28 @@ namespace Ryujinx.Input.HLE
                 Dx = ClampAxis((x / magnitudeClamped) * ((magnitudeClamped - deadzone) / (1 - deadzone))),
                 Dy = ClampAxis((y / magnitudeClamped) * ((magnitudeClamped - deadzone) / (1 - deadzone))),
             };
+        }
+
+        // [Nextendo] Deflect the right stick from accumulated mouse movement (mouse-look). Consumes
+        // the per-frame delta, so the first controller polled each frame receives it (player 1 in
+        // single-player). Applied before deadzone/clamp so it behaves like real stick input.
+        private static (float x, float y) ApplyMousePanning(float x, float y)
+        {
+            if (!MousePanning.Enabled || !MousePanning.Capturing)
+            {
+                return (x, y);
+            }
+
+            Vector2 delta = MousePanning.ConsumeDelta();
+            float scale = MousePanning.BaseScale * MousePanning.Sensitivity;
+
+            // Screen X right -> aim right. Screen Y grows downward while the right stick reports up as
+            // +Y, so invert Y to make moving the mouse down aim down. Per-axis invert options let the
+            // player flip either direction to taste.
+            x += delta.X * scale * (MousePanning.InvertX ? -1f : 1f);
+            y -= delta.Y * scale * (MousePanning.InvertY ? -1f : 1f);
+
+            return (Math.Clamp(x, -1f, 1f), Math.Clamp(y, -1f, 1f));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

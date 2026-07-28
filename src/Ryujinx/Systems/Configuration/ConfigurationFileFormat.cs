@@ -17,7 +17,7 @@ namespace Ryujinx.Ava.Systems.Configuration
         /// <summary>
         /// The current version of the file format
         /// </summary>
-        public const int CurrentVersion = 73;
+        public const int CurrentVersion = 74;
 
         /// <summary>
         /// Version of the configuration file format
@@ -410,6 +410,22 @@ namespace Ryujinx.Ava.Systems.Configuration
         /// Enable or disable mouse support (Independent from controllers binding)
         /// </summary>
         public bool EnableMouse { get; set; }
+
+        /// <summary>
+        /// [Nextendo] Emulate the right stick from mouse movement (mouse-look aiming).
+        /// </summary>
+        public bool EnableMousePanning { get; set; }
+
+        /// <summary>
+        /// [Nextendo] Sensitivity multiplier for mouse-panning.
+        /// </summary>
+        public float MousePanningSensitivity { get; set; }
+
+        /// <summary>[Nextendo] Invert the horizontal axis of mouse-panning.</summary>
+        public bool MousePanningInvertX { get; set; }
+
+        /// <summary>[Nextendo] Invert the vertical axis of mouse-panning.</summary>
+        public bool MousePanningInvertY { get; set; }
 
         /// <summary>
         /// Enable/disable the ability to control Ryujinx when it's not the currently focused window.

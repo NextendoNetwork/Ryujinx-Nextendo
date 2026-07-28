@@ -140,6 +140,10 @@ namespace Ryujinx.Ava.Systems.Configuration
                 ShowConsole = UI.ShowConsole,
                 EnableKeyboard = Hid.EnableKeyboard,
                 EnableMouse = Hid.EnableMouse,
+                EnableMousePanning = Hid.EnableMousePanning,
+                MousePanningSensitivity = Hid.MousePanningSensitivity,
+                MousePanningInvertX = Hid.MousePanningInvertX,
+                MousePanningInvertY = Hid.MousePanningInvertY,
                 DisableInputWhenOutOfFocus = Hid.DisableInputWhenOutOfFocus,
                 Hotkeys = Hid.Hotkeys,
                 InputConfig = Hid.InputConfig,
@@ -269,6 +273,10 @@ namespace Ryujinx.Ava.Systems.Configuration
             UI.PauseEmulationWhileScanningAmiibo.Value = true;
             Hid.EnableKeyboard.Value = false;
             Hid.EnableMouse.Value = false;
+            Hid.EnableMousePanning.Value = false;
+            Hid.MousePanningSensitivity.Value = 1f;
+            Hid.MousePanningInvertX.Value = false;
+            Hid.MousePanningInvertY.Value = false;
             Hid.DisableInputWhenOutOfFocus.Value = false;
             Hid.Hotkeys.Value = new KeyboardHotkeys
             {

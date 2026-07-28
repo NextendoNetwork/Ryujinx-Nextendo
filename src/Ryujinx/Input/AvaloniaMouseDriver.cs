@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Ryujinx.Ava.Systems.Configuration;
 using Ryujinx.Input;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,10 @@ namespace Ryujinx.Ava.Input
         private Size _size;
         private readonly TopLevel _window;
         private DispatcherTimer _scrollStopTimer;
+
+        // [Nextendo] Mouse-panning (mouse-look) state.
+        private Vector2 _panLastPos;
+        private bool _panActive;
 
         public bool[] PressedButtons { get; }
         public Vector2 CurrentPosition { get; private set; }
@@ -121,9 +126,89 @@ namespace Ryujinx.Ava.Input
         private void Parent_PointerMovedEvent(object o, PointerEventArgs args)
         {
             Point position = args.GetPosition(_widget);
+            Vector2 pos = new((float)position.X, (float)position.Y);
 
-            CurrentPosition = new Vector2((float)position.X, (float)position.Y);
+            CurrentPosition = pos;
+
+            HandleMousePanning(args, pos);
         }
+
+        // [Nextendo] Mouse-look: feed relative mouse movement to the right stick (via MousePanning),
+        // and recenter the OS cursor near the window edges on Windows so panning never runs out of
+        // room. Hold Alt to release the mouse (e.g. to reach a menu).
+        private void HandleMousePanning(PointerEventArgs args, Vector2 pos)
+        {
+            var hid = ConfigurationState.Instance.Hid;
+            MousePanning.Enabled = hid.EnableMousePanning.Value;
+            MousePanning.Sensitivity = hid.MousePanningSensitivity.Value;
+            MousePanning.InvertX = hid.MousePanningInvertX.Value;
+            MousePanning.InvertY = hid.MousePanningInvertY.Value;
+
+            bool releaseHeld = args.KeyModifiers.HasFlag(KeyModifiers.Alt);
+
+            if (!MousePanning.Enabled || releaseHeld)
+            {
+                _panActive = false;
+                MousePanning.Capturing = false;
+
+                return;
+            }
+
+            MousePanning.Capturing = true;
+
+            if (!_panActive)
+            {
+                // First move after (re)capture: seed the reference so we don't emit a jump.
+                _panActive = true;
+                _panLastPos = pos;
+
+                return;
+            }
+
+            Vector2 delta = pos - _panLastPos;
+            _panLastPos = pos;
+
+            if (delta != Vector2.Zero)
+            {
+                MousePanning.Accumulate(delta.X, delta.Y);
+            }
+
+            RecenterCursorNearEdge(pos);
+        }
+
+        private void RecenterCursorNearEdge(Vector2 pos)
+        {
+            if (!OperatingSystem.IsWindows() || _widget is null)
+            {
+                return; // OS cursor warp is Windows-only for now; elsewhere panning is edge-limited.
+            }
+
+            int w = _size.Width;
+            int h = _size.Height;
+
+            if (w <= 0 || h <= 0)
+            {
+                return;
+            }
+
+            const int Margin = 100;
+
+            if (pos.X > Margin && pos.X < w - Margin && pos.Y > Margin && pos.Y < h - Margin)
+            {
+                return; // comfortably inside — no need to recenter yet.
+            }
+
+            Point center = new(w / 2.0, h / 2.0);
+            PixelPoint screen = _widget.PointToScreen(center);
+
+            try { SetCursorPos(screen.X, screen.Y); } catch { /* best-effort */ }
+
+            // Re-seed so the warp itself isn't read as movement on the next event.
+            _panLastPos = new Vector2((float)center.X, (float)center.Y);
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetCursorPos(int x, int y);
 
         public void SetMousePressed(MouseButton button)
         {

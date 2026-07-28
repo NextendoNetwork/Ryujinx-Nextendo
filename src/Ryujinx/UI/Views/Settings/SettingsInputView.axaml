@@ -74,6 +74,53 @@
                                 <TextBlock
                                     Text="{ext:Locale SettingsTabInputDirectMouseAccess}" />
                             </CheckBox>
+                            <CheckBox
+                                ToolTip.Tip="{ext:Locale MousePanningTooltip}"
+                                MinWidth="0"
+                                IsChecked="{Binding EnableMousePanning}">
+                                <TextBlock
+                                    Text="{ext:Locale SettingsTabInputMousePanning}" />
+                            </CheckBox>
+                        </StackPanel>
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="10"
+                            Margin="0,8,0,0">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Text="{ext:Locale SettingsTabInputMousePanning}" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Opacity="0.6"
+                                Text="{ext:Locale SettingsTabInputMousePanningSensitivity}" />
+                            <Slider
+                                Name="MousePanningSlider"
+                                Width="200"
+                                Minimum="0.1"
+                                Maximum="10"
+                                TickFrequency="0.1"
+                                IsSnapToTickEnabled="True"
+                                VerticalAlignment="Center"
+                                Value="{Binding MousePanningSensitivity}" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                MinWidth="40"
+                                Text="{Binding #MousePanningSlider.Value, StringFormat={}{0:0.0}×}" />
+                            <CheckBox
+                                VerticalAlignment="Center"
+                                Margin="10,0,0,0"
+                                MinWidth="0"
+                                IsChecked="{Binding MousePanningInvertX}">
+                                <TextBlock
+                                    Text="{ext:Locale SettingsTabInputMousePanningInvertX}" />
+                            </CheckBox>
+                            <CheckBox
+                                VerticalAlignment="Center"
+                                MinWidth="0"
+                                IsChecked="{Binding MousePanningInvertY}">
+                                <TextBlock
+                                    Text="{ext:Locale SettingsTabInputMousePanningInvertY}" />
+                            </CheckBox>
                         </StackPanel>
                     </StackPanel>
                 </Grid>

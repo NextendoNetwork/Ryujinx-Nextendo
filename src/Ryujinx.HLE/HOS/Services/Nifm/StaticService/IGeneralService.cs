@@ -2,8 +2,10 @@ using Ryujinx.Common;
 using Ryujinx.Common.Configuration;
 using Ryujinx.Common.Logging;
 using Ryujinx.Common.Utilities;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay;
 using Ryujinx.HLE.HOS.Services.Nifm.StaticService.GeneralService;
 using Ryujinx.HLE.HOS.Services.Nifm.StaticService.Types;
+using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy;
 using System;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
@@ -96,6 +98,19 @@ namespace Ryujinx.HLE.HOS.Services.Nifm.StaticService
         // GetCurrentIpAddress() -> nn::nifm::IpV4Address
         public ResultCode GetCurrentIpAddress(ServiceCtx context)
         {
+            // Once the game is actually using the LAN Play network, the console lives on the virtual
+            // 10.13.x.x network and games that implement their own LAN mode use this address to advertise
+            // themselves. Until then the host address is reported, so simply having LAN Play selected
+            // changes nothing for online play.
+            if (SocketHelpers.ActiveLanPlayStack is { IsGuestActive: true } lanPlay)
+            {
+                context.ResponseData.WriteStruct(new IpV4Address(lanPlay.NetworkInterface.Address));
+
+                Logger.Info?.Print(LogClass.ServiceNifm, $"Console's LAN Play IP is \"{lanPlay.NetworkInterface.Address}\".");
+
+                return ResultCode.Success;
+            }
+
             (_, UnicastIPAddressInformation unicastAddress) = GetLocalInterface(context);
 
             if (unicastAddress == null)
@@ -123,7 +138,18 @@ namespace Ryujinx.HLE.HOS.Services.Nifm.StaticService
 
             Logger.Info?.Print(LogClass.ServiceNifm, $"Console's local IP is \"{unicastAddress.Address}\".");
 
-            context.ResponseData.WriteStruct(new IpAddressSetting(interfaceProperties, unicastAddress));
+            if (SocketHelpers.ActiveLanPlayStack is { IsGuestActive: true } lanPlay)
+            {
+                context.ResponseData.WriteStruct(new IpAddressSetting(
+                    lanPlay.NetworkInterface.Address,
+                    lanPlay.NetworkInterface.SubnetMask,
+                    NetworkHelpers.ConvertUint(LanPlayProtocol.GatewayAddress)));
+            }
+            else
+            {
+                context.ResponseData.WriteStruct(new IpAddressSetting(interfaceProperties, unicastAddress));
+            }
+
             context.ResponseData.WriteStruct(new DnsSetting(interfaceProperties));
 
             return ResultCode.Success;

@@ -39,6 +39,8 @@
                             Content="{ext:Locale MultiplayerModeLdnRyu}" />
                         <ComboBoxItem
                             Content="{ext:Locale MultiplayerModeLdnMitm}" />
+                        <ComboBoxItem
+                            Content="{ext:Locale MultiplayerModeLanPlay}" />
                     </ComboBox>
                     <CheckBox Margin="10,0,0,0" IsChecked="{Binding DisableP2P}">
                         <TextBlock Text="{ext:Locale MultiplayerDisableP2P}"
@@ -76,6 +78,50 @@
                         <TextBlock HorizontalAlignment="Center"
                                     Text="{ext:Locale ClearLdnPass}" />
                     </Button>
+                </StackPanel>
+                <StackPanel Margin="10,0,0,0"
+                    Orientation="Horizontal"
+                    IsVisible="{Binding IsLanPlaySelected}">
+                    <TextBlock VerticalAlignment="Center"
+                        Text="{ext:Locale MultiplayerLanPlayServer}"
+                        ToolTip.Tip="{ext:Locale MultiplayerLanPlayServerTooltip}"
+                        Width="200" />
+                    <TextBox Name="LanPlayServer"
+                        Text="{Binding LanPlayServer}"
+                        Width="250"
+                        ToolTip.Tip="{ext:Locale MultiplayerLanPlayServerTooltip}"
+                        Watermark="{ext:Locale MultiplayerLanPlayServerWatermark}" />
+                    <Button
+                        Name="TestLanPlayButton"
+                        MinWidth="90"
+                        Margin="10,0,0,0"
+                        IsEnabled="{Binding !IsLanPlayTestRunning}"
+                        ToolTip.Tip="{ext:Locale MultiplayerLanPlayTestTooltip}"
+                        Click="TestLanPlayButton_OnClick">
+                        <TextBlock HorizontalAlignment="Center"
+                            Text="{ext:Locale MultiplayerLanPlayTest}" />
+                    </Button>
+                </StackPanel>
+                <TextBlock Margin="10,0,0,0"
+                    Name="LanPlayTestResultBlock"
+                    FontStyle="Italic"
+                    MaxWidth="600"
+                    TextWrapping="Wrap"
+                    Focusable="False"
+                    IsVisible="{Binding IsLanPlayTestResultVisible}"
+                    Text="{Binding LanPlayTestResult}" />
+                <StackPanel Margin="10,0,0,0"
+                    Orientation="Horizontal"
+                    IsVisible="{Binding IsLanPlaySelected}">
+                    <TextBlock VerticalAlignment="Center"
+                        Text="{ext:Locale MultiplayerLanPlayVirtualIp}"
+                        ToolTip.Tip="{ext:Locale MultiplayerLanPlayVirtualIpTooltip}"
+                        Width="200" />
+                    <TextBox Name="LanPlayVirtualIp"
+                        Text="{Binding LanPlayVirtualIp}"
+                        Width="250"
+                        ToolTip.Tip="{ext:Locale MultiplayerLanPlayVirtualIpTooltip}"
+                        Watermark="{ext:Locale MultiplayerLanPlayVirtualIpWatermark}" />
                 </StackPanel>
                 <TextBlock  Margin="10,0,0,0"
                     VerticalAlignment="Center"

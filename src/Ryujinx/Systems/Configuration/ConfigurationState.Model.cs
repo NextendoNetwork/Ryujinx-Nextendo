@@ -724,6 +724,16 @@ namespace Ryujinx.Ava.Systems.Configuration
             /// </summary>
             public ReactiveObject<string> LdnServer { get; private set; }
 
+            /// <summary>
+            /// LAN Play relay server (host:port, optionally prefixed with user:password@)
+            /// </summary>
+            public ReactiveObject<string> LanPlayServer { get; private set; }
+
+            /// <summary>
+            /// Virtual 10.13.x.x address used on the LAN Play network, or empty for an automatic one
+            /// </summary>
+            public ReactiveObject<string> LanPlayVirtualIp { get; private set; }
+
             public string GetLdnServer()
             {
                 string ldnServer = LdnServer;
@@ -753,6 +763,10 @@ namespace Ryujinx.Ava.Systems.Configuration
                 LdnPassphrase.LogChangesToValue(nameof(LdnPassphrase));
                 LdnServer = new ReactiveObject<string>();
                 LdnServer.LogChangesToValue(nameof(LdnServer));
+                LanPlayServer = new ReactiveObject<string>();
+                LanPlayServer.LogChangesToValue(nameof(LanPlayServer));
+                LanPlayVirtualIp = new ReactiveObject<string>();
+                LanPlayVirtualIp.LogChangesToValue(nameof(LanPlayVirtualIp));
             }
         }
 
@@ -983,6 +997,8 @@ namespace Ryujinx.Ava.Systems.Configuration
                 Multiplayer.DisableP2p,
                 Multiplayer.LdnPassphrase,
                 Multiplayer.GetLdnServer(),
+                Multiplayer.LanPlayServer,
+                Multiplayer.LanPlayVirtualIp,
                 Debug.EnableGdbStub,
                 Debug.GdbStubPort,
                 Debug.DebuggerSuspendOnStart,

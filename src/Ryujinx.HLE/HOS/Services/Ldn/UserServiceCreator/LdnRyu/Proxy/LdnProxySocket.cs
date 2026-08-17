@@ -13,7 +13,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
     /// This socket is forwarded through a TCP stream that goes through the Ldn server.
     /// The Ldn server will then route the packets we send (or need to receive) within the virtual adhoc network.
     /// </summary>
-    class LdnProxySocket : ISocketImpl
+    class LdnProxySocket : IPollableSocket
     {
         private readonly LdnProxy _proxy;
 

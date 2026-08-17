@@ -4,6 +4,7 @@ using LibHac.Fs;
 using LibHac.Fs.Shim;
 using LibHac.FsSystem;
 using LibHac.Tools.FsSystem;
+using Ryujinx.Common.Configuration.Multiplayer;
 using Ryujinx.Cpu;
 using Ryujinx.HLE.Debugger;
 using Ryujinx.HLE.FileSystem;
@@ -27,6 +28,7 @@ using Ryujinx.HLE.HOS.Services.Pcv.Bpc;
 using Ryujinx.HLE.HOS.Services.Sdb.Pl;
 using Ryujinx.HLE.HOS.Services.Settings;
 using Ryujinx.HLE.HOS.Services.Sm;
+using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy;
 using Ryujinx.HLE.HOS.Services.SurfaceFlinger;
 using Ryujinx.HLE.HOS.Services.Time.Clock;
 using Ryujinx.HLE.HOS.SystemState;
@@ -133,6 +135,8 @@ namespace Ryujinx.HLE.HOS
             State = new SystemStateMgr();
 
             PerformanceState = new PerformanceState();
+
+            ApplyMultiplayerConfiguration();
 
             NfpDevices = [];
             NfcDevices = [];
@@ -459,6 +463,19 @@ namespace Ryujinx.HLE.HOS
             VsyncEvent.ReadableEvent.Signal();
         }
 
+        /// <summary>
+        /// Applies the multiplayer configuration of the running session, joining or leaving the LAN Play
+        /// relay as needed. Safe to call at any time: the front end calls it again when the user changes
+        /// the multiplayer settings while a game is running.
+        /// </summary>
+        public void ApplyMultiplayerConfiguration()
+        {
+            SocketHelpers.ApplyMultiplayerMode(
+                Device.Configuration.MultiplayerMode,
+                Device.Configuration.MultiplayerLanPlayServer,
+                Device.Configuration.MultiplayerLanPlayVirtualIp);
+        }
+
         public void Dispose()
         {
             GC.SuppressFinalize(this);
@@ -529,6 +546,8 @@ namespace Ryujinx.HLE.HOS
                 {
                     LibHacHorizonManager.PmClient.Fs.UnregisterProgram(LibHacHorizonManager.ApplicationClient.Os.GetCurrentProcessId().Value).ThrowIfFailure();
                 }
+
+                SocketHelpers.ShutdownLanPlay();
 
                 KernelContext.Dispose();
             }

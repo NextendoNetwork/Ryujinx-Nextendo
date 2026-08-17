@@ -12,6 +12,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Proxy
         private byte[] _buffer;
         private int _bufferEnd;
 
+        public bool IsServer => false;
+
         public LdnProxyTcpClient(LanProtocol protocol, IPAddress address, int port) : base(address, port)
         {
             _protocol = protocol;

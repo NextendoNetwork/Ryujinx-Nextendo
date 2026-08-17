@@ -27,24 +27,24 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
 
         private readonly LanDiscovery _discovery;
 
-        public event Action<LdnProxyTcpSession> Accept;
+        public event Action<ILdnTcpSession> Accept;
         public event Action<EndPoint, LanPacketType, byte[]> Scan;
         public event Action<NetworkInfo> ScanResponse;
         public event Action<NetworkInfo> SyncNetwork;
         public event Action<NodeInfo, EndPoint> Connect;
-        public event Action<LdnProxyTcpSession> DisconnectStation;
+        public event Action<ILdnTcpSession> DisconnectStation;
 
         public LanProtocol(LanDiscovery parent)
         {
             _discovery = parent;
         }
 
-        public void InvokeAccept(LdnProxyTcpSession session)
+        public void InvokeAccept(ILdnTcpSession session)
         {
             Accept?.Invoke(session);
         }
 
-        public void InvokeDisconnectStation(LdnProxyTcpSession session)
+        public void InvokeDisconnectStation(ILdnTcpSession session)
         {
             DisconnectStation?.Invoke(session);
         }
@@ -173,11 +173,11 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
             return s.SendPacketAsync(endPoint, buf) ? 0 : -1;
         }
 
-        public int SendPacket(LdnProxyTcpSession s, LanPacketType type, byte[] data)
+        public int SendPacket(ILdnTcpSession s, LanPacketType type, byte[] data)
         {
             byte[] buf = PreparePacket(type, data);
 
-            return s.SendAsync(buf) ? 0 : -1;
+            return s.SendPacket(buf) ? 0 : -1;
         }
 
         private LanPacketHeader PrepareHeader(LanPacketHeader header, LanPacketType type)

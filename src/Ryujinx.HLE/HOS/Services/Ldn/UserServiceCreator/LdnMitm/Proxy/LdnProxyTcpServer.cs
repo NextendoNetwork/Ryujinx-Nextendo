@@ -10,6 +10,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Proxy
     {
         private readonly LanProtocol _protocol;
 
+        public bool IsServer => true;
+
         public LdnProxyTcpServer(LanProtocol protocol, IPAddress address, int port) : base(address, port)
         {
             _protocol = protocol;

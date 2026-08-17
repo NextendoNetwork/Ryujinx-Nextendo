@@ -1,6 +1,7 @@
 using Ryujinx.Common.Logging;
 using Ryujinx.Common.Utilities;
 using Ryujinx.HLE.HOS.Services.Ldn.Types;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Proxy;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using System;
 using System.Net.NetworkInformation;
@@ -10,7 +11,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
     /// <summary>
     /// Client implementation for <a href="https://github.com/spacemeowx2/ldn_mitm">ldn_mitm</a>
     /// </summary>
-    internal class LdnMitmClient : INetworkClient
+    internal class LdnMitmClient : INetworkClient, ILdnDiscoveryClient
     {
         public ProxyConfig Config { get; }
         public bool NeedsRealId => false;
@@ -23,10 +24,10 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
         {
             UnicastIPAddressInformation localIpInterface = NetworkHelpers.GetLocalInterface(config.MultiplayerLanInterfaceId).Item2;
 
-            _lanDiscovery = new LanDiscovery(this, localIpInterface.Address, localIpInterface.IPv4Mask);
+            _lanDiscovery = new LanDiscovery(this, new HostLdnNetworkProvider(localIpInterface.Address, localIpInterface.IPv4Mask));
         }
 
-        internal void InvokeNetworkChange(NetworkInfo info, bool connected, DisconnectReason reason = DisconnectReason.None)
+        public void InvokeNetworkChange(NetworkInfo info, bool connected, DisconnectReason reason = DisconnectReason.None)
         {
             NetworkChange?.Invoke(this, new NetworkChangeEventArgs(info, connected: connected, disconnectReason: reason));
         }

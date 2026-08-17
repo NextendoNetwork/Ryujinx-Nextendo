@@ -8,9 +8,11 @@ using Ryujinx.Cpu;
 using Ryujinx.HLE.HOS.Ipc;
 using Ryujinx.HLE.HOS.Kernel.Threading;
 using Ryujinx.HLE.HOS.Services.Ldn.Types;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
+using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy;
 using Ryujinx.Horizon.Common;
 using Ryujinx.Memory;
 using System;
@@ -1201,6 +1203,19 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
                                 break;
                             case MultiplayerMode.LdnMitm:
                                 NetworkClient = new LdnMitmClient(context.Device.Configuration);
+                                break;
+                            case MultiplayerMode.LanPlay:
+                                if (SocketHelpers.CurrentLanPlayStack is { } lanPlayStack)
+                                {
+                                    NetworkClient = new LanPlayLdnClient(lanPlayStack);
+                                }
+                                else
+                                {
+                                    Logger.Error?.Print(LogClass.ServiceLdn, "Could not join the LAN Play relay. Defaulting to stubbed wireless.");
+
+                                    NetworkClient = new LdnDisabledClient();
+                                }
+
                                 break;
                             case MultiplayerMode.Disabled:
                                 NetworkClient = new LdnDisabledClient();

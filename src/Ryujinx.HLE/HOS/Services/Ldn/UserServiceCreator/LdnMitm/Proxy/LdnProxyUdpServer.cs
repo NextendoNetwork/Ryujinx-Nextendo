@@ -3,27 +3,17 @@ using Ryujinx.HLE.HOS.Services.Ldn.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Types;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Proxy
 {
-    internal class LdnProxyUdpServer : NetCoreServer.UdpServer, ILdnSocket
+    internal class LdnProxyUdpServer : NetCoreServer.UdpServer, ILdnUdpSocket
     {
-        private const long ScanFrequency = 1000;
-
         private readonly LanProtocol _protocol;
+        private readonly LdnScanResults _scanResults = new();
         private byte[] _buffer;
         private int _bufferEnd;
-
-        private readonly Lock _scanLock = new();
-
-        private Dictionary<ulong, NetworkInfo> _scanResultsLast = new();
-        private Dictionary<ulong, NetworkInfo> _scanResults = new();
-        private readonly AutoResetEvent _scanResponse = new(false);
-        private long _lastScanTime;
 
         public LdnProxyUdpServer(LanProtocol protocol, IPAddress address, int port) : base(address, port)
         {
@@ -67,7 +57,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Proxy
             _protocol.Scan -= HandleScan;
             _protocol.ScanResponse -= HandleScanResponse;
 
-            _scanResponse.Dispose();
+            _scanResults.Dispose();
 
             base.Dispose(disposingManagedResources);
         }
@@ -84,74 +74,17 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Proxy
 
         private void HandleScanResponse(NetworkInfo info)
         {
-            Span<byte> mac = stackalloc byte[8];
-
-            info.Common.MacAddress.AsSpan().CopyTo(mac);
-
-            lock (_scanLock)
-            {
-                _scanResults[BitConverter.ToUInt64(mac)] = info;
-
-                _scanResponse.Set();
-            }
+            _scanResults.Add(info);
         }
 
         public void ClearScanResults()
         {
-            // Rate limit scans.
-
-            long timeMs = Stopwatch.GetTimestamp() / (Stopwatch.Frequency / 1000);
-            long delay = ScanFrequency - (timeMs - _lastScanTime);
-
-            if (delay > 0)
-            {
-                Thread.Sleep((int)delay);
-            }
-
-            _lastScanTime = timeMs;
-
-            lock (_scanLock)
-            {
-                Dictionary<ulong, NetworkInfo> newResults = _scanResultsLast;
-                newResults.Clear();
-
-                _scanResultsLast = _scanResults;
-                _scanResults = newResults;
-
-                _scanResponse.Reset();
-            }
+            _scanResults.Clear();
         }
 
         public Dictionary<ulong, NetworkInfo> GetScanResults()
         {
-            // NOTE: Try to minimize waiting time for scan results.
-            // After we receive the first response, wait a short time for follow-ups and return.
-            // Responses that were too late to catch will appear in the next scan.
-
-            // ldn_mitm does not do this, but this improves latency for games that expect it to be low (it is on console).
-
-            if (_scanResponse.WaitOne(1000))
-            {
-                // Wait a short while longer in case there are some other responses.
-                Thread.Sleep(33);
-            }
-
-            lock (_scanLock)
-            {
-                Dictionary<ulong, NetworkInfo> results = new();
-
-                foreach (KeyValuePair<ulong, NetworkInfo> last in _scanResultsLast)
-                {
-                    results[last.Key] = last.Value;
-                }
-
-                foreach (KeyValuePair<ulong, NetworkInfo> scan in _scanResults)
-                {
-                    results[scan.Key] = scan.Value;
-                }
-
-                return results;
-            }
+            return _scanResults.Get();
         }
     }
 }

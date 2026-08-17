@@ -24,6 +24,7 @@ using Ryujinx.Graphics.GAL;
 using Ryujinx.Graphics.Vulkan;
 using Ryujinx.HLE;
 using Ryujinx.HLE.FileSystem;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay;
 using Ryujinx.HLE.HOS.Services.Time.TimeZone;
 using System;
 using System.Collections.Generic;
@@ -427,7 +428,70 @@ namespace Ryujinx.Ava.UI.ViewModels
             set
             {
                 field = value;
+
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsLanPlaySelected));
             }
+        }
+
+        /// <summary>
+        /// True when the LAN Play multiplayer mode is selected, so its settings are shown.
+        /// </summary>
+        public bool IsLanPlaySelected => MultiplayerModeIndex == (int)MultiplayerMode.LanPlay;
+
+        public string LanPlayServer { get; set; }
+
+        public string LanPlayVirtualIp { get; set; }
+
+        /// <summary>
+        /// Result of the last LAN Play connection test, shown under the server field.
+        /// </summary>
+        public string LanPlayTestResult
+        {
+            get;
+            set
+            {
+                field = value;
+
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsLanPlayTestResultVisible));
+            }
+        }
+
+        public bool IsLanPlayTestResultVisible => !string.IsNullOrEmpty(LanPlayTestResult);
+
+        public bool IsLanPlayTestRunning
+        {
+            get;
+            set
+            {
+                field = value;
+
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Joins the configured relay without starting a game and reports what answered, so that a broken
+        /// setup can be told apart from a game specific problem.
+        /// </summary>
+        public async Task TestLanPlayConnection()
+        {
+            if (IsLanPlayTestRunning)
+            {
+                return;
+            }
+
+            IsLanPlayTestRunning = true;
+            LanPlayTestResult = LocaleManager.Instance[LocaleKeys.MultiplayerLanPlayTestRunning];
+
+            string server = LanPlayServer;
+            string virtualIp = LanPlayVirtualIp;
+
+            LanPlayConnectionTest.Result result = await Task.Run(() => LanPlayConnectionTest.Run(server, virtualIp));
+
+            LanPlayTestResult = result.Message;
+            IsLanPlayTestRunning = false;
         }
 
         public bool IsInvalidLdnPassphraseVisible { get; set; }
@@ -764,6 +828,8 @@ namespace Ryujinx.Ava.UI.ViewModels
             MultiplayerModeIndex = (int)config.Multiplayer.Mode.Value;
             DisableP2P = config.Multiplayer.DisableP2p;
             LdnPassphrase = config.Multiplayer.LdnPassphrase;
+            LanPlayServer = config.Multiplayer.LanPlayServer;
+            LanPlayVirtualIp = config.Multiplayer.LanPlayVirtualIp;
 
             // Debug
             EnableGdbStub = config.Debug.EnableGdbStub.Value;
@@ -892,6 +958,8 @@ namespace Ryujinx.Ava.UI.ViewModels
             config.Multiplayer.Mode.Value = (MultiplayerMode)MultiplayerModeIndex;
             config.Multiplayer.DisableP2p.Value = DisableP2P;
             config.Multiplayer.LdnPassphrase.Value = LdnPassphrase;
+            config.Multiplayer.LanPlayServer.Value = LanPlayServer ?? string.Empty;
+            config.Multiplayer.LanPlayVirtualIp.Value = LanPlayVirtualIp ?? string.Empty;
 
             // Debug
             config.Debug.EnableGdbStub.Value = EnableGdbStub;

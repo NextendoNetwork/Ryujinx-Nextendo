@@ -208,7 +208,12 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
                 }
             }
 
-            bool isLDNPrivateIP = remoteEndPoint.Address.ToString().StartsWith("192.168.");
+            // [Nextendo] Loopback is shown as well as the LAN: a redirect that lands on 127.0.0.1 means the
+            // server address was never configured, and hiding it turned that into an unexplainable failure.
+            bool isLDNPrivateIP = remoteEndPoint.Address.ToString().StartsWith("192.168.")
+                                  || IPAddress.IsLoopback(remoteEndPoint.Address)
+                                  || (remoteEndPoint.Address.IsIPv4MappedToIPv6 && IPAddress.IsLoopback(remoteEndPoint.Address.MapToIPv4()));
+
             if (isLDNPrivateIP)
             {
                 Logger.Info?.PrintMsg(LogClass.ServiceBsd, $"Connecting to: {ProtocolType}/{remoteEndPoint.Address}:{remoteEndPoint.Port}");
@@ -226,7 +231,12 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
             }
             catch (SocketException exception)
             {
-                if (!Blocking && exception.ErrorCode == (int)WsaError.WSAEWOULDBLOCK)
+                // [Nextendo] SocketErrorCode, not ErrorCode: on Unix the latter is the native errno (EAGAIN
+                // is 11), not the Winsock value (10035), so this test was only ever true on Windows. On Linux
+                // and macOS a non-blocking connect therefore skipped the whole branch below and reported
+                // EAGAIN to the guest instead of EINPROGRESS, which is not a connect() error at all — and the
+                // synchronous-completion workaround for the online service never ran there either.
+                if (!Blocking && exception.SocketErrorCode == SocketError.WouldBlock)
                 {
                     // [Nextendo] Pour le connect gRPC, ne PAS rendre EINPROGRESS en comptant sur le client
                     // pour sonder le socket en POLLOUT : c'est RACE. Il n'ajoute le socket a son ensemble de
@@ -253,6 +263,23 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
                                 return LinuxError.SUCCESS;
                             }
+
+                            // [Nextendo] The connect did not complete: the client sends its ClientHello anyway
+                            // and the game reports a network error (2321-4992 for NPLN), so the reason has to
+                            // be in the log rather than left to be guessed.
+                            byte[] error = new byte[4];
+
+                            Socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Error, error);
+
+                            SocketError reason = (SocketError)BitConverter.ToInt32(error);
+
+                            Logger.Error?.PrintMsg(LogClass.ServiceBsd,
+                                $"[Nextendo] the connection to the online service at port {remoteEndPoint.Port} failed ({reason}). " +
+                                (IPAddress.IsLoopback(remoteEndPoint.Address) ||
+                                 (remoteEndPoint.Address.IsIPv4MappedToIPv6 && IPAddress.IsLoopback(remoteEndPoint.Address.MapToIPv4()))
+                                    ? "It was redirected to loopback, which means the server address is not configured: " +
+                                      "set NEXTENDO_SERVER_IP (and NEXTENDO_NAT_IP) before launching, or bake them into the build."
+                                    : "The server is not answering on that address from this machine."));
                         }
                         catch { /* on retombe sur EINPROGRESS */ }
                     }
@@ -739,6 +766,78 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
             vlen = index + 1;
         }
 
+        /// <summary>
+        /// Sends the segments of a scatter/gather message one at a time, for socket implementations that
+        /// have no vectored send. Stops at the first segment that is not fully accepted, like a host socket
+        /// would when its send buffer fills up.
+        /// </summary>
+        private int SendSegments(ArraySegment<byte>[] buffers, SocketFlags flags, out SocketError socketError)
+        {
+            socketError = SocketError.Success;
+
+            int total = 0;
+
+            foreach (ArraySegment<byte> buffer in buffers)
+            {
+                if (buffer.Count == 0)
+                {
+                    continue;
+                }
+
+                int sent = Socket.Send(buffer.AsSpan(), flags, out socketError);
+
+                if (socketError != SocketError.Success)
+                {
+                    return total;
+                }
+
+                total += sent;
+
+                if (sent < buffer.Count)
+                {
+                    break;
+                }
+            }
+
+            return total;
+        }
+
+        /// <summary>
+        /// Fills the segments of a scatter/gather message one at a time, for socket implementations that
+        /// have no vectored receive. Stops as soon as a segment is not filled completely, so a datagram
+        /// shorter than the segments does not block waiting for the rest.
+        /// </summary>
+        private int ReceiveSegments(ArraySegment<byte>[] buffers, SocketFlags flags, out SocketError socketError)
+        {
+            socketError = SocketError.Success;
+
+            int total = 0;
+
+            foreach (ArraySegment<byte> buffer in buffers)
+            {
+                if (buffer.Count == 0)
+                {
+                    continue;
+                }
+
+                int read = Socket.Receive(buffer.AsSpan(), flags, out socketError);
+
+                if (socketError != SocketError.Success)
+                {
+                    return total;
+                }
+
+                total += read;
+
+                if (read < buffer.Count)
+                {
+                    break;
+                }
+            }
+
+            return total;
+        }
+
         // TODO: Find a way to support passing the timeout somehow without changing the socket ReceiveTimeout.
         public LinuxError RecvMMsg(out int vlen, BsdMMsgHdr message, BsdSocketFlags flags, TimeVal timeout)
         {
@@ -763,7 +862,20 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
             try
             {
-                int receiveSize = (Socket as DefaultSocket).BaseSocket.Receive(ConvertMessagesToBuffer(message), ConvertBsdSocketFlags(flags), out SocketError socketError);
+                SocketError socketError;
+                int receiveSize;
+
+                if (Socket is DefaultSocket hostSocket)
+                {
+                    receiveSize = hostSocket.BaseSocket.Receive(ConvertMessagesToBuffer(message), ConvertBsdSocketFlags(flags), out socketError);
+                }
+                else
+                {
+                    // [Nextendo] The socket is not always backed by a host socket: with LAN Play or RyuLDN
+                    // selected it is a virtual one, which has no scatter/gather receive, so the segments are
+                    // filled one after another instead of casting (which used to throw here).
+                    receiveSize = ReceiveSegments(ConvertMessagesToBuffer(message), ConvertBsdSocketFlags(flags), out socketError);
+                }
 
                 if (receiveSize > 0)
                 {
@@ -811,7 +923,19 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
                 {
                     Logger.Info?.Print(LogClass.ServiceBsd, $"[DIAG] Bsd.SendMMsg TLS hs=0x{mmsgBuf[0].Array[mmsgBuf[0].Offset + 5]:x2} len={mmsgBuf[0].Count} remote={RemoteEndPoint}");
                 }
-                int sendSize = (Socket as DefaultSocket).BaseSocket.Send(mmsgBuf, ConvertBsdSocketFlags(flags), out SocketError socketError);
+                SocketError socketError;
+                int sendSize;
+
+                if (Socket is DefaultSocket hostSocket)
+                {
+                    sendSize = hostSocket.BaseSocket.Send(mmsgBuf, ConvertBsdSocketFlags(flags), out socketError);
+                }
+                else
+                {
+                    // [Nextendo] Same as in RecvMMsg: a virtual socket (LAN Play, RyuLDN) has no
+                    // scatter/gather send, so the segments go out one after another.
+                    sendSize = SendSegments(mmsgBuf, ConvertBsdSocketFlags(flags), out socketError);
+                }
 
                 if (sendSize > 0)
                 {

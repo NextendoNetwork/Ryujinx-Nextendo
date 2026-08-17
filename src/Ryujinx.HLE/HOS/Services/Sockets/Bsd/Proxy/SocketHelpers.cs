@@ -156,11 +156,17 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy
                     Logger.Warning?.PrintMsg(LogClass.ServiceBsd, $"LDN proxy does not support socket {domain}, {type}, {protocol}");
                 }
             }
-            else if (_lanPlayServer != null && CurrentLanPlayStack is { } lanPlay && lanPlay.Supported(domain, type, protocol))
+            else if (_lanPlayServer != null && CurrentLanPlayStack is { } lanPlay)
             {
-                Logger.Info?.PrintMsg(LogClass.ServiceBsd, $"Socket is using the LAN Play network interface");
+                if (lanPlay.Supported(domain, type, protocol))
+                {
+                    Logger.Info?.PrintMsg(LogClass.ServiceBsd, $"Socket is using the LAN Play network interface");
 
-                return lanPlay.CreateSocket(domain, type, protocol, lanInterfaceId);
+                    return lanPlay.CreateSocket(domain, type, protocol, lanInterfaceId);
+                }
+
+                Logger.Warning?.PrintMsg(LogClass.ServiceBsd,
+                    $"LAN Play cannot carry socket {domain}, {type}, {protocol}; it will use the host networking stack instead");
             }
             else
             {

@@ -96,7 +96,10 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
             {
                 if (_queue.Count >= MaxQueuedDatagrams)
                 {
+                    // The guest is not reading fast enough; drop the oldest datagram, like a real interface.
                     _queue.Dequeue();
+
+                    _networkInterface.Diagnostics.Dropped(LanPlayDropReason.QueueFull, $"udp port {LocalPort}");
                 }
 
                 _queue.Enqueue(new Datagram

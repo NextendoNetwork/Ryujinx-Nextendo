@@ -65,6 +65,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
         public LanPlayClient Client => _client;
 
+        public LanPlayDiagnostics Diagnostics => _client.Diagnostics;
+
         public LanPlayNetworkInterface(LanPlayClient client, uint address)
         {
             _client = client;
@@ -169,6 +171,15 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
                 length = segment.Length;
             }
 
+            // A zero checksum means the sender did not compute one, which UDP allows.
+            if (BinaryPrimitives.ReadUInt16BigEndian(segment[6..]) != 0 &&
+                Ipv4Packet.TransportChecksum(header.Source, header.Destination, Ipv4Packet.ProtocolUdp, segment[..length]) != 0)
+            {
+                Diagnostics.Dropped(LanPlayDropReason.BadTransportChecksum, $"udp {sourcePort} -> {destinationPort}");
+
+                return;
+            }
+
             LanPlayUdpEndpoint endpoint;
 
             lock (_udpLock)
@@ -178,6 +189,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
             if (endpoint == null)
             {
+                Diagnostics.Dropped(LanPlayDropReason.NoUdpEndpoint, $"udp port {destinationPort}");
+
                 return;
             }
 
@@ -253,11 +266,20 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
         {
             if (segment.Length < LanPlayTcpConnection.HeaderSize || IsBroadcast(header.Destination))
             {
+                Diagnostics.Dropped(LanPlayDropReason.Malformed, "tcp segment");
+
                 return;
             }
 
             ushort sourcePort = BinaryPrimitives.ReadUInt16BigEndian(segment);
             ushort destinationPort = BinaryPrimitives.ReadUInt16BigEndian(segment[2..]);
+
+            if (Ipv4Packet.TransportChecksum(header.Source, header.Destination, Ipv4Packet.ProtocolTcp, segment) != 0)
+            {
+                Diagnostics.Dropped(LanPlayDropReason.BadTransportChecksum, $"tcp {sourcePort} -> {destinationPort}");
+
+                return;
+            }
 
             LanPlayTcpConnection connection;
             LanPlayTcpListener listener = null;
@@ -280,6 +302,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
             }
             else
             {
+                Diagnostics.Dropped(LanPlayDropReason.NoTcpConnection, $"tcp port {destinationPort}");
+
                 LanPlayTcpConnection.SendReset(this, destinationPort, header.Source, sourcePort, segment);
             }
         }
@@ -353,11 +377,16 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
                 _client.SendIpv4(packet);
 
+                Diagnostics.Ipv4Sent(destination, protocol, packet.Length, 1);
+
                 return;
             }
 
             // IPv4 fragment payloads must be a multiple of 8 bytes, except for the last one.
             int fragmentPayload = Ipv4Packet.MaxPayloadSize & ~7;
+            int fragmentCount = (payload.Length + fragmentPayload - 1) / fragmentPayload;
+
+            Diagnostics.Ipv4Sent(destination, protocol, payload.Length, fragmentCount);
 
             for (int offset = 0; offset < payload.Length; offset += fragmentPayload)
             {
@@ -379,6 +408,15 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
         {
             if (!Ipv4Packet.TryParse(packet, out Ipv4Packet.Header header))
             {
+                Diagnostics.Dropped(LanPlayDropReason.Malformed, $"{packet.Length} byte ipv4 packet");
+
+                return;
+            }
+
+            if (Ipv4Packet.Checksum(packet.AsSpan(0, header.HeaderLength)) != 0)
+            {
+                Diagnostics.Dropped(LanPlayDropReason.BadHeaderChecksum);
+
                 return;
             }
 
@@ -386,6 +424,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
             // interface would drop: packets addressed to somebody else, and our own echoed traffic.
             if (header.Destination != AddressV4 && !IsBroadcast(header.Destination))
             {
+                Diagnostics.Dropped(LanPlayDropReason.NotForUs);
+
                 return;
             }
 
@@ -393,6 +433,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
             // reflecting our own packets.
             if (header.Source == AddressV4)
             {
+                Diagnostics.Dropped(LanPlayDropReason.LoopedBack);
+
                 return;
             }
 
@@ -403,12 +445,18 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
                     return;
                 }
 
+                Diagnostics.Ipv4Received(header, reassembled.AsSpan(0, reassembledLength));
+
                 Dispatch(header, reassembled.AsSpan(0, reassembledLength));
 
                 return;
             }
 
-            Dispatch(header, packet.AsSpan(header.HeaderLength, header.TotalLength - header.HeaderLength));
+            ReadOnlySpan<byte> transportPayload = packet.AsSpan(header.HeaderLength, header.TotalLength - header.HeaderLength);
+
+            Diagnostics.Ipv4Received(header, transportPayload);
+
+            Dispatch(header, transportPayload);
         }
 
         private void Dispatch(in Ipv4Packet.Header header, ReadOnlySpan<byte> payload)
@@ -426,6 +474,10 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
                 case Ipv4Packet.ProtocolIcmp:
                     HandleIcmp(header, payload);
                     break;
+
+                default:
+                    Diagnostics.Dropped(LanPlayDropReason.UnsupportedProtocol, $"ip protocol {header.Protocol}");
+                    break;
             }
         }
 
@@ -438,6 +490,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
             if (fragmentLength <= 0 || header.FragmentOffset + fragmentLength > ushort.MaxValue)
             {
+                Diagnostics.Dropped(LanPlayDropReason.Reassembly, $"fragment of {fragmentLength} bytes at offset {header.FragmentOffset}");
+
                 return false;
             }
 
@@ -481,6 +535,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
                 {
                     if (free == -1)
                     {
+                        Diagnostics.Dropped(LanPlayDropReason.Reassembly, "reassembly buffer is full");
+
                         return false;
                     }
 
@@ -530,6 +586,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
         private void Tick()
         {
+            Diagnostics.Tick();
+
             List<LanPlayTcpConnection> connections;
 
             lock (_tcpLock)

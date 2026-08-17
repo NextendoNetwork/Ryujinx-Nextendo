@@ -61,8 +61,10 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
         /// </summary>
         public long LastReceiveTime { get; private set; }
 
-        public ulong SentPackets { get; private set; }
-        public ulong ReceivedPackets { get; private set; }
+        /// <summary>
+        /// Counters and tracing for this session.
+        /// </summary>
+        public LanPlayDiagnostics Diagnostics { get; }
 
         public LanPlayClient(LanPlayConfiguration configuration)
         {
@@ -70,6 +72,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
             RelayEndPoint = configuration.RelayEndPoint;
             _relayEndPoint = RelayEndPoint;
+
+            Diagnostics = new LanPlayDiagnostics(RelayEndPoint.ToString());
 
             _socket = new Socket(RelayEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
             _socket.Bind(new IPEndPoint(RelayEndPoint.AddressFamily == AddressFamily.InterNetworkV6
@@ -96,7 +100,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
             _keepAliveTimer = new Timer(_ => SendKeepAlive(), null, 0, LanPlayProtocol.KeepAliveIntervalMs);
 
-            Logger.Info?.Print(LogClass.ServiceLdn, $"LAN Play: connected to relay {RelayEndPoint}.");
+            Logger.Info?.Print(LogClass.ServiceLdn,
+                $"LAN Play: connected to relay {RelayEndPoint}. Enable \"Network logs\" in the logging settings for a line per packet.");
         }
 
         /// <summary>
@@ -129,6 +134,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
             if (totalParts > 32)
             {
                 Logger.Warning?.Print(LogClass.ServiceLdn, $"LAN Play: dropping {packet.Length} byte packet, too large for the configured path MTU.");
+
+                Diagnostics.Dropped(LanPlayDropReason.RelayFragment, $"{packet.Length} bytes needs {totalParts} fragments");
 
                 return;
             }
@@ -193,7 +200,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
                     _socket.SendTo(datagram, SocketFlags.None, _relayEndPoint);
                 }
 
-                SentPackets++;
+                Diagnostics.RelayDatagramSent(type, datagram.Length);
             }
             catch (SocketException ex)
             {
@@ -248,7 +255,6 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
                 }
 
                 LastReceiveTime = Environment.TickCount64;
-                ReceivedPackets++;
 
                 HandleDatagram(buffer.AsSpan(0, size));
             }
@@ -261,6 +267,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
             // The high bit marks an encrypted packet, which no known relay uses.
             LanPlayProtocol.PacketType type = (LanPlayProtocol.PacketType)(datagram[0] & 0x7F);
             ReadOnlySpan<byte> payload = datagram[1..];
+
+            Diagnostics.RelayDatagramReceived(type, datagram);
 
             switch (type)
             {
@@ -298,6 +306,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
         {
             if (packet.Length < Ipv4Packet.MinHeaderSize)
             {
+                Diagnostics.Dropped(LanPlayDropReason.Malformed, $"{packet.Length} byte relay payload");
+
                 return;
             }
 
@@ -315,6 +325,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
         {
             if (!LanPlayProtocol.TryReadFragmentHeader(payload, out LanPlayProtocol.FragmentHeader header))
             {
+                Diagnostics.Dropped(LanPlayDropReason.RelayFragment, "invalid fragment header");
+
                 return;
             }
 
@@ -358,7 +370,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
                 {
                     if (free == -1)
                     {
-                        Logger.Warning?.Print(LogClass.ServiceLdn, "LAN Play: fragment buffer is full, dropping fragment.");
+                        Diagnostics.Dropped(LanPlayDropReason.RelayFragment, "fragment buffer is full");
 
                         return;
                     }
@@ -378,6 +390,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
                 if (offset + header.Length > fragment.Buffer.Length)
                 {
+                    Diagnostics.Dropped(LanPlayDropReason.RelayFragment, $"fragment {header.Part} of {header.TotalParts} is out of range");
+
                     return;
                 }
 
@@ -455,6 +469,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
             _keepAliveTimer?.Dispose();
             _keepAliveTimer = null;
+
+            Diagnostics.LogFinalReport();
 
             try
             {

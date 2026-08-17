@@ -91,7 +91,25 @@
                         Width="250"
                         ToolTip.Tip="{ext:Locale MultiplayerLanPlayServerTooltip}"
                         Watermark="{ext:Locale MultiplayerLanPlayServerWatermark}" />
+                    <Button
+                        Name="TestLanPlayButton"
+                        MinWidth="90"
+                        Margin="10,0,0,0"
+                        IsEnabled="{Binding !IsLanPlayTestRunning}"
+                        ToolTip.Tip="{ext:Locale MultiplayerLanPlayTestTooltip}"
+                        Click="TestLanPlayButton_OnClick">
+                        <TextBlock HorizontalAlignment="Center"
+                            Text="{ext:Locale MultiplayerLanPlayTest}" />
+                    </Button>
                 </StackPanel>
+                <TextBlock Margin="10,0,0,0"
+                    Name="LanPlayTestResultBlock"
+                    FontStyle="Italic"
+                    MaxWidth="600"
+                    TextWrapping="Wrap"
+                    Focusable="False"
+                    IsVisible="{Binding IsLanPlayTestResultVisible}"
+                    Text="{Binding LanPlayTestResult}" />
                 <StackPanel Margin="10,0,0,0"
                     Orientation="Horizontal"
                     IsVisible="{Binding IsLanPlaySelected}">

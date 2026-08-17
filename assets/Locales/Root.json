@@ -17826,6 +17826,81 @@
       }
     },
     {
+      "ID": "MultiplayerLanPlayTest",
+      "Translations": {
+        "ar_SA": null,
+        "de_DE": null,
+        "el_GR": null,
+        "en_US": "Test",
+        "es_ES": null,
+        "fr_FR": null,
+        "he_IL": null,
+        "it_IT": null,
+        "ja_JP": null,
+        "ko_KR": null,
+        "no_NO": null,
+        "pl_PL": null,
+        "pt_BR": null,
+        "ru_RU": null,
+        "sv_SE": null,
+        "th_TH": null,
+        "tr_TR": null,
+        "uk_UA": null,
+        "zh_CN": null,
+        "zh_TW": null
+      }
+    },
+    {
+      "ID": "MultiplayerLanPlayTestTooltip",
+      "Translations": {
+        "ar_SA": null,
+        "de_DE": null,
+        "el_GR": null,
+        "en_US": "Joins the relay without starting a game and reports what answered: the virtual address Ryujinx would use, the other participants it can see, and whether any of them is hosting a local session.\n\nUse this to tell a wrong relay address or a blocked connection apart from a game specific problem.",
+        "es_ES": null,
+        "fr_FR": null,
+        "he_IL": null,
+        "it_IT": null,
+        "ja_JP": null,
+        "ko_KR": null,
+        "no_NO": null,
+        "pl_PL": null,
+        "pt_BR": null,
+        "ru_RU": null,
+        "sv_SE": null,
+        "th_TH": null,
+        "tr_TR": null,
+        "uk_UA": null,
+        "zh_CN": null,
+        "zh_TW": null
+      }
+    },
+    {
+      "ID": "MultiplayerLanPlayTestRunning",
+      "Translations": {
+        "ar_SA": null,
+        "de_DE": null,
+        "el_GR": null,
+        "en_US": "Joining the relay and listening for other players...",
+        "es_ES": null,
+        "fr_FR": null,
+        "he_IL": null,
+        "it_IT": null,
+        "ja_JP": null,
+        "ko_KR": null,
+        "no_NO": null,
+        "pl_PL": null,
+        "pt_BR": null,
+        "ru_RU": null,
+        "sv_SE": null,
+        "th_TH": null,
+        "tr_TR": null,
+        "uk_UA": null,
+        "zh_CN": null,
+        "zh_TW": null
+      }
+    },
+    {
       "ID": "MultiplayerDisableP2P",
       "Translations": {
         "ar_SA": "",

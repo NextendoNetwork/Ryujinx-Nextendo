@@ -115,6 +115,8 @@ New, in `src/Ryujinx.HLE/HOS/Services/Ldn/UserServiceCreator/LanPlay`:
 | `LanPlayLdnClient.cs` | `INetworkClient` for the LAN Play multiplayer mode |
 | `Proxy/LanPlaySocket.cs` | `ISocketImpl` for the emulated console's sockets |
 | `Proxy/LanPlayLdn*.cs` | ldn_mitm discovery sockets carried by the virtual interface |
+| `LanPlayDiagnostics.cs` | counters, per packet tracing, periodic summary, relay silence warning |
+| `LanPlayConnectionTest.cs` | the *Test* button: joins the relay and reports what answered |
 
 Refactored so that the ldn_mitm protocol can run over either transport (behaviour for ldn_mitm mode
 is unchanged):
@@ -213,7 +215,64 @@ dotnet build src/Ryujinx/Ryujinx.csproj -c Release
 Stored in `Config.json` as `multiplayer_lan_play_server` / `multiplayer_lan_play_virtual_ip`
 (configuration version 74; older configuration files are migrated automatically).
 
-## 11. Testing
+## 11. Debugging a session
+
+Everything below is available in a normal build; no debugger is needed.
+
+**Test button.** *Settings → Network*, next to the LAN Play server field. It joins the relay without
+starting a game, picks a virtual address, sends the same LDN scan request a console sends, listens
+for four seconds and reports the virtual address it would use, the other participants it saw, and
+whether any of them is hosting a local session. This separates "my relay setting is wrong or my
+connection is blocked" from "the game is not doing what I expect".
+
+**Normal log (info).** Joining, the chosen virtual address, LDN sessions being hosted or joined,
+every LDN network change with the node list, scan results, messages sent by the relay, and a traffic
+summary every 30 seconds plus a final one when the session ends:
+
+```
+LAN Play: connected to relay switch.example.com:11451. Enable "Network logs" ...
+LAN Play: using the virtual address 10.13.42.7.
+LAN Play: hosting an LDN session on 10.13.42.7:11452.
+LAN Play LDN: network update, 2 node(s): #0 10.13.42.7, #1 10.13.8.31
+LAN Play status: relay switch.example.com:11451, sent 214 packets (33012 bytes, 4 keepalives),
+  received 198 packets (30122 bytes), udp 210/196, tcp 3/1, icmp 1/1, dropped NotForUs=87
+```
+
+**Warnings that point at the usual causes.** The relay going quiet is reported once, with the likely
+cause, and again when it comes back:
+
+```
+LAN Play: nothing received from the relay ... in 30 seconds. Check the address and port,
+  that outbound UDP is not blocked, and that the relay is up.
+LAN Play: the relay ... is answering again.
+```
+
+Other warnings cover a relay that asks for credentials, a virtual address that is already taken, a
+socket kind LAN Play cannot carry (which then uses the host stack), a TCP connection timing out after
+its retransmissions, and a peer resetting a connection.
+
+**Network logs (per packet).** Enable *Settings → Logging → Enable network logs* to get a line per
+packet in each direction plus a line for every dropped packet with the reason:
+
+```
+LAN Play out: UDP -> 10.13.255.255 68 bytes
+LAN Play in: UDP 10.13.8.31 -> 10.13.42.7 ports 11452 -> 11452 1124 bytes
+LAN Play: dropped a packet (BadTransportChecksum): udp 11452 -> 11452
+```
+
+Drop reasons: `Malformed`, `NotForUs`, `LoopedBack`, `BadHeaderChecksum`, `BadTransportChecksum`,
+`NoUdpEndpoint`, `NoTcpConnection`, `Reassembly`, `RelayFragment`, `UnsupportedProtocol`,
+`QueueFull`. `NotForUs` and `LoopedBack` are normal on a relay that floods, and are counted but not
+logged per packet.
+
+**Trace logs.** With trace logging enabled, the first eight non-keepalive relay datagrams are dumped
+as hex, which is what to attach when the framing itself is suspect.
+
+Incoming packets are validated the way a real stack does: the IPv4 header checksum, and the UDP (when
+present) and TCP checksums are verified, and failures are counted rather than silently ignored, so a
+relay or peer sending malformed traffic shows up immediately in the summary.
+
+## 12. Testing
 
 ```
 dotnet test src/Ryujinx.Tests/Ryujinx.Tests.csproj --filter "FullyQualifiedName~LanPlayTests"
@@ -223,17 +282,19 @@ The tests run an in-process relay that reproduces the routing behaviour of the r
 two clients with distinct virtual identities, broadcast distribution, unicast in both directions,
 a 3000 byte datagram going through IPv4 fragmentation and reassembly, the TCP handshake with data in
 both directions (including an 8000 byte transfer) and an orderly close, duplicate address detection,
-server string parsing, teardown and reconnect, guest sockets over the virtual interface with
-non-LAN-Play traffic still going out through the host stack, and a full LDN session where one client
-creates a network, the other discovers it with a scan and joins it, after which the host reports two
-nodes with the right virtual addresses and user names.
+server string parsing, teardown and reconnect, guest sockets over the virtual interface (including
+`SocketHelpers.Select`) with non-LAN-Play traffic still going out through the host stack, a full LDN
+session where one client creates a network, the other discovers it with a scan and joins it, after
+which the host reports two nodes with the right virtual addresses and user names, the connection test
+finding that hosted session, and packets whose checksums are wrong (built and checksummed by the test
+itself, independently of the stack) being accepted or dropped and counted as expected.
 
 For a manual test with two Ryujinx instances, point both at the same relay, start the same game on
 both and enter its local multiplayer mode. The interesting log lines are
 `LAN Play: connected to relay ...`, `LAN Play: using the virtual address ...` and
 `LAN Play: hosting an LDN session on ...`.
 
-## 12. Known limitations and what still needs validation on real hardware
+## 13. Known limitations and what still needs validation on real hardware
 
 * **Not yet tested against a real console.** Everything above is validated between Ryujinx instances
   and against a relay implementation derived from the reference client's behaviour. The interop that

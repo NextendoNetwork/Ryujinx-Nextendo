@@ -415,6 +415,10 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
             if ((flags & FlagRst) != 0)
             {
+                _networkInterface.Diagnostics.TcpReset();
+
+                Logger.Debug?.Print(LogClass.ServiceLdn, $"LAN Play: TCP connection to {RemoteEndPoint} was reset by the peer in state {State}.");
+
                 Abort();
 
                 return;
@@ -466,6 +470,12 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
                 if (data.Length > 0)
                 {
+                    if (sequence != _rcvNxt)
+                    {
+                        // Out of order: dropped on purpose, the peer will send it again.
+                        _networkInterface.Diagnostics.Dropped(LanPlayDropReason.Malformed, $"out of order tcp segment from {RemoteEndPoint}");
+                    }
+
                     if (sequence == _rcvNxt)
                     {
                         if (DataReceived != null)
@@ -476,6 +486,11 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
                         else
                         {
                             int accepted = Math.Min(data.Length, ReceiveBufferSize - _receiveLength);
+
+                            if (accepted < data.Length)
+                            {
+                                _networkInterface.Diagnostics.Dropped(LanPlayDropReason.QueueFull, $"tcp receive buffer from {RemoteEndPoint}");
+                            }
 
                             for (int i = 0; i < accepted; i++)
                             {
@@ -533,6 +548,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
             if (established)
             {
+                Logger.Debug?.Print(LogClass.ServiceLdn, $"LAN Play: TCP connection established with {RemoteEndPoint} (local port {LocalPort}).");
+
                 Established?.Invoke();
             }
 
@@ -685,11 +702,17 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
             if (giveUp)
             {
-                Logger.Warning?.Print(LogClass.ServiceLdn, $"LAN Play: TCP connection to {RemoteEndPoint} timed out.");
+                Logger.Warning?.Print(LogClass.ServiceLdn,
+                    $"LAN Play: TCP connection to {RemoteEndPoint} timed out after {MaxRetransmits} retransmissions in state {State}.");
 
                 Abort();
 
                 return;
+            }
+
+            if (retransmitSyn || retransmitData != null || retransmitFin)
+            {
+                _networkInterface.Diagnostics.TcpRetransmit(_retransmitCount);
             }
 
             if (retransmitSyn)

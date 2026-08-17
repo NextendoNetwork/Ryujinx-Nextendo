@@ -24,6 +24,7 @@ using Ryujinx.Graphics.GAL;
 using Ryujinx.Graphics.Vulkan;
 using Ryujinx.HLE;
 using Ryujinx.HLE.FileSystem;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay;
 using Ryujinx.HLE.HOS.Services.Time.TimeZone;
 using System;
 using System.Collections.Generic;
@@ -441,6 +442,57 @@ namespace Ryujinx.Ava.UI.ViewModels
         public string LanPlayServer { get; set; }
 
         public string LanPlayVirtualIp { get; set; }
+
+        /// <summary>
+        /// Result of the last LAN Play connection test, shown under the server field.
+        /// </summary>
+        public string LanPlayTestResult
+        {
+            get;
+            set
+            {
+                field = value;
+
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsLanPlayTestResultVisible));
+            }
+        }
+
+        public bool IsLanPlayTestResultVisible => !string.IsNullOrEmpty(LanPlayTestResult);
+
+        public bool IsLanPlayTestRunning
+        {
+            get;
+            set
+            {
+                field = value;
+
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Joins the configured relay without starting a game and reports what answered, so that a broken
+        /// setup can be told apart from a game specific problem.
+        /// </summary>
+        public async Task TestLanPlayConnection()
+        {
+            if (IsLanPlayTestRunning)
+            {
+                return;
+            }
+
+            IsLanPlayTestRunning = true;
+            LanPlayTestResult = LocaleManager.Instance[LocaleKeys.MultiplayerLanPlayTestRunning];
+
+            string server = LanPlayServer;
+            string virtualIp = LanPlayVirtualIp;
+
+            LanPlayConnectionTest.Result result = await Task.Run(() => LanPlayConnectionTest.Run(server, virtualIp));
+
+            LanPlayTestResult = result.Message;
+            IsLanPlayTestRunning = false;
+        }
 
         public bool IsInvalidLdnPassphraseVisible { get; set; }
 

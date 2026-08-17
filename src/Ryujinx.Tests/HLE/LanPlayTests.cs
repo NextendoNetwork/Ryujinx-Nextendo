@@ -7,6 +7,7 @@ using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -327,6 +328,152 @@ namespace Ryujinx.Tests.HLE
 
             station.DisconnectNetwork();
             host.DisconnectNetwork();
+        }
+
+        [Test]
+        public void ConnectionTestReportsHostedSessions()
+        {
+            using LanPlayLdnClient host = new(CreateStack("10.13.10.2"));
+
+            Assert.That(host.CreateNetwork(CreateAccessPointRequest("Host"), []), Is.True);
+
+            LanPlayConnectionTest.Result result = LanPlayConnectionTest.Run($"{_relay.EndPoint.Address}:{_relay.EndPoint.Port}", string.Empty);
+
+            Assert.That(result.Success, Is.True, result.Message);
+            Assert.That(result.Message, Does.Contain("10.13.10.2"), result.Message);
+            Assert.That(result.Message, Does.Contain("answered the local session scan"), result.Message);
+
+            host.DisconnectNetwork();
+        }
+
+        [Test]
+        public void ConnectionTestRejectsAnUnusableServer()
+        {
+            LanPlayConnectionTest.Result result = LanPlayConnectionTest.Run(string.Empty, string.Empty);
+
+            Assert.That(result.Success, Is.False);
+            Assert.That(result.Message, Does.Contain("host:port"));
+        }
+
+        [Test]
+        public void CorruptedPacketsAreDroppedAndCounted()
+        {
+            using LanPlayStack receiverStack = CreateStack("10.13.8.2");
+            using LanPlayStack senderStack = CreateStack("10.13.8.3");
+
+            LanPlayUdpEndpoint receiver = receiverStack.NetworkInterface.BindUdp(LdnPort);
+
+            uint source = NetworkHelpers.ConvertIpv4Address(senderStack.NetworkInterface.Address);
+            uint destination = NetworkHelpers.ConvertIpv4Address(receiverStack.NetworkInterface.Address);
+
+            // Built and checksummed here rather than by the code under test, so that a mistake in the
+            // stack's own checksum implementation cannot hide.
+            byte[] good = BuildUdpPacket(source, destination, LdnPort, LdnPort, Encoding.ASCII.GetBytes("valid"));
+
+            senderStack.Client.SendIpv4(good);
+
+            Assert.That(receiver.WaitForData(Timeout), Is.True, "an externally built packet was not accepted");
+            Assert.That(receiver.TryDequeue(out LanPlayUdpEndpoint.Datagram datagram), Is.True);
+            Assert.That(Encoding.ASCII.GetString(datagram.Data), Is.EqualTo("valid"));
+
+            // A corrupted IPv4 header checksum, a corrupted UDP checksum, and a packet for somebody else.
+            byte[] badHeader = BuildUdpPacket(source, destination, LdnPort, LdnPort, Encoding.ASCII.GetBytes("bad header"));
+            badHeader[10] ^= 0xFF;
+
+            byte[] badUdp = BuildUdpPacket(source, destination, LdnPort, LdnPort, Encoding.ASCII.GetBytes("bad udp"));
+            badUdp[Ipv4Packet.MinHeaderSize + 7] ^= 0xFF;
+
+            byte[] elsewhere = BuildUdpPacket(source, NetworkHelpers.ConvertIpv4Address(IPAddress.Parse("10.13.8.9")), LdnPort, LdnPort, Encoding.ASCII.GetBytes("not ours"));
+
+            senderStack.Client.SendIpv4(badHeader);
+            senderStack.Client.SendIpv4(badUdp);
+            senderStack.Client.SendIpv4(elsewhere);
+
+            Assert.That(receiver.WaitForData(500), Is.False, "a corrupted packet was delivered to the guest");
+
+            string report = receiverStack.Client.Diagnostics.GetReport();
+
+            Assert.That(report, Does.Contain("BadHeaderChecksum=1"), report);
+            Assert.That(report, Does.Contain("BadTransportChecksum=1"), report);
+            Assert.That(report, Does.Contain("NotForUs=1"), report);
+        }
+
+        [Test]
+        public void DiagnosticsReportCountsTraffic()
+        {
+            using LanPlayStack stack = CreateStack("10.13.9.2");
+            using LanPlayStack peerStack = CreateStack("10.13.9.3");
+
+            LanPlayUdpEndpoint peer = peerStack.NetworkInterface.BindUdp(LdnPort);
+            LanPlayUdpEndpoint endpoint = stack.NetworkInterface.BindUdp(LdnPort);
+
+            endpoint.SendTo(new IPEndPoint(peerStack.NetworkInterface.Address, LdnPort), Encoding.ASCII.GetBytes("hello"));
+
+            Assert.That(peer.WaitForData(Timeout), Is.True);
+
+            string sender = stack.Client.Diagnostics.GetReport();
+            string receiver = peerStack.Client.Diagnostics.GetReport();
+
+            // The announce ping plus the datagram, and the same seen from the other side.
+            Assert.That(sender, Does.Contain("udp 1/"), sender);
+            Assert.That(sender, Does.Contain("icmp 1/"), sender);
+            Assert.That(receiver, Does.Contain("/1, icmp").Or.Contain("udp 0/1"), receiver);
+            Assert.That(receiver, Does.Not.Contain("never heard from the relay"), receiver);
+        }
+
+        /// <summary>
+        /// Builds a UDP over IPv4 packet with checksums computed independently of the stack under test.
+        /// </summary>
+        private static byte[] BuildUdpPacket(uint source, uint destination, ushort sourcePort, ushort destinationPort, byte[] payload)
+        {
+            byte[] packet = new byte[Ipv4Packet.MinHeaderSize + 8 + payload.Length];
+
+            packet[0] = 0x45;
+            BinaryPrimitives.WriteUInt16BigEndian(packet.AsSpan(2), (ushort)packet.Length);
+            BinaryPrimitives.WriteUInt16BigEndian(packet.AsSpan(4), 0x1234);
+            packet[8] = 64;
+            packet[9] = 17;
+            BinaryPrimitives.WriteUInt32BigEndian(packet.AsSpan(12), source);
+            BinaryPrimitives.WriteUInt32BigEndian(packet.AsSpan(16), destination);
+            BinaryPrimitives.WriteUInt16BigEndian(packet.AsSpan(10), OnesComplementSum(packet.AsSpan(0, Ipv4Packet.MinHeaderSize)));
+
+            Span<byte> datagram = packet.AsSpan(Ipv4Packet.MinHeaderSize);
+
+            BinaryPrimitives.WriteUInt16BigEndian(datagram, sourcePort);
+            BinaryPrimitives.WriteUInt16BigEndian(datagram[2..], destinationPort);
+            BinaryPrimitives.WriteUInt16BigEndian(datagram[4..], (ushort)(8 + payload.Length));
+            payload.CopyTo(datagram[8..]);
+
+            byte[] pseudo = new byte[12 + datagram.Length];
+
+            BinaryPrimitives.WriteUInt32BigEndian(pseudo, source);
+            BinaryPrimitives.WriteUInt32BigEndian(pseudo.AsSpan(4), destination);
+            pseudo[9] = 17;
+            BinaryPrimitives.WriteUInt16BigEndian(pseudo.AsSpan(10), (ushort)datagram.Length);
+            datagram.CopyTo(pseudo.AsSpan(12));
+
+            ushort checksum = OnesComplementSum(pseudo);
+
+            BinaryPrimitives.WriteUInt16BigEndian(datagram[6..], checksum == 0 ? (ushort)0xFFFF : checksum);
+
+            return packet;
+        }
+
+        private static ushort OnesComplementSum(ReadOnlySpan<byte> data)
+        {
+            uint sum = 0;
+
+            for (int i = 0; i < data.Length; i += 2)
+            {
+                sum += (uint)(data[i] << 8) | (i + 1 < data.Length ? data[i + 1] : 0u);
+
+                while (sum > 0xFFFF)
+                {
+                    sum = (sum & 0xFFFF) + (sum >> 16);
+                }
+            }
+
+            return (ushort)~sum;
         }
 
         private static IntentId Intent => new() { LocalCommunicationId = 0x0100000000010000 };

@@ -5,6 +5,7 @@ using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using System;
+using System.Text;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 {
@@ -42,12 +43,46 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
         public void InvokeNetworkChange(NetworkInfo info, bool connected, DisconnectReason reason = DisconnectReason.None)
         {
+            Logger.Info?.Print(LogClass.ServiceLdn,
+                $"LAN Play LDN: network {(connected ? "update" : $"lost ({reason})")}, {info.Ldn.NodeCount} node(s): {DescribeNodes(info)}");
+
             NetworkChange?.Invoke(this, new NetworkChangeEventArgs(info, connected: connected, disconnectReason: reason));
+        }
+
+        private static string DescribeNodes(NetworkInfo info)
+        {
+            StringBuilder description = new();
+
+            foreach (NodeInfo node in info.Ldn.Nodes.AsSpan())
+            {
+                if (node.IsConnected == 0)
+                {
+                    continue;
+                }
+
+                if (description.Length != 0)
+                {
+                    description.Append(", ");
+                }
+
+                description.Append($"#{node.NodeId} {NetworkHelpers.ConvertUint(node.Ipv4Address)}");
+            }
+
+            return description.Length == 0 ? "none" : description.ToString();
         }
 
         public NetworkError Connect(ConnectRequest request)
         {
-            return _lanDiscovery.Connect(request.NetworkInfo, request.UserConfig, request.LocalCommunicationVersion);
+            NetworkError error = _lanDiscovery.Connect(request.NetworkInfo, request.UserConfig, request.LocalCommunicationVersion);
+
+            if (error != NetworkError.None)
+            {
+                Logger.Warning?.Print(LogClass.ServiceLdn,
+                    $"LAN Play LDN: could not join the session hosted by {NetworkHelpers.ConvertUint(request.NetworkInfo.Ldn.Nodes[0].Ipv4Address)}: {error}. " +
+                    $"Relay state: {_stack.Client.Diagnostics.GetReport()}");
+            }
+
+            return error;
         }
 
         public NetworkError ConnectPrivate(ConnectPrivateRequest request)
@@ -60,7 +95,14 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
         public bool CreateNetwork(CreateAccessPointRequest request, byte[] advertiseData)
         {
-            return _lanDiscovery.CreateNetwork(request.SecurityConfig, request.UserConfig, request.NetworkConfig);
+            bool created = _lanDiscovery.CreateNetwork(request.SecurityConfig, request.UserConfig, request.NetworkConfig);
+
+            if (!created)
+            {
+                Logger.Error?.Print(LogClass.ServiceLdn, "LAN Play LDN: could not host a session on the virtual network interface.");
+            }
+
+            return created;
         }
 
         public bool CreateNetworkPrivate(CreateAccessPointPrivateRequest request, byte[] advertiseData)
@@ -89,7 +131,14 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
         public NetworkInfo[] Scan(ushort channel, ScanFilter scanFilter)
         {
-            return _lanDiscovery.Scan(channel, scanFilter);
+            NetworkInfo[] networks = _lanDiscovery.Scan(channel, scanFilter);
+
+            Logger.Info?.Print(LogClass.ServiceLdn,
+                networks.Length == 0
+                    ? "LAN Play LDN: scan found no sessions on the relay. Other players must use the same relay and the same game version."
+                    : $"LAN Play LDN: scan found {networks.Length} session(s) on the relay.");
+
+            return networks;
         }
 
         public void SetAdvertiseData(byte[] data)

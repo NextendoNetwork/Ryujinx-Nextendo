@@ -251,16 +251,24 @@ What deliberately does not change under the running game:
 LAN Play and the online stack are designed to coexist, and LAN Play stays out of the way until it is
 actually used. Concretely:
 
-* **Traffic.** Only what is addressed to the LAN Play network (10.13.0.0/16 and broadcasts) goes to
-  the relay. Everything else — the online service, the DNS MITM, the NAT check — keeps using the host
-  network stack through the socket's host fallback, and a line is logged the first time that fallback
-  is used so it is visible in a log.
+* **Traffic.** Only what is addressed to the LAN Play network goes to the relay: 10.13.0.0/16,
+  the broadcast addresses, and the broadcast address of one of the host's own networks (192.168.0.255
+  for a host on 192.168.0.91/24). That last case is a game's own LAN mode broadcasting before the
+  console started presenting its LAN Play address, so it is LAN discovery and is re-addressed to
+  10.13.255.255 on the way out; the relay only floods that address, and a peer drops anything else as
+  addressed to somebody else. Everything else — the online service, the DNS MITM, the NAT check —
+  keeps using the host network stack through the socket's host fallback, and a line is logged the
+  first time that fallback is used so it is visible in a log. Options the game set on the socket
+  before that fallback existed are replayed on it, SO_BROADCAST included, without which a broadcast
+  fails with EACCES on Linux and macOS.
 * **The console's address.** `ldn::GetIpv4Address` always answers with the LAN Play address, because
   it is only asked in the context of a local session. `nifm::GetCurrentIpAddress` and
   `GetCurrentIpConfigInfo` only answer with it once the game is actually using the LAN Play network
   (`LanPlayStack.IsGuestActive`): hosting or joining a local session, or exchanging any traffic on the
   LAN Play network, which is what entering a game's own LAN mode does — for example holding ZR + ZL +
-  L3 in a Splatoon private battle. Before that, and for a session that only ever plays online, the
+  L3 in a Splatoon private battle. A game that entered its LAN mode broadcasts on the network it was
+  told it is on, so the first such broadcast is what marks the LAN Play network as in use; the game
+  has to re-enter its LAN mode for the LAN Play address to be the one it advertises to its peers. Before that, and for a session that only ever plays online, the
   host address is reported exactly as it would be with LAN Play switched off. Merely selecting LAN
   Play therefore changes nothing for online play.
 * **Nothing else is conditioned on the mode.** `GetCurrentNetworkProfile`, the DNS redirects, the NAT

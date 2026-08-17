@@ -35,6 +35,12 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
         private int _receiveTimeout = -1;
         private bool _closed;
 
+        /// <summary>
+        /// Every option the guest set on this socket, in the order it set them, so that they can be replayed
+        /// on the host socket whenever that one ends up being created (see <see cref="EnsureHostSocket"/>).
+        /// </summary>
+        private readonly List<(SocketOptionLevel Level, SocketOptionName Name, object Value)> _guestSocketOptions = new();
+
         private readonly Dictionary<SocketOptionName, int> _socketOptions = new()
         {
             { SocketOptionName.Broadcast, 1 },
@@ -218,6 +224,29 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
             Logger.Info?.Print(LogClass.ServiceBsd,
                 $"LAN Play: {ProtocolType} socket is using the host network for destinations outside {_networkInterface.Address}/16.");
 
+            // The host socket is created on first use, so everything the guest set on the socket before
+            // that has to be replayed on it, in order and before it is bound, or the host socket silently
+            // behaves differently from the one the guest configured. SO_BROADCAST is the one that bites:
+            // without it a broadcast fails with EACCES on Linux and macOS.
+            foreach ((SocketOptionLevel level, SocketOptionName name, object value) in _guestSocketOptions)
+            {
+                try
+                {
+                    if (value is int intValue)
+                    {
+                        _hostSocket.SetSocketOption(level, name, intValue);
+                    }
+                    else
+                    {
+                        _hostSocket.SetSocketOption(level, name, value);
+                    }
+                }
+                catch (SocketException ex)
+                {
+                    Logger.Debug?.Print(LogClass.ServiceBsd, $"LAN Play: the host socket refused {level}/{name}: {ex.SocketErrorCode}");
+                }
+            }
+
             if (ProtocolType == ProtocolType.Udp && _requestedLocalEndPoint != null)
             {
                 try
@@ -381,7 +410,9 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
 
             _udp ??= _networkInterface.BindUdp((ushort)(_requestedLocalEndPoint?.Port ?? 0));
 
-            _stack.MarkGuestActive(_networkInterface.IsBroadcast(NetworkHelpers.ConvertIpv4Address(((IPEndPoint)remoteEP).Address))
+            uint destination = NetworkHelpers.ConvertIpv4Address(((IPEndPoint)remoteEP).Address);
+
+            _stack.MarkGuestActive(_networkInterface.IsBroadcast(destination) || LanPlayNetworkInterface.IsHostBroadcast(destination)
                 ? "a broadcast on the LAN Play network"
                 : "traffic to a peer on the LAN Play network");
 
@@ -549,6 +580,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
                 }
             }
 
+            RememberForHostSocket(optionLevel, optionName, optionValue);
+
             try
             {
                 _hostSocket?.SetSocketOption(optionLevel, optionName, optionValue);
@@ -561,6 +594,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
 
         public void SetSocketOption(SocketOptionLevel optionLevel, SocketOptionName optionName, object optionValue)
         {
+            RememberForHostSocket(optionLevel, optionName, optionValue);
+
             try
             {
                 _hostSocket?.SetSocketOption(optionLevel, optionName, optionValue);
@@ -569,6 +604,12 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
             {
                 // Same as above.
             }
+        }
+
+        private void RememberForHostSocket(SocketOptionLevel optionLevel, SocketOptionName optionName, object optionValue)
+        {
+            _guestSocketOptions.RemoveAll(option => option.Level == optionLevel && option.Name == optionName);
+            _guestSocketOptions.Add((optionLevel, optionName, optionValue));
         }
 
         public void Shutdown(SocketShutdown how)

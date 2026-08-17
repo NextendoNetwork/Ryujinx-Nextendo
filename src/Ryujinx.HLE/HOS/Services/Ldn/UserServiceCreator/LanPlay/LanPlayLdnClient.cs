@@ -1,30 +1,43 @@
 using Ryujinx.Common.Logging;
 using Ryujinx.Common.Utilities;
 using Ryujinx.HLE.HOS.Services.Ldn.Types;
-using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Proxy;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using System;
-using System.Net.NetworkInformation;
 
-namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
+namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 {
     /// <summary>
-    /// Client implementation for <a href="https://github.com/spacemeowx2/ldn_mitm">ldn_mitm</a>
+    /// Network client for <see cref="Common.Configuration.Multiplayer.MultiplayerMode.LanPlay"/>.
+    /// <para>
+    /// It speaks the same ldn_mitm protocol as <see cref="LdnMitmClient"/>, so a real console running
+    /// ldn_mitm sees Ryujinx as just another console, but the packets travel over an embedded
+    /// switch-lan-play client instead of the host network interface.
+    /// </para>
     /// </summary>
-    internal class LdnMitmClient : INetworkClient, ILdnDiscoveryClient
+    internal class LanPlayLdnClient : INetworkClient, ILdnDiscoveryClient
     {
+        private readonly LanPlayStack _stack;
+        private readonly LanDiscovery _lanDiscovery;
+
         public ProxyConfig Config { get; }
+
         public bool NeedsRealId => false;
 
         public event EventHandler<NetworkChangeEventArgs> NetworkChange;
 
-        private readonly LanDiscovery _lanDiscovery;
-
-        public LdnMitmClient(HleConfiguration config)
+        public LanPlayLdnClient(LanPlayStack stack)
         {
-            UnicastIPAddressInformation localIpInterface = NetworkHelpers.GetLocalInterface(config.MultiplayerLanInterfaceId).Item2;
+            _stack = stack;
 
-            _lanDiscovery = new LanDiscovery(this, new HostLdnNetworkProvider(localIpInterface.Address, localIpInterface.IPv4Mask));
+            Config = new ProxyConfig
+            {
+                ProxyIp = _stack.NetworkInterface.AddressV4,
+                ProxySubnetMask = NetworkHelpers.ConvertIpv4Address(_stack.NetworkInterface.SubnetMask),
+            };
+
+            _lanDiscovery = new LanDiscovery(this, new LanPlayLdnNetworkProvider(_stack.NetworkInterface));
         }
 
         public void InvokeNetworkChange(NetworkInfo info, bool connected, DisconnectReason reason = DisconnectReason.None)
@@ -39,8 +52,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
 
         public NetworkError ConnectPrivate(ConnectPrivateRequest request)
         {
-            // NOTE: This method is not implemented in ldn_mitm
-            Logger.Stub?.PrintMsg(LogClass.ServiceLdn, "LdnMitmClient ConnectPrivate");
+            // NOTE: As in ldn_mitm, private networks are not implemented.
+            Logger.Stub?.PrintMsg(LogClass.ServiceLdn, "LanPlayLdnClient ConnectPrivate");
 
             return NetworkError.None;
         }
@@ -52,8 +65,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
 
         public bool CreateNetworkPrivate(CreateAccessPointPrivateRequest request, byte[] advertiseData)
         {
-            // NOTE: This method is not implemented in ldn_mitm
-            Logger.Stub?.PrintMsg(LogClass.ServiceLdn, "LdnMitmClient CreateNetworkPrivate");
+            Logger.Stub?.PrintMsg(LogClass.ServiceLdn, "LanPlayLdnClient CreateNetworkPrivate");
 
             return true;
         }
@@ -70,8 +82,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
 
         public ResultCode Reject(DisconnectReason disconnectReason, uint nodeId)
         {
-            // NOTE: This method is not implemented in ldn_mitm
-            Logger.Stub?.PrintMsg(LogClass.ServiceLdn, "LdnMitmClient Reject");
+            Logger.Stub?.PrintMsg(LogClass.ServiceLdn, "LanPlayLdnClient Reject");
 
             return ResultCode.Success;
         }
@@ -88,18 +99,18 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
 
         public void SetGameVersion(ReadOnlySpan<byte> versionString)
         {
-            // NOTE: This method is not implemented in ldn_mitm
-            Logger.Stub?.PrintMsg(LogClass.ServiceLdn, "LdnMitmClient SetGameVersion");
+            Logger.Stub?.PrintMsg(LogClass.ServiceLdn, "LanPlayLdnClient SetGameVersion");
         }
 
         public void SetStationAcceptPolicy(AcceptPolicy acceptPolicy)
         {
-            // NOTE: This method is not implemented in ldn_mitm
-            Logger.Stub?.PrintMsg(LogClass.ServiceLdn, "LdnMitmClient SetStationAcceptPolicy");
+            Logger.Stub?.PrintMsg(LogClass.ServiceLdn, "LanPlayLdnClient SetStationAcceptPolicy");
         }
 
         public void Dispose()
         {
+            // The stack itself belongs to the emulation session, not to this client, because the game may
+            // keep using the LAN Play network through its own sockets after LDN is torn down.
             _lanDiscovery.Dispose();
         }
     }

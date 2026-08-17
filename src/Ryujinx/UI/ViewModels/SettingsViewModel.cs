@@ -427,8 +427,20 @@ namespace Ryujinx.Ava.UI.ViewModels
             set
             {
                 field = value;
+
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsLanPlaySelected));
             }
         }
+
+        /// <summary>
+        /// True when the LAN Play multiplayer mode is selected, so its settings are shown.
+        /// </summary>
+        public bool IsLanPlaySelected => MultiplayerModeIndex == (int)MultiplayerMode.LanPlay;
+
+        public string LanPlayServer { get; set; }
+
+        public string LanPlayVirtualIp { get; set; }
 
         public bool IsInvalidLdnPassphraseVisible { get; set; }
 
@@ -764,6 +776,8 @@ namespace Ryujinx.Ava.UI.ViewModels
             MultiplayerModeIndex = (int)config.Multiplayer.Mode.Value;
             DisableP2P = config.Multiplayer.DisableP2p;
             LdnPassphrase = config.Multiplayer.LdnPassphrase;
+            LanPlayServer = config.Multiplayer.LanPlayServer;
+            LanPlayVirtualIp = config.Multiplayer.LanPlayVirtualIp;
 
             // Debug
             EnableGdbStub = config.Debug.EnableGdbStub.Value;
@@ -892,6 +906,8 @@ namespace Ryujinx.Ava.UI.ViewModels
             config.Multiplayer.Mode.Value = (MultiplayerMode)MultiplayerModeIndex;
             config.Multiplayer.DisableP2p.Value = DisableP2P;
             config.Multiplayer.LdnPassphrase.Value = LdnPassphrase;
+            config.Multiplayer.LanPlayServer.Value = LanPlayServer ?? string.Empty;
+            config.Multiplayer.LanPlayVirtualIp.Value = LanPlayVirtualIp ?? string.Empty;
 
             // Debug
             config.Debug.EnableGdbStub.Value = EnableGdbStub;

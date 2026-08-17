@@ -238,6 +238,8 @@ namespace Ryujinx.Headless
                         false,
                         string.Empty,
                         string.Empty,
+                        string.Empty,
+                        string.Empty,
                         options.EnableGdbStub,
                         options.GdbStubPort,
                         options.DebuggerSuspendOnStart,

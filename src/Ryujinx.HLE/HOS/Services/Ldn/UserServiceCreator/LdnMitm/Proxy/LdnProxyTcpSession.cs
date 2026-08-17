@@ -5,12 +5,15 @@ using System.Net.Sockets;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Proxy
 {
-    internal class LdnProxyTcpSession : NetCoreServer.TcpSession
+    internal class LdnProxyTcpSession : NetCoreServer.TcpSession, ILdnTcpSession
     {
         private readonly LanProtocol _protocol;
 
-        internal int NodeId;
-        internal NodeInfo NodeInfo;
+        public int NodeId { get; set; }
+
+        public NodeInfo NodeInfo { get; set; }
+
+        public EndPoint RemoteEndPoint => Socket.RemoteEndPoint;
 
         private byte[] _buffer;
         private int _bufferEnd;
@@ -28,8 +31,17 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Proxy
 
         public void OverrideInfo()
         {
-            NodeInfo.NodeId = (byte)NodeId;
-            NodeInfo.IsConnected = (byte)(IsConnected ? 1 : 0);
+            NodeInfo info = NodeInfo;
+
+            info.NodeId = (byte)NodeId;
+            info.IsConnected = (byte)(IsConnected ? 1 : 0);
+
+            NodeInfo = info;
+        }
+
+        public bool SendPacket(byte[] data)
+        {
+            return SendAsync(data);
         }
 
         protected override void OnConnected()

@@ -1,15 +1,98 @@
 using Ryujinx.Common.Logging;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy
 {
     static class SocketHelpers
     {
         private static LdnProxy _proxy;
+        private static LanPlayStack _lanPlay;
+        private static string _lanPlayServer;
+        private static string _lanPlayVirtualAddress;
+        private static bool _lanPlayFailed;
+
+        private static readonly Lock _lanPlayLock = new();
+
+        /// <summary>
+        /// The LAN Play stack of the running session, or null when LAN Play is not in use. It is created on
+        /// first use, so that selecting LAN Play does not connect to a relay until the game does something
+        /// with the network.
+        /// </summary>
+        public static LanPlayStack CurrentLanPlayStack
+        {
+            get
+            {
+                if (_lanPlay != null)
+                {
+                    return _lanPlay;
+                }
+
+                if (_lanPlayServer == null || _lanPlayFailed)
+                {
+                    return null;
+                }
+
+                lock (_lanPlayLock)
+                {
+                    if (_lanPlay != null || _lanPlayFailed)
+                    {
+                        return _lanPlay;
+                    }
+
+                    try
+                    {
+                        if (!LanPlayConfiguration.TryParse(_lanPlayServer, _lanPlayVirtualAddress, out LanPlayConfiguration configuration))
+                        {
+                            throw new InvalidOperationException("The LAN Play relay server is not configured correctly.");
+                        }
+
+                        _lanPlay = LanPlayStack.Create(configuration);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error?.Print(LogClass.ServiceLdn, $"Could not join the LAN Play relay: {ex.Message}");
+
+                        _lanPlayFailed = true;
+                    }
+
+                    return _lanPlay;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Enables LAN Play for this emulation session. The relay is only contacted on first use.
+        /// </summary>
+        public static void ConfigureLanPlay(string server, string virtualAddress)
+        {
+            lock (_lanPlayLock)
+            {
+                _lanPlayServer = server;
+                _lanPlayVirtualAddress = virtualAddress;
+                _lanPlayFailed = false;
+            }
+        }
+
+        /// <summary>
+        /// Disconnects from the LAN Play relay and forgets its configuration.
+        /// </summary>
+        public static void ShutdownLanPlay()
+        {
+            lock (_lanPlayLock)
+            {
+                _lanPlay?.Dispose();
+                _lanPlay = null;
+                _lanPlayServer = null;
+                _lanPlayVirtualAddress = null;
+                _lanPlayFailed = false;
+            }
+        }
 
         public static void Select(List<ISocketImpl> readEvents, List<ISocketImpl> writeEvents, List<ISocketImpl> errorEvents, int timeout)
         {
@@ -22,7 +105,7 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy
                 Socket.Select(readDefault, writeDefault, errorDefault, timeout);
             }
 
-            void FilterSockets(List<ISocketImpl> removeFrom, List<Socket> selectedSockets, Func<LdnProxySocket, bool> ldnCheck)
+            void FilterSockets(List<ISocketImpl> removeFrom, List<Socket> selectedSockets, Func<IPollableSocket, bool> pollableCheck)
             {
                 removeFrom.RemoveAll(socket =>
                 {
@@ -30,8 +113,8 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy
                     {
                         case DefaultSocket dsocket:
                             return !selectedSockets.Contains(dsocket.BaseSocket);
-                        case LdnProxySocket psocket:
-                            return !ldnCheck(psocket);
+                        case IPollableSocket psocket:
+                            return !pollableCheck(psocket);
                         default:
                             throw new NotImplementedException();
                     }
@@ -72,6 +155,12 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy
                 {
                     Logger.Warning?.PrintMsg(LogClass.ServiceBsd, $"LDN proxy does not support socket {domain}, {type}, {protocol}");
                 }
+            }
+            else if (_lanPlayServer != null && CurrentLanPlayStack is { } lanPlay && lanPlay.Supported(domain, type, protocol))
+            {
+                Logger.Info?.PrintMsg(LogClass.ServiceBsd, $"Socket is using the LAN Play network interface");
+
+                return lanPlay.CreateSocket(domain, type, protocol, lanInterfaceId);
             }
             else
             {

@@ -167,6 +167,8 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Sfdnsres.Proxy
             return address;
         }
 
+        private static bool _loopbackRedirectReported;
+
         private static bool TryMatchBuiltin(string host, out IPAddress address)
         {
             foreach ((string pattern, IPAddress addr) in _builtinRedirects)
@@ -174,6 +176,19 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Sfdnsres.Proxy
                 if (FileSystemName.MatchesSimpleExpression(pattern, host))
                 {
                     address = addr;
+
+                    // [Nextendo] The warning at start-up is easy to miss, and the consequence only shows up
+                    // much later as an unexplained network error from the game. Say it again, once, at the
+                    // moment a hostname the game needs is actually pointed at loopback.
+                    if (IPAddress.IsLoopback(addr) && !_loopbackRedirectReported)
+                    {
+                        _loopbackRedirectReported = true;
+
+                        Logger.Error?.PrintMsg(LogClass.ServiceBsd,
+                            $"[Nextendo] \"{host}\" is being redirected to {addr} because the server address is not configured. " +
+                            "Online play cannot work: set NEXTENDO_SERVER_IP (and NEXTENDO_NAT_IP) before launching, " +
+                            "or bake them into the build with distribution/nextendo/bake_release.py.");
+                    }
 
                     return true;
                 }

@@ -208,7 +208,12 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
                 }
             }
 
-            bool isLDNPrivateIP = remoteEndPoint.Address.ToString().StartsWith("192.168.");
+            // [Nextendo] Loopback is shown as well as the LAN: a redirect that lands on 127.0.0.1 means the
+            // server address was never configured, and hiding it turned that into an unexplainable failure.
+            bool isLDNPrivateIP = remoteEndPoint.Address.ToString().StartsWith("192.168.")
+                                  || IPAddress.IsLoopback(remoteEndPoint.Address)
+                                  || (remoteEndPoint.Address.IsIPv4MappedToIPv6 && IPAddress.IsLoopback(remoteEndPoint.Address.MapToIPv4()));
+
             if (isLDNPrivateIP)
             {
                 Logger.Info?.PrintMsg(LogClass.ServiceBsd, $"Connecting to: {ProtocolType}/{remoteEndPoint.Address}:{remoteEndPoint.Port}");
@@ -253,6 +258,23 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
                                 return LinuxError.SUCCESS;
                             }
+
+                            // [Nextendo] The connect did not complete: the client sends its ClientHello anyway
+                            // and the game reports a network error (2321-4992 for NPLN), so the reason has to
+                            // be in the log rather than left to be guessed.
+                            byte[] error = new byte[4];
+
+                            Socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Error, error);
+
+                            SocketError reason = (SocketError)BitConverter.ToInt32(error);
+
+                            Logger.Error?.PrintMsg(LogClass.ServiceBsd,
+                                $"[Nextendo] the connection to the online service at port {remoteEndPoint.Port} failed ({reason}). " +
+                                (IPAddress.IsLoopback(remoteEndPoint.Address) ||
+                                 (remoteEndPoint.Address.IsIPv4MappedToIPv6 && IPAddress.IsLoopback(remoteEndPoint.Address.MapToIPv4()))
+                                    ? "It was redirected to loopback, which means the server address is not configured: " +
+                                      "set NEXTENDO_SERVER_IP (and NEXTENDO_NAT_IP) before launching, or bake them into the build."
+                                    : "The server is not answering on that address from this machine."));
                         }
                         catch { /* on retombe sur EINPROGRESS */ }
                     }

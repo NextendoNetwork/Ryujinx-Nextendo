@@ -327,7 +327,30 @@ both and enter its local multiplayer mode. The interesting log lines are
 `LAN Play: connected to relay ...`, `LAN Play: using the virtual address ...` and
 `LAN Play: hosting an LDN session on ...`.
 
-## 14. Known limitations and what still needs validation on real hardware
+## 14. Continuous integration for this branch
+
+Two workflows were added for testing this feature, both prefixed `dev-` and both kept out of the
+upstream project: they never run on `main`, on a tag or on a release, and every job is skipped unless
+the workflow runs in a Nextendo fork. Deleting `.github/workflows/dev-*.yml` removes them entirely,
+which is what to do before upstreaming.
+
+**`dev-lan-play-check.yml` — cross-platform check.** Runs on a push to `claude/**`, `lan-play/**`,
+`dev/**` or `test/**`, or by hand from the Actions tab. On Windows, Linux and macOS (arm64) it builds
+the whole solution, checks the build did not rewrite `assets/Locales` (which is how a missing
+translation key shows up), runs the LAN Play tests three times because they are timing sensitive and
+the hosted runners are slow, then runs the remaining HLE tests for information only. Test results are
+uploaded as `.trx` artifacts per platform. `fail-fast` is off, so one platform failing still reports
+the other two.
+
+**`dev-lan-play-builds.yml` — runnable test builds.** Manual runs only, with a choice of
+configuration and of which platforms to build. It produces self-contained builds for `win-x64` and
+`linux-x64`, and the universal `.app` for macOS through the maintained
+`distribution/macos/create_macos_pr_build_ava.sh`, each as a downloadable artifact, and writes
+instructions for trying LAN Play across machines into the run summary. These are test builds: the
+Nextendo server addresses are not baked in, so anything other than LAN Play falls back to loopback.
+Use the release workflow for real builds.
+
+## 15. Known limitations and what still needs validation on real hardware
 
 * **Not yet tested against a real console.** Everything above is validated between Ryujinx instances
   and against a relay implementation derived from the reference client's behaviour. The interop that

@@ -22,6 +22,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
         private const int PollIntervalMs = 15;
 
         private readonly LanPlayNetworkInterface _networkInterface;
+        private readonly LanPlayStack _stack;
         private readonly string _lanInterfaceId;
 
         private LanPlayUdpEndpoint _udp;
@@ -166,25 +167,27 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
 
         public bool Error => _tcp?.Aborted ?? false;
 
-        public LanPlaySocket(AddressFamily domain, SocketType type, ProtocolType protocol, LanPlayNetworkInterface networkInterface, string lanInterfaceId)
+        public LanPlaySocket(AddressFamily domain, SocketType type, ProtocolType protocol, LanPlayStack stack, string lanInterfaceId)
         {
             AddressFamily = domain;
             SocketType = type;
             ProtocolType = protocol;
 
-            _networkInterface = networkInterface;
+            _stack = stack;
+            _networkInterface = stack.NetworkInterface;
             _lanInterfaceId = lanInterfaceId;
 
             _socketOptions[SocketOptionName.Type] = (int)type;
         }
 
-        private LanPlaySocket(LanPlayNetworkInterface networkInterface, LanPlayTcpConnection connection, string lanInterfaceId)
+        private LanPlaySocket(LanPlayStack stack, LanPlayTcpConnection connection, string lanInterfaceId)
         {
             AddressFamily = AddressFamily.InterNetwork;
             SocketType = SocketType.Stream;
             ProtocolType = ProtocolType.Tcp;
 
-            _networkInterface = networkInterface;
+            _stack = stack;
+            _networkInterface = stack.NetworkInterface;
             _lanInterfaceId = lanInterfaceId;
             _tcp = connection;
 
@@ -272,7 +275,9 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
                 throw new SocketException((int)(Blocking ? SocketError.TimedOut : SocketError.WouldBlock));
             }
 
-            return new LanPlaySocket(_networkInterface, connection, _lanInterfaceId);
+            _stack.MarkGuestActive("an incoming connection on the LAN Play network");
+
+            return new LanPlaySocket(_stack, connection, _lanInterfaceId);
         }
 
         public void Connect(EndPoint remoteEP)
@@ -301,6 +306,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
 
             IPEndPoint target = (IPEndPoint)remoteEP;
             ushort localPort = (ushort)(_requestedLocalEndPoint is { Port: > 0 } local ? local.Port : _networkInterface.AllocateTcpPort());
+
+            _stack.MarkGuestActive("a connection to a peer on the LAN Play network");
 
             _tcp = new LanPlayTcpConnection(_networkInterface, localPort, NetworkHelpers.ConvertIpv4Address(target.Address), (ushort)target.Port);
 
@@ -331,6 +338,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
 
             if (_udp != null && _connectedTo != null && IsLanPlayAddress(_connectedTo))
             {
+                _stack.MarkGuestActive("traffic to a peer on the LAN Play network");
+
                 return _udp.SendTo(_connectedTo, buffer);
             }
 
@@ -371,6 +380,10 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
             }
 
             _udp ??= _networkInterface.BindUdp((ushort)(_requestedLocalEndPoint?.Port ?? 0));
+
+            _stack.MarkGuestActive(_networkInterface.IsBroadcast(NetworkHelpers.ConvertIpv4Address(((IPEndPoint)remoteEP).Address))
+                ? "a broadcast on the LAN Play network"
+                : "traffic to a peer on the LAN Play network");
 
             return _udp.SendTo((IPEndPoint)remoteEP, buffer);
         }
@@ -430,6 +443,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
 
                 if (_udp != null && TryReceiveVirtual(buffer, flags, ref remoteEP, out int read))
                 {
+                    _stack.MarkGuestActive("traffic received from the LAN Play network");
+
                     return read;
                 }
 

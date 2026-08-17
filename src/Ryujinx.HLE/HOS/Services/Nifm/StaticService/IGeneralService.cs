@@ -98,9 +98,11 @@ namespace Ryujinx.HLE.HOS.Services.Nifm.StaticService
         // GetCurrentIpAddress() -> nn::nifm::IpV4Address
         public ResultCode GetCurrentIpAddress(ServiceCtx context)
         {
-            // While LAN Play is active the console lives on the virtual 10.13.x.x network, and games that
-            // implement their own LAN mode use this address to advertise themselves to the other players.
-            if (SocketHelpers.ActiveLanPlayStack is { } lanPlay)
+            // Once the game is actually using the LAN Play network, the console lives on the virtual
+            // 10.13.x.x network and games that implement their own LAN mode use this address to advertise
+            // themselves. Until then the host address is reported, so simply having LAN Play selected
+            // changes nothing for online play.
+            if (SocketHelpers.ActiveLanPlayStack is { IsGuestActive: true } lanPlay)
             {
                 context.ResponseData.WriteStruct(new IpV4Address(lanPlay.NetworkInterface.Address));
 
@@ -136,7 +138,7 @@ namespace Ryujinx.HLE.HOS.Services.Nifm.StaticService
 
             Logger.Info?.Print(LogClass.ServiceNifm, $"Console's local IP is \"{unicastAddress.Address}\".");
 
-            if (SocketHelpers.ActiveLanPlayStack is { } lanPlay)
+            if (SocketHelpers.ActiveLanPlayStack is { IsGuestActive: true } lanPlay)
             {
                 context.ResponseData.WriteStruct(new IpAddressSetting(
                     lanPlay.NetworkInterface.Address,

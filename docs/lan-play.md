@@ -245,13 +245,29 @@ What deliberately does not change under the running game:
 
 ### Interaction with online play
 
-While LAN Play is selected, the emulated console presents its LAN Play address (10.13.x.x) to the
-guest through `ldn::GetIpv4Address` and `nifm::GetCurrentIpAddress`, exactly as a real console
-connected through switch-lan-play does. Its internet traffic still leaves through the host network
-stack, so online play keeps working, but a game that reports its own local address to an online
-service will report the LAN Play one while the mode is selected.
+LAN Play and the online stack are designed to coexist, and LAN Play stays out of the way until it is
+actually used. Concretely:
 
-If an online feature misbehaves with LAN Play selected, switching the mode to Disabled now takes
+* **Traffic.** Only what is addressed to the LAN Play network (10.13.0.0/16 and broadcasts) goes to
+  the relay. Everything else — the online service, the DNS MITM, the NAT check — keeps using the host
+  network stack through the socket's host fallback, and a line is logged the first time that fallback
+  is used so it is visible in a log.
+* **The console's address.** `ldn::GetIpv4Address` always answers with the LAN Play address, because
+  it is only asked in the context of a local session. `nifm::GetCurrentIpAddress` and
+  `GetCurrentIpConfigInfo` only answer with it once the game is actually using the LAN Play network
+  (`LanPlayStack.IsGuestActive`): hosting or joining a local session, or exchanging any traffic on the
+  LAN Play network, which is what entering a game's own LAN mode does — for example holding ZR + ZL +
+  L3 in a Splatoon private battle. Before that, and for a session that only ever plays online, the
+  host address is reported exactly as it would be with LAN Play switched off. Merely selecting LAN
+  Play therefore changes nothing for online play.
+* **Nothing else is conditioned on the mode.** `GetCurrentNetworkProfile`, the DNS redirects, the NAT
+  check and the account services are untouched, and LAN Play binds virtual ports only, so it cannot
+  collide with a port the online stack uses.
+
+Two guest paths used to break this coexistence and are fixed (see below): vectored I/O and the SSL
+service used to require a host socket.
+
+If an online feature still misbehaves with LAN Play selected, switching the mode to Disabled takes
 effect immediately: no restart, and any socket the game already had open keeps working. A game that
 cached its address earlier may need its online menu re-entered before it asks for it again.
 

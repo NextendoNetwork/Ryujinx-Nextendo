@@ -499,6 +499,116 @@ namespace Ryujinx.Tests.HLE
         }
 
         [Test]
+        public void AGameOwnLanModeBroadcastReachesTheRelay()
+        {
+            // A game with its own LAN mode (a Splatoon private battle over LAN, for instance) asks nifm for
+            // the console's address and broadcasts on that network. Until the console presents its LAN Play
+            // address that is the *host* network's broadcast address, so it used to leave through the host
+            // network — where no relay peer could ever see it, and where Linux and macOS reject it with
+            // EACCES unless the game asked for SO_BROADCAST, which the game reads as the search failing.
+            uint hostBroadcast = FindHostBroadcastAddress();
+
+            if (hostBroadcast == 0)
+            {
+                Assert.Ignore("this machine has no IPv4 network with a broadcast address");
+            }
+
+            string relay = $"{_relay.EndPoint.Address}:{_relay.EndPoint.Port}";
+
+            SocketHelpers.ApplyMultiplayerMode(MultiplayerMode.LanPlay, relay, "10.13.26.2");
+
+            LanPlayStack stack = SocketHelpers.CurrentLanPlayStack;
+
+            Assert.That(stack, Is.Not.Null);
+
+            using LanPlayStack peerStack = LanPlayStack.Create(Parse(relay, "10.13.26.3"));
+
+            LanPlayUdpEndpoint peer = peerStack.NetworkInterface.BindUdp(LdnPort);
+
+            ISocketImpl guest = SocketHelpers.CreateSocket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp, "0");
+
+            guest.Bind(new IPEndPoint(IPAddress.Any, 35000));
+            guest.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
+            guest.SendTo(Encoding.ASCII.GetBytes("browse"), SocketFlags.None, new IPEndPoint(NetworkHelpers.ConvertUint(hostBroadcast), LdnPort));
+
+            Assert.That(peer.WaitForData(Timeout), Is.True, "the LAN discovery broadcast never reached the relay");
+            Assert.That(peer.TryDequeue(out LanPlayUdpEndpoint.Datagram browse), Is.True);
+            Assert.That(Encoding.ASCII.GetString(browse.Data), Is.EqualTo("browse"));
+
+            // Re-addressed to the LAN Play network, otherwise the relay would not flood it and a peer would
+            // drop it as addressed to somebody else.
+            Assert.That(browse.WasBroadcast, Is.True, "the broadcast was not re-addressed to the LAN Play network");
+            Assert.That(browse.Source.Address.ToString(), Is.EqualTo("10.13.26.2"));
+
+            // The game entering its LAN mode is exactly what makes the console present its LAN Play address.
+            Assert.That(stack.IsGuestActive, Is.True, "a LAN discovery broadcast did not mark the LAN Play network as in use");
+
+            guest.Close();
+            peer.Close();
+        }
+
+        [Test]
+        public void TheHostSocketKeepsTheOptionsSetBeforeItExisted()
+        {
+            // The host socket is only created when the guest first sends somewhere outside the LAN Play
+            // network, so everything the guest set on the socket before that has to be replayed on it.
+            string relay = $"{_relay.EndPoint.Address}:{_relay.EndPoint.Port}";
+
+            SocketHelpers.ApplyMultiplayerMode(MultiplayerMode.LanPlay, relay, "10.13.27.2");
+
+            ISocketImpl guest = SocketHelpers.CreateSocket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp, "0");
+
+            Assert.That(guest, Is.InstanceOf<LanPlaySocket>());
+
+            guest.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, 4);
+
+            // Talking to something outside the LAN Play network is what creates the host socket.
+            using Socket online = new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            online.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+            online.ReceiveTimeout = Timeout;
+
+            guest.SendTo(Encoding.ASCII.GetBytes("online"), SocketFlags.None, (IPEndPoint)online.LocalEndPoint);
+
+            Assert.That(online.Receive(new byte[16]), Is.EqualTo(6));
+
+            byte[] readBack = new byte[4];
+
+            guest.GetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, readBack);
+
+            Assert.That(BitConverter.ToInt32(readBack), Is.EqualTo(4), "the host socket did not get the options the guest had set");
+
+            guest.Close();
+        }
+
+        /// <summary>
+        /// The broadcast address of one of the host's IPv4 networks, or zero when it has none.
+        /// </summary>
+        private static uint FindHostBroadcastAddress()
+        {
+            foreach (System.Net.NetworkInformation.NetworkInterface adapter in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+            {
+                foreach (System.Net.NetworkInformation.UnicastIPAddressInformation unicastAddress in adapter.GetIPProperties().UnicastAddresses)
+                {
+                    if (unicastAddress.Address.AddressFamily != AddressFamily.InterNetwork || IPAddress.IsLoopback(unicastAddress.Address) || unicastAddress.IPv4Mask == null)
+                    {
+                        continue;
+                    }
+
+                    uint mask = NetworkHelpers.ConvertIpv4Address(unicastAddress.IPv4Mask);
+
+                    if (mask is 0 or uint.MaxValue)
+                    {
+                        continue;
+                    }
+
+                    return NetworkHelpers.ConvertIpv4Address(unicastAddress.Address) | ~mask;
+                }
+            }
+
+            return 0;
+        }
+
+        [Test]
         public void HostingALocalSessionMarksLanPlayAsInUse()
         {
             string relay = $"{_relay.EndPoint.Address}:{_relay.EndPoint.Port}";

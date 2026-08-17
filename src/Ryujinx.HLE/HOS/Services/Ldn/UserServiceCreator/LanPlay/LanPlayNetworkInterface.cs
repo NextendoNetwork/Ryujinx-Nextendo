@@ -5,6 +5,7 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 
@@ -37,6 +38,10 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
             public long Timestamp;
             public byte[] Buffer = new byte[ushort.MaxValue];
         }
+
+        // Broadcast addresses of the host's own networks, read once: the stack only exists while a game is
+        // using the network, and a guest socket asks about them for every datagram it sends.
+        private static readonly Lazy<HashSet<uint>> _hostBroadcastAddresses = new(CollectHostBroadcastAddresses);
 
         private readonly LanPlayClient _client;
         private readonly EphemeralPortPool _udpPorts = new();
@@ -94,11 +99,71 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
         }
 
         /// <summary>
+        /// True for the broadcast address of one of the host's own IPv4 networks, such as 192.168.0.255 for
+        /// a host on 192.168.0.91/24.
+        /// <para>
+        /// A game that implements its own LAN mode asks nifm for the console's address and broadcasts to
+        /// that network's broadcast address, so it uses the host network's broadcast address for as long as
+        /// the console still presents its host address (see <see cref="LanPlayStack.IsGuestActive"/>). Those
+        /// broadcasts are LAN discovery and belong on the LAN Play network: leaving through the host network
+        /// they could never reach the relay, and on Linux and macOS they fail outright with EACCES unless
+        /// the game asked for SO_BROADCAST.
+        /// </para>
+        /// </summary>
+        public static bool IsHostBroadcast(uint address)
+        {
+            return _hostBroadcastAddresses.Value.Contains(address);
+        }
+
+        /// <summary>
         /// True when traffic for this address belongs on the LAN Play network rather than on the host network.
         /// </summary>
         public bool IsHandledAddress(uint address)
         {
-            return IsInSubnet(address) || IsBroadcast(address);
+            return IsInSubnet(address) || IsBroadcast(address) || IsHostBroadcast(address);
+        }
+
+        private static HashSet<uint> CollectHostBroadcastAddresses()
+        {
+            HashSet<uint> addresses = new();
+
+            try
+            {
+                // The Ldn namespace has a NetworkInterface of its own, hence the qualified name here.
+                foreach (System.Net.NetworkInformation.NetworkInterface adapter in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    foreach (UnicastIPAddressInformation unicastAddress in adapter.GetIPProperties().UnicastAddresses)
+                    {
+                        if (unicastAddress.Address.AddressFamily != AddressFamily.InterNetwork || IPAddress.IsLoopback(unicastAddress.Address))
+                        {
+                            continue;
+                        }
+
+                        IPAddress mask = unicastAddress.IPv4Mask;
+
+                        if (mask == null)
+                        {
+                            continue;
+                        }
+
+                        uint maskValue = NetworkHelpers.ConvertIpv4Address(mask);
+
+                        // A /32 has no broadcast address of its own, and an unusable mask is not one.
+                        if (maskValue is 0 or uint.MaxValue)
+                        {
+                            continue;
+                        }
+
+                        addresses.Add(NetworkHelpers.ConvertIpv4Address(unicastAddress.Address) | ~maskValue);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                Logger.Warning?.Print(LogClass.ServiceLdn, $"LAN Play: could not read the host's networks: {exception.Message}");
+            }
+
+            return addresses;
         }
 
         #region UDP
@@ -138,6 +203,14 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
         public void SendUdp(ushort sourcePort, uint destinationAddress, ushort destinationPort, ReadOnlySpan<byte> data)
         {
+            // The relay floods the LAN Play broadcast address, and a peer drops anything addressed to
+            // neither itself nor a broadcast address, so a broadcast aimed at the host's network has to be
+            // re-addressed to the LAN Play network to be seen by anybody.
+            if (IsHostBroadcast(destinationAddress))
+            {
+                destinationAddress = LanPlayProtocol.SubnetBroadcast;
+            }
+
             int length = 8 + data.Length;
             byte[] segment = new byte[length];
 

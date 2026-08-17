@@ -739,6 +739,78 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
             vlen = index + 1;
         }
 
+        /// <summary>
+        /// Sends the segments of a scatter/gather message one at a time, for socket implementations that
+        /// have no vectored send. Stops at the first segment that is not fully accepted, like a host socket
+        /// would when its send buffer fills up.
+        /// </summary>
+        private int SendSegments(ArraySegment<byte>[] buffers, SocketFlags flags, out SocketError socketError)
+        {
+            socketError = SocketError.Success;
+
+            int total = 0;
+
+            foreach (ArraySegment<byte> buffer in buffers)
+            {
+                if (buffer.Count == 0)
+                {
+                    continue;
+                }
+
+                int sent = Socket.Send(buffer.AsSpan(), flags, out socketError);
+
+                if (socketError != SocketError.Success)
+                {
+                    return total;
+                }
+
+                total += sent;
+
+                if (sent < buffer.Count)
+                {
+                    break;
+                }
+            }
+
+            return total;
+        }
+
+        /// <summary>
+        /// Fills the segments of a scatter/gather message one at a time, for socket implementations that
+        /// have no vectored receive. Stops as soon as a segment is not filled completely, so a datagram
+        /// shorter than the segments does not block waiting for the rest.
+        /// </summary>
+        private int ReceiveSegments(ArraySegment<byte>[] buffers, SocketFlags flags, out SocketError socketError)
+        {
+            socketError = SocketError.Success;
+
+            int total = 0;
+
+            foreach (ArraySegment<byte> buffer in buffers)
+            {
+                if (buffer.Count == 0)
+                {
+                    continue;
+                }
+
+                int read = Socket.Receive(buffer.AsSpan(), flags, out socketError);
+
+                if (socketError != SocketError.Success)
+                {
+                    return total;
+                }
+
+                total += read;
+
+                if (read < buffer.Count)
+                {
+                    break;
+                }
+            }
+
+            return total;
+        }
+
         // TODO: Find a way to support passing the timeout somehow without changing the socket ReceiveTimeout.
         public LinuxError RecvMMsg(out int vlen, BsdMMsgHdr message, BsdSocketFlags flags, TimeVal timeout)
         {
@@ -763,7 +835,20 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
             try
             {
-                int receiveSize = (Socket as DefaultSocket).BaseSocket.Receive(ConvertMessagesToBuffer(message), ConvertBsdSocketFlags(flags), out SocketError socketError);
+                SocketError socketError;
+                int receiveSize;
+
+                if (Socket is DefaultSocket hostSocket)
+                {
+                    receiveSize = hostSocket.BaseSocket.Receive(ConvertMessagesToBuffer(message), ConvertBsdSocketFlags(flags), out socketError);
+                }
+                else
+                {
+                    // [Nextendo] The socket is not always backed by a host socket: with LAN Play or RyuLDN
+                    // selected it is a virtual one, which has no scatter/gather receive, so the segments are
+                    // filled one after another instead of casting (which used to throw here).
+                    receiveSize = ReceiveSegments(ConvertMessagesToBuffer(message), ConvertBsdSocketFlags(flags), out socketError);
+                }
 
                 if (receiveSize > 0)
                 {
@@ -811,7 +896,19 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
                 {
                     Logger.Info?.Print(LogClass.ServiceBsd, $"[DIAG] Bsd.SendMMsg TLS hs=0x{mmsgBuf[0].Array[mmsgBuf[0].Offset + 5]:x2} len={mmsgBuf[0].Count} remote={RemoteEndPoint}");
                 }
-                int sendSize = (Socket as DefaultSocket).BaseSocket.Send(mmsgBuf, ConvertBsdSocketFlags(flags), out SocketError socketError);
+                SocketError socketError;
+                int sendSize;
+
+                if (Socket is DefaultSocket hostSocket)
+                {
+                    sendSize = hostSocket.BaseSocket.Send(mmsgBuf, ConvertBsdSocketFlags(flags), out socketError);
+                }
+                else
+                {
+                    // [Nextendo] Same as in RecvMMsg: a virtual socket (LAN Play, RyuLDN) has no
+                    // scatter/gather send, so the segments go out one after another.
+                    sendSize = SendSegments(mmsgBuf, ConvertBsdSocketFlags(flags), out socketError);
+                }
 
                 if (sendSize > 0)
                 {

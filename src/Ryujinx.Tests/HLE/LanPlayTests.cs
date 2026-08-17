@@ -9,11 +9,15 @@ using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
+using Ryujinx.HLE.HOS.Services.Sockets.Bsd;
+using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl;
 using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy;
+using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -457,6 +461,120 @@ namespace Ryujinx.Tests.HLE
 
             duringLanPlay.Close();
             afterLanPlay.Close();
+        }
+
+        [Test]
+        public void ScatterGatherAndStreamPathsWorkOverLanPlay()
+        {
+            // These are the paths a game's online code uses: SendMMsg/RecvMMsg for vectored I/O and a
+            // stream for TLS. Both used to assume a host socket and would throw (NullReference /
+            // InvalidCast) as soon as LAN Play or RyuLDN gave the guest a virtual socket instead, which
+            // surfaced as the game being unable to reach the online service.
+            string relay = $"{_relay.EndPoint.Address}:{_relay.EndPoint.Port}";
+
+            SocketHelpers.ApplyMultiplayerMode(MultiplayerMode.LanPlay, relay, "10.13.23.2");
+
+            Assert.That(SocketHelpers.CurrentLanPlayStack, Is.Not.Null);
+
+            using LanPlayStack peerStack = LanPlayStack.Create(Parse(relay, "10.13.23.3"));
+
+            LanPlayTcpListener listener = peerStack.NetworkInterface.ListenTcp(5000);
+
+            ManagedSocket guest = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp, "0");
+
+            Assert.That(guest.Socket, Is.InstanceOf<LanPlaySocket>(), "the guest socket did not use the virtual interface");
+            Assert.That(guest.Connect(new IPEndPoint(peerStack.NetworkInterface.Address, 5000)), Is.EqualTo(LinuxError.SUCCESS));
+
+            LanPlayTcpConnection peer = listener.Accept(Timeout);
+
+            Assert.That(peer, Is.Not.Null);
+
+            // Vectored send, as a TLS record would be written.
+            Assert.That(
+                guest.SendMMsg(out int sent, BuildMessage([Encoding.ASCII.GetBytes("hello "), Encoding.ASCII.GetBytes("world")]), BsdSocketFlags.None),
+                Is.EqualTo(LinuxError.SUCCESS));
+            Assert.That(sent, Is.GreaterThan(0));
+
+            byte[] received = new byte[32];
+            int read = peer.Receive(received, Timeout, false, true);
+
+            while (read < 11)
+            {
+                read += peer.Receive(received.AsSpan(read), Timeout, false, true);
+            }
+
+            Assert.That(Encoding.ASCII.GetString(received, 0, read), Is.EqualTo("hello world"));
+
+            // Vectored receive.
+            peer.Send(Encoding.ASCII.GetBytes("reply!"));
+
+            Assert.That(WaitFor(() => guest.Socket.Available >= 6), Is.True, "the guest never saw the answer");
+
+            BsdMMsgHdr incoming = BuildMessage([new byte[3], new byte[3]]);
+
+            Assert.That(guest.RecvMMsg(out _, incoming, BsdSocketFlags.None, default), Is.EqualTo(LinuxError.SUCCESS));
+            Assert.That(Encoding.ASCII.GetString(incoming.Messages[0].Iov[0]) + Encoding.ASCII.GetString(incoming.Messages[0].Iov[1]), Is.EqualTo("reply!"));
+
+            // The stream the SSL service wraps.
+            SocketImplStream stream = new(guest.Socket);
+
+            stream.Write(Encoding.ASCII.GetBytes("over tls"));
+
+            byte[] streamed = new byte[8];
+            int streamRead = 0;
+
+            while (streamRead < streamed.Length)
+            {
+                streamRead += peer.Receive(streamed.AsSpan(streamRead), Timeout, false, true);
+            }
+
+            Assert.That(Encoding.ASCII.GetString(streamed), Is.EqualTo("over tls"));
+
+            peer.Send(Encoding.ASCII.GetBytes("from tls"));
+
+            byte[] streamBuffer = new byte[8];
+            int fromStream = 0;
+
+            while (fromStream < streamBuffer.Length)
+            {
+                fromStream += stream.Read(streamBuffer.AsSpan(fromStream));
+            }
+
+            Assert.That(Encoding.ASCII.GetString(streamBuffer), Is.EqualTo("from tls"));
+
+            peer.Close();
+            listener.Close();
+            guest.Socket.Close();
+        }
+
+        /// <summary>
+        /// Builds a single scatter/gather message with the given segments, the way the guest's raw buffer
+        /// would deserialize into one.
+        /// </summary>
+        private static BsdMMsgHdr BuildMessage(byte[][] segments)
+        {
+            using MemoryStream raw = new();
+            using BinaryWriter writer = new(raw);
+
+            writer.Write((byte)8);      // Header byte, ignored.
+            writer.Write(0u);           // Name length.
+            writer.Write((uint)segments.Length);
+
+            foreach (byte[] segment in segments)
+            {
+                writer.Write((ulong)segment.Length);
+                writer.Write(segment);
+            }
+
+            writer.Write(0u);           // Control length.
+            writer.Write((uint)BsdSocketFlags.None);
+            writer.Write(0u);           // Length.
+
+            writer.Flush();
+
+            Assert.That(BsdMMsgHdr.Deserialize(out BsdMMsgHdr message, raw.ToArray(), 1), Is.EqualTo(LinuxError.SUCCESS));
+
+            return message;
         }
 
         [Test]

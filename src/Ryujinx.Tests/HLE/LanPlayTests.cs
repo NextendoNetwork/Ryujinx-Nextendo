@@ -464,6 +464,60 @@ namespace Ryujinx.Tests.HLE
         }
 
         [Test]
+        public void LanPlayStaysOutOfTheWayUntilTheGameUsesIt()
+        {
+            // Having LAN Play selected must not change anything for online play: the console keeps
+            // reporting its host address (nifm keys off IsGuestActive) until the game actually uses the
+            // LAN Play network, which is what entering a game's LAN mode or a local session does.
+            string relay = $"{_relay.EndPoint.Address}:{_relay.EndPoint.Port}";
+
+            SocketHelpers.ApplyMultiplayerMode(MultiplayerMode.LanPlay, relay, "10.13.24.2");
+
+            LanPlayStack stack = SocketHelpers.CurrentLanPlayStack;
+
+            Assert.That(stack, Is.Not.Null);
+            Assert.That(stack.IsGuestActive, Is.False, "joining the relay must not count as the game using it");
+
+            ISocketImpl guest = SocketHelpers.CreateSocket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp, "0");
+
+            // Talking to something outside the LAN Play network (the online service) leaves it inactive.
+            using Socket online = new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            online.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+            online.ReceiveTimeout = Timeout;
+
+            guest.SendTo(Encoding.ASCII.GetBytes("online"), SocketFlags.None, (IPEndPoint)online.LocalEndPoint);
+
+            Assert.That(online.Receive(new byte[16]), Is.EqualTo(6));
+            Assert.That(stack.IsGuestActive, Is.False, "online traffic must not mark the LAN Play network as in use");
+
+            // Entering a LAN mode does: the game broadcasts on the local network.
+            guest.SendTo(Encoding.ASCII.GetBytes("lan mode"), SocketFlags.None, new IPEndPoint(IPAddress.Broadcast, 11452));
+
+            Assert.That(stack.IsGuestActive, Is.True, "LAN traffic did not mark the LAN Play network as in use");
+
+            guest.Close();
+        }
+
+        [Test]
+        public void HostingALocalSessionMarksLanPlayAsInUse()
+        {
+            string relay = $"{_relay.EndPoint.Address}:{_relay.EndPoint.Port}";
+
+            SocketHelpers.ApplyMultiplayerMode(MultiplayerMode.LanPlay, relay, "10.13.25.2");
+
+            LanPlayStack stack = SocketHelpers.CurrentLanPlayStack;
+
+            Assert.That(stack.IsGuestActive, Is.False);
+
+            using LanPlayLdnClient client = new(stack);
+
+            Assert.That(client.CreateNetwork(CreateAccessPointRequest("Host"), []), Is.True);
+            Assert.That(stack.IsGuestActive, Is.True, "hosting a local session did not mark the LAN Play network as in use");
+
+            client.DisconnectNetwork();
+        }
+
+        [Test]
         public void ScatterGatherAndStreamPathsWorkOverLanPlay()
         {
             // These are the paths a game's online code uses: SendMMsg/RecvMMsg for vectored I/O and a

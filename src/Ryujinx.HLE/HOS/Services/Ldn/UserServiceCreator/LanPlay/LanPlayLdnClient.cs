@@ -73,6 +73,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
         public NetworkError Connect(ConnectRequest request)
         {
+            _stack.MarkGuestActive("joining a local session");
+
             NetworkError error = _lanDiscovery.Connect(request.NetworkInfo, request.UserConfig, request.LocalCommunicationVersion);
 
             if (error != NetworkError.None)
@@ -95,6 +97,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
         public bool CreateNetwork(CreateAccessPointRequest request, byte[] advertiseData)
         {
+            _stack.MarkGuestActive("hosting a local session");
+
             bool created = _lanDiscovery.CreateNetwork(request.SecurityConfig, request.UserConfig, request.NetworkConfig);
 
             if (!created)

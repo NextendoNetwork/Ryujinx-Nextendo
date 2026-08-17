@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 
@@ -12,6 +13,14 @@ namespace Ryujinx.HLE.HOS.Services.Nifm.StaticService.Types
         public IpV4Address Address;
         public IpV4Address IPv4Mask;
         public IpV4Address GatewayAddress;
+
+        public IpAddressSetting(IPAddress address, IPAddress mask, IPAddress gateway)
+        {
+            IsDhcpEnabled = false;
+            Address = new IpV4Address(address);
+            IPv4Mask = new IpV4Address(mask);
+            GatewayAddress = new IpV4Address(gateway);
+        }
 
         public IpAddressSetting(IPInterfaceProperties interfaceProperties, UnicastIPAddressInformation unicastIPAddressInformation)
         {

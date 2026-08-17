@@ -22,13 +22,15 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
 
         private const int FailureTimeout = 4000;
 
-        private readonly LdnMitmClient _parent;
+        private readonly ILdnDiscoveryClient _parent;
+        private readonly ILdnNetworkProvider _provider;
         private readonly LanProtocol _protocol;
         private bool _initialized;
         private readonly Ssid _fakeSsid;
         private ILdnTcpSocket _tcp;
-        private LdnProxyUdpServer _udp, _udp2;
-        private readonly List<LdnProxyTcpSession> _stations = [];
+        private IReadOnlyList<ILdnUdpSocket> _udpSockets = [];
+        private ILdnUdpSocket _udp;
+        private readonly List<ILdnTcpSession> _stations = [];
         private readonly Lock _lock = new();
 
         private readonly AutoResetEvent _apConnected = new(false);
@@ -37,19 +39,9 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
         internal readonly IPAddress LocalBroadcastAddr;
         internal NetworkInfo NetworkInfo;
 
-        public bool IsHost => _tcp is LdnProxyTcpServer;
+        public bool IsHost => _tcp is { IsServer: true };
 
         private readonly Random _random = new();
-
-        // NOTE: Credit to https://stackoverflow.com/a/39338188
-        private static IPAddress GetBroadcastAddress(IPAddress address, IPAddress mask)
-        {
-            uint ipAddress = BitConverter.ToUInt32(address.GetAddressBytes(), 0);
-            uint ipMaskV4 = BitConverter.ToUInt32(mask.GetAddressBytes(), 0);
-            uint broadCastIpAddress = ipAddress | ~ipMaskV4;
-
-            return new IPAddress(BitConverter.GetBytes(broadCastIpAddress));
-        }
 
         private static NetworkInfo GetEmptyNetworkInfo()
         {
@@ -92,13 +84,14 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
             return networkInfo;
         }
 
-        public LanDiscovery(LdnMitmClient parent, IPAddress ipAddress, IPAddress ipv4Mask)
+        public LanDiscovery(ILdnDiscoveryClient parent, ILdnNetworkProvider provider)
         {
-            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"Initialize LanDiscovery using IP: {ipAddress}");
+            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"Initialize LanDiscovery using IP: {provider.LocalAddress}");
 
             _parent = parent;
-            LocalAddr = ipAddress;
-            LocalBroadcastAddr = GetBroadcastAddress(ipAddress, ipv4Mask);
+            _provider = provider;
+            LocalAddr = provider.LocalAddress;
+            LocalBroadcastAddr = provider.BroadcastAddress;
 
             _fakeSsid = new Ssid
             {
@@ -148,7 +141,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
             _apConnected.Set();
         }
 
-        protected void OnConnect(LdnProxyTcpSession station)
+        protected void OnConnect(ILdnTcpSession station)
         {
             lock (_lock)
             {
@@ -168,7 +161,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
             }
         }
 
-        public void DisconnectStation(LdnProxyTcpSession station)
+        public void DisconnectStation(ILdnTcpSession station)
         {
             if (!station.IsDisposed)
             {
@@ -273,11 +266,11 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
                 {
                     address ??= LocalAddr;
 
-                    tcpSocket = new LdnProxyTcpServer(_protocol, address, port);
+                    tcpSocket = _provider.CreateTcpServer(_protocol, address, port);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"Failed to create LdnProxyTcpServer: {ex}");
+                    Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"Failed to create the LDN TCP server: {ex}");
 
                     return false;
                 }
@@ -296,11 +289,11 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
 
                 try
                 {
-                    tcpSocket = new LdnProxyTcpClient(_protocol, address, port);
+                    tcpSocket = _provider.CreateTcpClient(_protocol, address, port);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"Failed to create LdnProxyTcpClient: {ex}");
+                    Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"Failed to create the LDN TCP client: {ex}");
 
                     return false;
                 }
@@ -313,29 +306,24 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
 
         public bool InitUdp()
         {
-            _udp?.Stop();
-            _udp2?.Stop();
+            foreach (ILdnUdpSocket socket in _udpSockets)
+            {
+                socket.Stop();
+            }
 
             try
             {
-                // NOTE: Linux won't receive any broadcast packets if the socket is not bound to the broadcast address.
-                //       Windows only works if bound to localhost or the local address.
-                //       See this discussion: https://stackoverflow.com/questions/13666789/receiving-udp-broadcast-packets-on-linux
-                if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
-                {
-                    _udp2 = new LdnProxyUdpServer(_protocol, LocalBroadcastAddr, DefaultPort);
-                }
-
-                _udp = new LdnProxyUdpServer(_protocol, LocalAddr, DefaultPort);
+                _udpSockets = _provider.CreateUdpSockets(_protocol, DefaultPort);
+                _udp = _udpSockets.Count > 0 ? _udpSockets[0] : null;
             }
             catch (Exception ex)
             {
-                Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"Failed to create LdnProxyUdpServer: {ex}");
+                Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"Failed to create the LDN UDP server: {ex}");
 
                 return false;
             }
 
-            return true;
+            return _udp != null;
         }
 
         public NetworkInfo[] Scan(ushort channel, ScanFilter filter)
@@ -400,7 +388,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
         {
             lock (_lock)
             {
-                foreach (LdnProxyTcpSession station in _stations)
+                foreach (ILdnTcpSession station in _stations)
                 {
                     station.Disconnect();
                     station.Dispose();
@@ -429,7 +417,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
         {
             int countConnected = 1;
 
-            foreach (LdnProxyTcpSession station in _stations.Where(station => station.IsConnected))
+            foreach (ILdnTcpSession station in _stations.Where(station => station.IsConnected))
             {
                 countConnected++;
 
@@ -445,7 +433,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
 
             NetworkInfo.Ldn.NodeCount = nodeCount;
 
-            foreach (LdnProxyTcpSession station in _stations)
+            foreach (ILdnTcpSession station in _stations)
             {
                 if (station.IsConnected)
                 {
@@ -568,35 +556,26 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
             _protocol.Accept -= OnConnect;
             _protocol.SyncNetwork -= OnSyncNetwork;
             _protocol.DisconnectStation -= DisconnectStation;
+
+            _provider.Dispose();
         }
 
         public void DisconnectAndStop()
         {
-            if (_udp != null)
+            foreach (ILdnUdpSocket socket in _udpSockets)
             {
                 try
                 {
-                    _udp.Stop();
+                    socket.Stop();
                 }
                 finally
                 {
-                    _udp.Dispose();
-                    _udp = null;
+                    socket.Dispose();
                 }
             }
 
-            if (_udp2 != null)
-            {
-                try
-                {
-                    _udp2.Stop();
-                }
-                finally
-                {
-                    _udp2.Dispose();
-                    _udp2 = null;
-                }
-            }
+            _udpSockets = [];
+            _udp = null;
 
             if (_tcp != null)
             {

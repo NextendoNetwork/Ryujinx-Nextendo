@@ -103,6 +103,9 @@ DocProject/Help/html
 
 # Click-Once directory
 publish/
+
+# Test results written by the dev-* CI workflows
+artifacts/test-results/
 RyubingMaintainerTools/
 
 # Publish Web Output

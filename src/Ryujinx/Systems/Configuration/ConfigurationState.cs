@@ -153,6 +153,8 @@ namespace Ryujinx.Ava.Systems.Configuration
                 MultiplayerDisableP2p = Multiplayer.DisableP2p,
                 MultiplayerLdnPassphrase = Multiplayer.LdnPassphrase,
                 LdnServer = Multiplayer.LdnServer,
+                MultiplayerLanPlayServer = Multiplayer.LanPlayServer,
+                MultiplayerLanPlayVirtualIp = Multiplayer.LanPlayVirtualIp,
                 EnableGdbStub = Debug.EnableGdbStub,
                 GdbStubPort = Debug.GdbStubPort,
                 DebuggerSuspendOnStart = Debug.DebuggerSuspendOnStart,
@@ -231,6 +233,8 @@ namespace Ryujinx.Ava.Systems.Configuration
             Multiplayer.DisableP2p.Value = false;
             Multiplayer.LdnPassphrase.Value = string.Empty;
             Multiplayer.LdnServer.Value = string.Empty;
+            Multiplayer.LanPlayServer.Value = string.Empty;
+            Multiplayer.LanPlayVirtualIp.Value = string.Empty;
             UI.GuiColumns.FavColumn.Value = true;
             UI.GuiColumns.IconColumn.Value = true;
             UI.GuiColumns.AppColumn.Value = true;

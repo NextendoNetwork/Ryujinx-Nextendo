@@ -26,5 +26,10 @@ namespace Ryujinx.Ava.UI.Views.Settings
         {
             ViewModel.LdnPassphrase = string.Empty;
         }
+
+        private void TestLanPlayButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            _ = ViewModel.TestLanPlayConnection();
+        }
     }
 }

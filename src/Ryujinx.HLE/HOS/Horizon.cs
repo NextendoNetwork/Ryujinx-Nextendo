@@ -4,6 +4,7 @@ using LibHac.Fs;
 using LibHac.Fs.Shim;
 using LibHac.FsSystem;
 using LibHac.Tools.FsSystem;
+using Ryujinx.Common.Configuration.Multiplayer;
 using Ryujinx.Cpu;
 using Ryujinx.HLE.Debugger;
 using Ryujinx.HLE.FileSystem;
@@ -27,6 +28,7 @@ using Ryujinx.HLE.HOS.Services.Pcv.Bpc;
 using Ryujinx.HLE.HOS.Services.Sdb.Pl;
 using Ryujinx.HLE.HOS.Services.Settings;
 using Ryujinx.HLE.HOS.Services.Sm;
+using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy;
 using Ryujinx.HLE.HOS.Services.SurfaceFlinger;
 using Ryujinx.HLE.HOS.Services.Time.Clock;
 using Ryujinx.HLE.HOS.SystemState;
@@ -133,6 +135,14 @@ namespace Ryujinx.HLE.HOS
             State = new SystemStateMgr();
 
             PerformanceState = new PerformanceState();
+
+            if (device.Configuration.MultiplayerMode == MultiplayerMode.LanPlay)
+            {
+                // The relay is only contacted once the game actually uses the network, so this is cheap.
+                SocketHelpers.ConfigureLanPlay(
+                    device.Configuration.MultiplayerLanPlayServer,
+                    device.Configuration.MultiplayerLanPlayVirtualIp);
+            }
 
             NfpDevices = [];
             NfcDevices = [];
@@ -529,6 +539,8 @@ namespace Ryujinx.HLE.HOS
                 {
                     LibHacHorizonManager.PmClient.Fs.UnregisterProgram(LibHacHorizonManager.ApplicationClient.Os.GetCurrentProcessId().Value).ThrowIfFailure();
                 }
+
+                SocketHelpers.ShutdownLanPlay();
 
                 KernelContext.Dispose();
             }

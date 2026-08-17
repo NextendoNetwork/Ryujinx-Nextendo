@@ -190,6 +190,16 @@ namespace Ryujinx.HLE
         public string MultiplayerLdnServer { internal get; set; }
 
         /// <summary>
+        /// LAN Play relay server, as host:port, optionally prefixed with user:password@
+        /// </summary>
+        public string MultiplayerLanPlayServer { internal get; set; }
+
+        /// <summary>
+        /// Virtual 10.13.x.x address to use on the LAN Play network, or empty for an automatic one
+        /// </summary>
+        public string MultiplayerLanPlayVirtualIp { internal get; set; }
+
+        /// <summary>
         /// An action called when HLE force a refresh of output after docked mode changed.
         /// </summary>
         public Action RefreshInputConfig { internal get; set; }
@@ -237,6 +247,8 @@ namespace Ryujinx.HLE
                                 bool multiplayerDisableP2p,
                                 string multiplayerLdnPassphrase,
                                 string multiplayerLdnServer,
+                                string multiplayerLanPlayServer,
+                                string multiplayerLanPlayVirtualIp,
                                 bool enableGdbStub,
                                 ushort gdbStubPort,
                                 bool debuggerSuspendOnStart,
@@ -266,6 +278,8 @@ namespace Ryujinx.HLE
             MultiplayerDisableP2p = multiplayerDisableP2p;
             MultiplayerLdnPassphrase = multiplayerLdnPassphrase;
             MultiplayerLdnServer = multiplayerLdnServer;
+            MultiplayerLanPlayServer = multiplayerLanPlayServer;
+            MultiplayerLanPlayVirtualIp = multiplayerLanPlayVirtualIp;
             EnableGdbStub = enableGdbStub;
             GdbStubPort = gdbStubPort;
             DebuggerSuspendOnStart = debuggerSuspendOnStart;

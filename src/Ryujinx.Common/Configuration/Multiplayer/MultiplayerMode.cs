@@ -5,5 +5,6 @@ namespace Ryujinx.Common.Configuration.Multiplayer
         Disabled,
         LdnRyu,
         LdnMitm,
+        LanPlay,
     }
 }

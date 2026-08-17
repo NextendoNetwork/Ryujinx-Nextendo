@@ -17,7 +17,7 @@ namespace Ryujinx.Ava.Systems.Configuration
         /// <summary>
         /// The current version of the file format
         /// </summary>
-        public const int CurrentVersion = 73;
+        public const int CurrentVersion = 74;
 
         /// <summary>
         /// Version of the configuration file format
@@ -475,6 +475,16 @@ namespace Ryujinx.Ava.Systems.Configuration
         /// Custom LDN Server
         /// </summary>
         public string LdnServer { get; set; }
+
+        /// <summary>
+        /// LAN Play relay server (host:port, optionally prefixed with user:password@)
+        /// </summary>
+        public string MultiplayerLanPlayServer { get; set; }
+
+        /// <summary>
+        /// Virtual 10.13.x.x address used on the LAN Play network, or empty for an automatic one
+        /// </summary>
+        public string MultiplayerLanPlayVirtualIp { get; set; }
 
         /// <summary>
         /// Uses Hypervisor over JIT if available

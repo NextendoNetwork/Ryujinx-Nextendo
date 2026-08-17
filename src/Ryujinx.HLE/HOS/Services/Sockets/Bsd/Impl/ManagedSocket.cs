@@ -231,7 +231,12 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
             }
             catch (SocketException exception)
             {
-                if (!Blocking && exception.ErrorCode == (int)WsaError.WSAEWOULDBLOCK)
+                // [Nextendo] SocketErrorCode, not ErrorCode: on Unix the latter is the native errno (EAGAIN
+                // is 11), not the Winsock value (10035), so this test was only ever true on Windows. On Linux
+                // and macOS a non-blocking connect therefore skipped the whole branch below and reported
+                // EAGAIN to the guest instead of EINPROGRESS, which is not a connect() error at all — and the
+                // synchronous-completion workaround for the online service never ran there either.
+                if (!Blocking && exception.SocketErrorCode == SocketError.WouldBlock)
                 {
                     // [Nextendo] Pour le connect gRPC, ne PAS rendre EINPROGRESS en comptant sur le client
                     // pour sonder le socket en POLLOUT : c'est RACE. Il n'ajoute le socket a son ensemble de

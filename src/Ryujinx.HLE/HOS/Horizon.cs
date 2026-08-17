@@ -136,13 +136,7 @@ namespace Ryujinx.HLE.HOS
 
             PerformanceState = new PerformanceState();
 
-            if (device.Configuration.MultiplayerMode == MultiplayerMode.LanPlay)
-            {
-                // The relay is only contacted once the game actually uses the network, so this is cheap.
-                SocketHelpers.ConfigureLanPlay(
-                    device.Configuration.MultiplayerLanPlayServer,
-                    device.Configuration.MultiplayerLanPlayVirtualIp);
-            }
+            ApplyMultiplayerConfiguration();
 
             NfpDevices = [];
             NfcDevices = [];
@@ -467,6 +461,19 @@ namespace Ryujinx.HLE.HOS
         public void SignalVsync()
         {
             VsyncEvent.ReadableEvent.Signal();
+        }
+
+        /// <summary>
+        /// Applies the multiplayer configuration of the running session, joining or leaving the LAN Play
+        /// relay as needed. Safe to call at any time: the front end calls it again when the user changes
+        /// the multiplayer settings while a game is running.
+        /// </summary>
+        public void ApplyMultiplayerConfiguration()
+        {
+            SocketHelpers.ApplyMultiplayerMode(
+                Device.Configuration.MultiplayerMode,
+                Device.Configuration.MultiplayerLanPlayServer,
+                Device.Configuration.MultiplayerLanPlayVirtualIp);
         }
 
         public void Dispose()

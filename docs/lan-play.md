@@ -215,7 +215,47 @@ dotnet build src/Ryujinx/Ryujinx.csproj -c Release
 Stored in `Config.json` as `multiplayer_lan_play_server` / `multiplayer_lan_play_virtual_ip`
 (configuration version 74; older configuration files are migrated automatically).
 
-## 11. Platform support
+## 11. Changing the multiplayer mode while a game is running
+
+The multiplayer mode can be changed without restarting the emulator or the game. `Horizon` applies
+the multiplayer configuration at boot and the front end re-applies it whenever the settings change
+(`AppHost.UpdateMultiplayerModeState` and the LAN Play server / virtual IP handlers), which reaches
+`SocketHelpers.ApplyMultiplayerMode`.
+
+What happens immediately, at the moment the mode changes:
+
+| Change | Effect |
+| --- | --- |
+| anything to **LAN Play** | The relay is joined in the background, new guest sockets use the virtual interface, and the console reports its 10.13.x.x address. |
+| **LAN Play** to anything else | The relay is left and the stack is disposed. New guest sockets go back to the host stack, and the console reports its host address again. |
+| **RyuLDN** to anything else | The RyuLDN socket proxy is released, so guest sockets stop being routed into the LDN network. |
+| LAN Play relay or virtual IP edited | The relay is rejoined with the new settings. Re-saving the same values changes nothing, because the settings window re-applies everything on save. |
+
+What deliberately does not change under the running game:
+
+* **Sockets that are already open keep their transport.** A socket the game opened while LAN Play was
+  active keeps its host fallback, so traffic to anything outside the LAN Play network keeps flowing
+  after the switch; its virtual side simply goes quiet. This is what keeps an online session alive
+  when the mode is switched off mid-game, and there is a test for it.
+* **An LDN session does not migrate.** The LDN client is chosen when the game initialises LDN, so a
+  session that is already running stays on the transport it started with; the guest gets errors and
+  empty scan results instead of exceptions if the transport is taken away under it. Leaving and
+  re-entering the game's local multiplayer menu makes the game re-initialise LDN, at which point the
+  new mode is used.
+
+### Interaction with online play
+
+While LAN Play is selected, the emulated console presents its LAN Play address (10.13.x.x) to the
+guest through `ldn::GetIpv4Address` and `nifm::GetCurrentIpAddress`, exactly as a real console
+connected through switch-lan-play does. Its internet traffic still leaves through the host network
+stack, so online play keeps working, but a game that reports its own local address to an online
+service will report the LAN Play one while the mode is selected.
+
+If an online feature misbehaves with LAN Play selected, switching the mode to Disabled now takes
+effect immediately: no restart, and any socket the game already had open keeps working. A game that
+cached its address earlier may need its online menu re-entered before it asks for it again.
+
+## 12. Platform support
 
 Windows, Linux and macOS behave the same, because everything happens in managed code on top of one
 ordinary UDP socket:
@@ -247,7 +287,7 @@ The one difference a user may notice is unrelated to LAN Play itself: on any pla
 emulator is behind a NAT that rewrites source ports very aggressively, the relay may need a few
 keepalives before it routes to the right client, which is also true of the reference client.
 
-## 12. Debugging a session
+## 13. Debugging a session
 
 Everything below is available in a normal build; no debugger is needed.
 
@@ -304,7 +344,7 @@ Incoming packets are validated the way a real stack does: the IPv4 header checks
 present) and TCP checksums are verified, and failures are counted rather than silently ignored, so a
 relay or peer sending malformed traffic shows up immediately in the summary.
 
-## 13. Testing
+## 14. Testing
 
 ```
 dotnet test src/Ryujinx.Tests/Ryujinx.Tests.csproj --filter "FullyQualifiedName~LanPlayTests"
@@ -319,7 +359,11 @@ server string parsing, teardown and reconnect, guest sockets over the virtual in
 session where one client creates a network, the other discovers it with a scan and joins it, after
 which the host reports two nodes with the right virtual addresses and user names, the connection test
 finding that hosted session, a session tearing down promptly and surviving a relay that is down and
-comes back, and packets whose checksums are wrong (built and checksummed by the test
+comes back, switching the multiplayer mode at runtime in both directions (including that a socket
+opened while LAN Play was active keeps reaching the host network afterwards, that re-saving unchanged
+settings does not rejoin, that editing them does, that dropping LAN Play under a hosted LDN session
+degrades gracefully, and that leaving RyuLDN releases its socket proxy), and packets whose checksums
+are wrong (built and checksummed by the test
 itself, independently of the stack) being accepted or dropped and counted as expected.
 
 For a manual test with two Ryujinx instances, point both at the same relay, start the same game on
@@ -327,7 +371,7 @@ both and enter its local multiplayer mode. The interesting log lines are
 `LAN Play: connected to relay ...`, `LAN Play: using the virtual address ...` and
 `LAN Play: hosting an LDN session on ...`.
 
-## 14. Continuous integration for this branch
+## 15. Continuous integration for this branch
 
 Two workflows were added for testing this feature, both prefixed `dev-` and both kept out of the
 upstream project: they never run on `main`, on a tag or on a release, and every job is skipped unless
@@ -350,7 +394,7 @@ instructions for trying LAN Play across machines into the run summary. These are
 Nextendo server addresses are not baked in, so anything other than LAN Play falls back to loopback.
 Use the release workflow for real builds.
 
-## 15. Known limitations and what still needs validation on real hardware
+## 16. Known limitations and what still needs validation on real hardware
 
 * **Not yet tested against a real console.** Everything above is validated between Ryujinx instances
   and against a relay implementation derived from the reference client's behaviour. The interop that

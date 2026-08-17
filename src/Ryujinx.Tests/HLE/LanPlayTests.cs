@@ -1,9 +1,13 @@
 using NUnit.Framework;
+using Ryujinx.Common.Configuration.Multiplayer;
 using Ryujinx.Common.Memory;
 using Ryujinx.Common.Utilities;
 using Ryujinx.HLE.HOS.Services.Ldn.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy;
 using System;
@@ -38,6 +42,11 @@ namespace Ryujinx.Tests.HLE
         [TearDown]
         public void TearDown()
         {
+            // The LAN Play stack of a session lives in a static, so a test that switches modes must not
+            // leak it into the next one.
+            SocketHelpers.ShutdownLanPlay();
+            SocketHelpers.UnregisterProxy();
+
             _relay.Dispose();
         }
 
@@ -399,6 +408,134 @@ namespace Ryujinx.Tests.HLE
             Assert.That(LanPlayConfiguration.TryParse(server, virtualAddress, out LanPlayConfiguration configuration), Is.True);
 
             return configuration;
+        }
+
+        [Test]
+        public void SwitchingAwayFromLanPlayPutsTheConsoleBackOnTheHostNetwork()
+        {
+            string relay = $"{_relay.EndPoint.Address}:{_relay.EndPoint.Port}";
+
+            SocketHelpers.ApplyMultiplayerMode(MultiplayerMode.LanPlay, relay, "10.13.20.2");
+
+            Assert.That(SocketHelpers.CurrentLanPlayStack, Is.Not.Null, "LAN Play did not join the relay");
+
+            ISocketImpl duringLanPlay = SocketHelpers.CreateSocket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp, "0");
+
+            Assert.That(duringLanPlay, Is.InstanceOf<LanPlaySocket>(), "the guest socket did not use the virtual interface");
+
+            // Something outside the LAN Play network, standing in for the online service: it has to work
+            // while LAN Play is on, and keep working after it is switched off.
+            using Socket online = new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            online.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+            online.ReceiveTimeout = Timeout;
+
+            IPEndPoint onlineEndPoint = (IPEndPoint)online.LocalEndPoint;
+            byte[] buffer = new byte[64];
+
+            duringLanPlay.SendTo(Encoding.ASCII.GetBytes("hello online"), SocketFlags.None, onlineEndPoint);
+
+            Assert.That(Encoding.ASCII.GetString(buffer, 0, online.Receive(buffer)), Is.EqualTo("hello online"));
+
+            // Now the user picks another multiplayer mode while the game is running.
+            SocketHelpers.ApplyMultiplayerMode(MultiplayerMode.Disabled, relay, "10.13.20.2");
+
+            Assert.That(SocketHelpers.ActiveLanPlayStack, Is.Null, "LAN Play was still joined after being switched off");
+
+            ISocketImpl afterLanPlay = SocketHelpers.CreateSocket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp, "0");
+
+            Assert.That(afterLanPlay, Is.InstanceOf<DefaultSocket>(), "new guest sockets did not go back to the host stack");
+
+            afterLanPlay.SendTo(Encoding.ASCII.GetBytes("after switch"), SocketFlags.None, onlineEndPoint);
+
+            Assert.That(Encoding.ASCII.GetString(buffer, 0, online.Receive(buffer)), Is.EqualTo("after switch"));
+
+            // A socket the game opened *before* the switch must not be collateral damage: its traffic to
+            // anything outside the LAN Play network keeps flowing.
+            duringLanPlay.SendTo(Encoding.ASCII.GetBytes("still connected"), SocketFlags.None, onlineEndPoint);
+
+            Assert.That(Encoding.ASCII.GetString(buffer, 0, online.Receive(buffer)), Is.EqualTo("still connected"));
+
+            duringLanPlay.Close();
+            afterLanPlay.Close();
+        }
+
+        [Test]
+        public void SwitchingAwayFromRyuLdnReleasesItsSocketProxy()
+        {
+            // A RyuLDN session registers a socket proxy that takes priority over everything else. Leaving
+            // that mode has to release it, or the emulated console would keep sending its traffic into the
+            // LDN network instead of out to the host network.
+            SocketHelpers.RegisterProxy(new LdnProxy(new ProxyConfig { ProxyIp = 0x0A0A0A0A, ProxySubnetMask = 0xFFFFFF00 }, new StubProxyClient(), new RyuLdnProtocol()));
+
+            ISocketImpl proxied = SocketHelpers.CreateSocket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp, "0");
+
+            Assert.That(proxied, Is.InstanceOf<LdnProxySocket>(), "the RyuLDN proxy was not in use");
+
+            proxied.Close();
+
+            SocketHelpers.ApplyMultiplayerMode(MultiplayerMode.Disabled, string.Empty, string.Empty);
+
+            ISocketImpl afterSwitch = SocketHelpers.CreateSocket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp, "0");
+
+            Assert.That(afterSwitch, Is.InstanceOf<DefaultSocket>(), "guest sockets did not go back to the host stack");
+
+            afterSwitch.Close();
+        }
+
+        private sealed class StubProxyClient : IProxyClient
+        {
+            public bool SendAsync(byte[] buffer) => true;
+        }
+
+        [Test]
+        public void ReapplyingTheSameSettingsKeepsTheSessionAndChangingThemRejoins()
+        {
+            string relay = $"{_relay.EndPoint.Address}:{_relay.EndPoint.Port}";
+
+            SocketHelpers.ApplyMultiplayerMode(MultiplayerMode.LanPlay, relay, "10.13.21.2");
+
+            LanPlayStack first = SocketHelpers.CurrentLanPlayStack;
+
+            Assert.That(first, Is.Not.Null);
+
+            // Saving the settings window re-applies everything, even when nothing changed; that must not
+            // drop a working session.
+            SocketHelpers.ApplyMultiplayerMode(MultiplayerMode.LanPlay, relay, "10.13.21.2");
+
+            Assert.That(SocketHelpers.CurrentLanPlayStack, Is.SameAs(first), "an unchanged configuration rejoined the relay");
+
+            // Actually changing something does rejoin.
+            SocketHelpers.ApplyMultiplayerMode(MultiplayerMode.LanPlay, relay, "10.13.21.3");
+
+            LanPlayStack second = SocketHelpers.CurrentLanPlayStack;
+
+            Assert.That(second, Is.Not.Null.And.Not.SameAs(first), "changing the settings did not rejoin");
+            Assert.That(second.NetworkInterface.Address.ToString(), Is.EqualTo("10.13.21.3"));
+        }
+
+        [Test]
+        public void DroppingLanPlayDuringAnLdnSessionFailsGracefully()
+        {
+            string relay = $"{_relay.EndPoint.Address}:{_relay.EndPoint.Port}";
+
+            SocketHelpers.ApplyMultiplayerMode(MultiplayerMode.LanPlay, relay, "10.13.22.2");
+
+            using LanPlayLdnClient client = new(SocketHelpers.CurrentLanPlayStack);
+
+            Assert.That(client.CreateNetwork(CreateAccessPointRequest("Host"), []), Is.True);
+
+            // The user switches the multiplayer mode off in the middle of a hosted session.
+            SocketHelpers.ApplyMultiplayerMode(MultiplayerMode.Disabled, relay, "10.13.22.2");
+
+            // The session is gone, but the guest must get errors and empty results, not exceptions.
+            Assert.DoesNotThrow(() =>
+            {
+                NetworkInfo[] networks = client.Scan(6, new ScanFilter { Flag = ScanFilterFlag.LocalCommunicationId, NetworkId = new NetworkId { IntentId = Intent } });
+
+                Assert.That(networks, Is.Empty);
+
+                client.DisconnectNetwork();
+            });
         }
 
         [Test]

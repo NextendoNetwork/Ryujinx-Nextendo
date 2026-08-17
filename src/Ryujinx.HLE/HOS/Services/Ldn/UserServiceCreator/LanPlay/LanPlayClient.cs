@@ -15,6 +15,13 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
     class LanPlayClient : IDisposable
     {
         private const int ReceiveBufferSize = 4096;
+
+        /// <summary>
+        /// The receive loop wakes up this often even when the relay is silent. Closing a socket does not
+        /// reliably abort a blocking receive on every platform, so the loop polls its own stop flag
+        /// instead of relying on that.
+        /// </summary>
+        private const int ReceiveTimeoutMs = 500;
         private const int FragmentSlots = 32;
         private const int FragmentTimeoutMs = 5000;
 
@@ -75,10 +82,40 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
 
             Diagnostics = new LanPlayDiagnostics(RelayEndPoint.ToString());
 
-            _socket = new Socket(RelayEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+            _socket = new Socket(RelayEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp)
+            {
+                ReceiveTimeout = ReceiveTimeoutMs,
+            };
+
+            DisableUdpConnectionReset(_socket);
+
             _socket.Bind(new IPEndPoint(RelayEndPoint.AddressFamily == AddressFamily.InterNetworkV6
                 ? IPAddress.IPv6Any
                 : IPAddress.Any, 0));
+        }
+
+        /// <summary>
+        /// On Windows a UDP socket fails its next receive with WSAECONNRESET when a previous send drew back
+        /// an ICMP "port unreachable", which happens whenever the relay is momentarily down. Neither Linux
+        /// nor macOS does this, and neither does a real console, so it is turned off.
+        /// </summary>
+        private static void DisableUdpConnectionReset(Socket socket)
+        {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
+            try
+            {
+                const int SIO_UDP_CONNRESET = unchecked((int)0x9800000C);
+
+                socket.IOControl(SIO_UDP_CONNRESET, [0, 0, 0, 0], null);
+            }
+            catch (SocketException)
+            {
+                // Best effort: the loop below also swallows the error if this is not supported.
+            }
         }
 
         public void Start()
@@ -204,7 +241,10 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
             }
             catch (SocketException ex)
             {
-                Logger.Warning?.Print(LogClass.ServiceLdn, $"LAN Play: failed to send {type} to the relay: {ex.SocketErrorCode}.");
+                Logger.Warning?.Print(LogClass.ServiceLdn,
+                    ex.SocketErrorCode == SocketError.MessageSize
+                        ? $"LAN Play: the host network refused a {datagram.Length} byte datagram (path MTU too small). The packet was dropped."
+                        : $"LAN Play: failed to send {type} to the relay: {ex.SocketErrorCode}.");
             }
             catch (ObjectDisposedException)
             {
@@ -234,13 +274,30 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
                         break;
                     }
 
-                    // An ICMP error queued against our socket must not stop the client.
-                    if (ex.SocketErrorCode is SocketError.ConnectionReset or SocketError.NetworkReset or SocketError.MessageSize)
+                    switch (ex.SocketErrorCode)
                     {
-                        continue;
-                    }
+                        // No datagram within the receive timeout: just check the stop flag and read again.
+                        case SocketError.TimedOut:
+                        case SocketError.WouldBlock:
+                            continue;
 
-                    Logger.Warning?.Print(LogClass.ServiceLdn, $"LAN Play: relay socket error {ex.SocketErrorCode}, stopping.");
+                        // An ICMP error queued against our socket (Windows), a truncated datagram, or a
+                        // signal interrupting the read (Unix) must not stop the client.
+                        case SocketError.ConnectionReset:
+                        case SocketError.NetworkReset:
+                        case SocketError.MessageSize:
+                        case SocketError.Interrupted:
+                            continue;
+
+                        // The socket was closed while we were blocked; both Unix and Windows end up here.
+                        case SocketError.OperationAborted:
+                        case SocketError.Shutdown:
+                            break;
+
+                        default:
+                            Logger.Warning?.Print(LogClass.ServiceLdn, $"LAN Play: relay socket error {ex.SocketErrorCode}, stopping.");
+                            break;
+                    }
 
                     break;
                 }
@@ -482,6 +539,15 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay
             }
 
             _socket.Dispose();
+
+            // The receive loop wakes up at least once per receive timeout, so this returns quickly on
+            // every platform. A warning here would mean the loop is stuck, which is worth knowing about.
+            if (_receiveThread != null && _receiveThread != Thread.CurrentThread && !_receiveThread.Join(2 * ReceiveTimeoutMs))
+            {
+                Logger.Warning?.Print(LogClass.ServiceLdn, "LAN Play: the relay receive thread did not stop in time.");
+            }
+
+            _receiveThread = null;
 
             lock (_fragmentLock)
             {

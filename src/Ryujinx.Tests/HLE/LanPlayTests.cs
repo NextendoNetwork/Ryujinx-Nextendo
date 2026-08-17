@@ -9,6 +9,7 @@ using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -328,6 +329,76 @@ namespace Ryujinx.Tests.HLE
 
             station.DisconnectNetwork();
             host.DisconnectNetwork();
+        }
+
+        [Test]
+        public void SessionShutsDownPromptlyOnEveryPlatform()
+        {
+            // Closing a socket does not reliably abort a blocking receive on every platform, so teardown
+            // must not depend on it. A slow Dispose here would mean a leaked thread per session.
+            LanPlayStack stack = CreateStack("10.13.11.2");
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            stack.Dispose();
+
+            stopwatch.Stop();
+
+            Assert.That(stack.Client.IsRunning, Is.False);
+            Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(2000), "tearing down the LAN Play session took too long");
+
+            // Disposing twice must be harmless, whichever thread got there first.
+            Assert.DoesNotThrow(stack.Dispose);
+        }
+
+        [Test]
+        public void SessionSurvivesAnUnreachableRelay()
+        {
+            // A relay that is down makes the host queue an ICMP "port unreachable" against our socket.
+            // Windows then fails the *next* receive with WSAECONNRESET, Linux and macOS do not; either way
+            // the session must stay alive and pick up again once the relay answers.
+            int deadPort;
+
+            using (Socket probe = new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
+            {
+                probe.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+
+                deadPort = ((IPEndPoint)probe.LocalEndPoint).Port;
+            }
+
+            Assert.That(LanPlayConfiguration.TryParse($"127.0.0.1:{deadPort}", "10.13.13.2", out LanPlayConfiguration configuration), Is.True);
+
+            using LanPlayStack stack = LanPlayStack.Create(configuration);
+
+            LanPlayUdpEndpoint endpoint = stack.NetworkInterface.BindUdp(LdnPort);
+
+            for (int i = 0; i < 4; i++)
+            {
+                endpoint.SendTo(new IPEndPoint(IPAddress.Parse("10.13.13.3"), LdnPort), Encoding.ASCII.GetBytes("anybody there"));
+
+                Thread.Sleep(100);
+            }
+
+            Assert.That(stack.Client.IsRunning, Is.True, "the relay client stopped after an ICMP error");
+
+            // Now bring a relay up on that port and check the session recovers by itself.
+            using TestLanPlayRelay relay = new(deadPort);
+            using LanPlayStack peerStack = LanPlayStack.Create(Parse($"127.0.0.1:{deadPort}", "10.13.13.3"));
+
+            LanPlayUdpEndpoint peer = peerStack.NetworkInterface.BindUdp(LdnPort);
+
+            endpoint.SendTo(new IPEndPoint(peerStack.NetworkInterface.Address, LdnPort), Encoding.ASCII.GetBytes("still here"));
+
+            Assert.That(peer.WaitForData(Timeout), Is.True, "traffic did not flow after the relay came back");
+            Assert.That(peer.TryDequeue(out LanPlayUdpEndpoint.Datagram datagram), Is.True);
+            Assert.That(Encoding.ASCII.GetString(datagram.Data), Is.EqualTo("still here"));
+        }
+
+        private static LanPlayConfiguration Parse(string server, string virtualAddress)
+        {
+            Assert.That(LanPlayConfiguration.TryParse(server, virtualAddress, out LanPlayConfiguration configuration), Is.True);
+
+            return configuration;
         }
 
         [Test]

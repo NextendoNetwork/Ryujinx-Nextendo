@@ -1,6 +1,6 @@
 {
   "Locales": [
-		{
+    {
       "ID": "WindowTitle",
       "Translations": {
         "ar_SA": "أميبو",
@@ -200,7 +200,7 @@
         "zh_TW": "未知"
       }
     },
-	  {
+    {
       "ID": "ScanButton",
       "Translations": {
         "ar_SA": "فحص Amiibo",

@@ -30,10 +30,10 @@ namespace Ryujinx.Tests.HLE
 
         public IPEndPoint EndPoint { get; }
 
-        public TestLanPlayRelay()
+        public TestLanPlayRelay(int port = 0)
         {
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+            _socket.Bind(new IPEndPoint(IPAddress.Loopback, port));
 
             EndPoint = (IPEndPoint)_socket.LocalEndPoint;
 

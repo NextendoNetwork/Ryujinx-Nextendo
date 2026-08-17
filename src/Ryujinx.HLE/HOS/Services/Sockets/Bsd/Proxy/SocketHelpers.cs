@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy
 {
@@ -77,6 +78,10 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy
                 _lanPlayVirtualAddress = virtualAddress;
                 _lanPlayFailed = false;
             }
+
+            // Joining involves a name lookup and probing for a free virtual address, so it is done ahead of
+            // time on a background thread: the guest thread that opens the first socket should not wait for it.
+            Task.Run(() => _ = CurrentLanPlayStack);
         }
 
         /// <summary>

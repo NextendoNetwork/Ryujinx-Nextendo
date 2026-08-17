@@ -215,7 +215,39 @@ dotnet build src/Ryujinx/Ryujinx.csproj -c Release
 Stored in `Config.json` as `multiplayer_lan_play_server` / `multiplayer_lan_play_virtual_ip`
 (configuration version 74; older configuration files are migrated automatically).
 
-## 11. Debugging a session
+## 11. Platform support
+
+Windows, Linux and macOS behave the same, because everything happens in managed code on top of one
+ordinary UDP socket:
+
+* **No libpcap, no adapter, no privileges.** Nothing is captured or injected on a host interface, so
+  none of the platform specific capture stacks (Npcap, `AF_PACKET`, BPF) is involved, and the
+  emulator does not need administrator or root rights on any platform. Even a *virtual* port below
+  1024 works everywhere, because that port only exists inside Ryujinx.
+* **No routing, firewall or interface changes.** The host keeps its own address; only outbound UDP to
+  the relay is used, which is what a normal firewall already allows for the emulator.
+* **Byte order is explicit.** All packet fields are read and written with `BinaryPrimitives` in
+  network order, so the code does not depend on the host being little endian (relevant for macOS on
+  Apple silicon as much as for anything else).
+* **Teardown does not rely on platform behaviour.** Closing a socket does not reliably abort a
+  blocking receive on Unix, so the relay receive loop wakes up twice a second and checks its own stop
+  flag; `Dispose` then joins the thread and warns if it is stuck. A test asserts a session tears down
+  in well under two seconds.
+* **The one platform specific line** is `SIO_UDP_CONNRESET`, disabled on Windows only: without it a
+  Windows UDP socket fails its *next* receive with `WSAECONNRESET` after an ICMP "port unreachable",
+  which happens whenever the relay is briefly down. Linux and macOS do not do this, and neither does
+  a real console. The receive loop also treats that error, `WSAENETRESET`, truncated datagrams and
+  `EINTR` as recoverable, so one bad moment cannot end a session. A test covers a relay that is down
+  and then comes back.
+* **ldn_mitm mode keeps its platform quirks** exactly as before: `HostLdnNetworkProvider` still binds
+  the second UDP socket to the broadcast address on Linux and macOS, which those platforms need in
+  order to receive broadcasts, and not on Windows, which does not accept it.
+
+The one difference a user may notice is unrelated to LAN Play itself: on any platform where the
+emulator is behind a NAT that rewrites source ports very aggressively, the relay may need a few
+keepalives before it routes to the right client, which is also true of the reference client.
+
+## 12. Debugging a session
 
 Everything below is available in a normal build; no debugger is needed.
 
@@ -272,7 +304,7 @@ Incoming packets are validated the way a real stack does: the IPv4 header checks
 present) and TCP checksums are verified, and failures are counted rather than silently ignored, so a
 relay or peer sending malformed traffic shows up immediately in the summary.
 
-## 12. Testing
+## 13. Testing
 
 ```
 dotnet test src/Ryujinx.Tests/Ryujinx.Tests.csproj --filter "FullyQualifiedName~LanPlayTests"
@@ -286,7 +318,8 @@ server string parsing, teardown and reconnect, guest sockets over the virtual in
 `SocketHelpers.Select`) with non-LAN-Play traffic still going out through the host stack, a full LDN
 session where one client creates a network, the other discovers it with a scan and joins it, after
 which the host reports two nodes with the right virtual addresses and user names, the connection test
-finding that hosted session, and packets whose checksums are wrong (built and checksummed by the test
+finding that hosted session, a session tearing down promptly and surviving a relay that is down and
+comes back, and packets whose checksums are wrong (built and checksummed by the test
 itself, independently of the stack) being accepted or dropped and counted as expected.
 
 For a manual test with two Ryujinx instances, point both at the same relay, start the same game on
@@ -294,7 +327,7 @@ both and enter its local multiplayer mode. The interesting log lines are
 `LAN Play: connected to relay ...`, `LAN Play: using the virtual address ...` and
 `LAN Play: hosting an LDN session on ...`.
 
-## 13. Known limitations and what still needs validation on real hardware
+## 14. Known limitations and what still needs validation on real hardware
 
 * **Not yet tested against a real console.** Everything above is validated between Ryujinx instances
   and against a relay implementation derived from the reference client's behaviour. The interop that

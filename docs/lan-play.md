@@ -1,5 +1,8 @@
 # Native Switch LAN Play support
 
+> Picking this up cold? Start with [`HANDOFF.md`](../HANDOFF.md) in the repository root: it summarises
+> the state of the work, the invariants to respect and the open online-connection investigation.
+
 Ryujinx can join a [switch-lan-play](https://github.com/spacemeowx2/switch-lan-play) relay by itself.
 No second PC, no external `switch-lan-play` process, no libpcap, no virtual adapter, no host routing
 changes and no manual 10.13.x.x configuration on the host are needed.

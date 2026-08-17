@@ -210,6 +210,11 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay.Proxy
                 Blocking = Blocking,
             };
 
+            // Makes it obvious in a log that traffic which is not for the LAN Play network (an online
+            // service, for instance) still leaves through the host network while LAN Play is selected.
+            Logger.Info?.Print(LogClass.ServiceBsd,
+                $"LAN Play: {ProtocolType} socket is using the host network for destinations outside {_networkInterface.Address}/16.");
+
             if (ProtocolType == ProtocolType.Udp && _requestedLocalEndPoint != null)
             {
                 try

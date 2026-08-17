@@ -100,7 +100,7 @@ namespace Ryujinx.HLE.HOS.Services.Nifm.StaticService
         {
             // While LAN Play is active the console lives on the virtual 10.13.x.x network, and games that
             // implement their own LAN mode use this address to advertise themselves to the other players.
-            if (SocketHelpers.CurrentLanPlayStack is { } lanPlay)
+            if (SocketHelpers.ActiveLanPlayStack is { } lanPlay)
             {
                 context.ResponseData.WriteStruct(new IpV4Address(lanPlay.NetworkInterface.Address));
 
@@ -136,7 +136,7 @@ namespace Ryujinx.HLE.HOS.Services.Nifm.StaticService
 
             Logger.Info?.Print(LogClass.ServiceNifm, $"Console's local IP is \"{unicastAddress.Address}\".");
 
-            if (SocketHelpers.CurrentLanPlayStack is { } lanPlay)
+            if (SocketHelpers.ActiveLanPlayStack is { } lanPlay)
             {
                 context.ResponseData.WriteStruct(new IpAddressSetting(
                     lanPlay.NetworkInterface.Address,

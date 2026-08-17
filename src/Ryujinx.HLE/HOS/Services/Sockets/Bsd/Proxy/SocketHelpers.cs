@@ -1,3 +1,4 @@
+using Ryujinx.Common.Configuration.Multiplayer;
 using Ryujinx.Common.Logging;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LanPlay;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy;
@@ -68,12 +69,62 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy
         }
 
         /// <summary>
+        /// The LAN Play stack only if it is already joined, without creating one. Used by callers that want
+        /// to know the current state (such as nifm reporting the console's address) rather than to send
+        /// traffic, so that merely asking does not connect to a relay.
+        /// </summary>
+        public static LanPlayStack ActiveLanPlayStack => _lanPlay;
+
+        /// <summary>
+        /// Applies the multiplayer mode of the running session. Can be called at any time, so that changing
+        /// the mode while a game is running takes effect immediately: LAN Play is joined when it is selected
+        /// and dropped as soon as it is not, which puts the emulated console straight back on the host
+        /// network (and back to its host address) for anything else it wants to connect to.
+        /// </summary>
+        public static void ApplyMultiplayerMode(MultiplayerMode mode, string lanPlayServer, string lanPlayVirtualAddress)
+        {
+            if (mode == MultiplayerMode.LanPlay)
+            {
+                ConfigureLanPlay(lanPlayServer, lanPlayVirtualAddress);
+            }
+            else
+            {
+                ShutdownLanPlay();
+            }
+
+            // The RyuLDN proxy takes priority over everything else while it is registered, so leaving that
+            // mode has to release it too, otherwise the emulated console would keep talking to the LDN
+            // network instead of the host network it now belongs on.
+            if (mode != MultiplayerMode.LdnRyu && _proxy != null)
+            {
+                Logger.Info?.Print(LogClass.ServiceLdn, "Releasing the RyuLDN socket proxy: the multiplayer mode no longer uses it.");
+
+                UnregisterProxy();
+            }
+        }
+
+        /// <summary>
         /// Enables LAN Play for this emulation session. The relay is only contacted on first use.
         /// </summary>
         public static void ConfigureLanPlay(string server, string virtualAddress)
         {
             lock (_lanPlayLock)
             {
+                // Settings are re-applied whenever the user saves the settings window, even when nothing
+                // changed, so an unchanged configuration must not tear down a working session.
+                if (_lanPlayServer == server && _lanPlayVirtualAddress == virtualAddress && (_lanPlay != null || _lanPlayFailed))
+                {
+                    return;
+                }
+
+                if (_lanPlay != null)
+                {
+                    Logger.Info?.Print(LogClass.ServiceLdn, "LAN Play: the relay settings changed, rejoining.");
+
+                    _lanPlay.Dispose();
+                    _lanPlay = null;
+                }
+
                 _lanPlayServer = server;
                 _lanPlayVirtualAddress = virtualAddress;
                 _lanPlayFailed = false;
@@ -91,6 +142,13 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy
         {
             lock (_lanPlayLock)
             {
+                if (_lanPlay != null)
+                {
+                    Logger.Info?.Print(LogClass.ServiceLdn,
+                        "LAN Play: leaving the relay. The emulated console is back on the host network; " +
+                        "sockets it opens from now on use it, and it reports its host address again.");
+                }
+
                 _lanPlay?.Dispose();
                 _lanPlay = null;
                 _lanPlayServer = null;

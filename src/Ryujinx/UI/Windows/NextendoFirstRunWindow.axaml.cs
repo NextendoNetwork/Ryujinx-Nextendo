@@ -278,7 +278,7 @@ namespace Ryujinx.Ava.UI.Windows
             Button openSite = ActionButton(L(LocaleKeys.Dialog_Nextendo_GuestRegisterFullAccount));
             openSite.Click += (_, _) =>
             {
-                try { Ryujinx.Common.Helper.OpenHelper.OpenUrl("https://nextendo.network/register"); }
+                try { Ryujinx.Common.Helper.OpenHelper.OpenUrl(Ryujinx.Ava.Common.NextendoApi.SiteUrl() + "/register"); }
                 catch { /* best-effort */ }
             };
 

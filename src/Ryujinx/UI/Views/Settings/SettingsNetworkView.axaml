@@ -149,11 +149,13 @@
                 </StackPanel>
                 <Separator Height="1" />
 
-                <!-- [Nextendo] Serveur personnalise. Ce n est PAS une redirection partielle :
-                     cocher cette case coupe entierement Nextendo Network — compte, amis,
-                     sauvegardes en ligne, presence, controle de version. L emulateur redevient
-                     un Ryujinx ordinaire pointe sur le serveur indique. C est pour cela que le
-                     reglage vit ici, dans Reseau, et non dans l onglet du service qu il eteint. -->
+                <!-- [Nextendo] Serveur personnalise. Basculement complet, pas une simple
+                     redirection de trafic de jeu : cocher cette case et remplir les TROIS
+                     champs ci-dessous (IP jeu, IP NAT, domaine de compte) redirige tout —
+                     jeu, NAT, compte, amis, sauvegardes — vers l infrastructure d un tiers.
+                     Sans les trois, Nextendo est simplement coupe (etat sur par defaut). C
+                     est pour cela que le reglage vit ici, dans Reseau, et non dans l onglet
+                     du service qu il remplace. -->
                 <TextBlock Classes="h1" Text="{ext:Locale Dialog_Nextendo_OverrideTitle}" />
                 <TextBlock Margin="10,0,0,0" Opacity="0.8" TextWrapping="Wrap" FontSize="12"
                            Text="{ext:Locale Dialog_Nextendo_OverrideDesc}" />
@@ -175,6 +177,20 @@
 
                 <TextBlock Margin="10,0,0,0" Opacity="0.7" TextWrapping="Wrap" FontSize="11"
                            Text="{ext:Locale Dialog_Nextendo_OverrideNatWarning}" />
+
+                <!-- [Nextendo] Champ à part et OBLIGATOIRE : redirige le COMPTE (connexion,
+                     amis, sauvegardes en ligne) vers un autre backend compatible Nextendo.
+                     N'a aucun rapport avec les deux champs jeu/NAT ci-dessus — voir
+                     NextendoServerOverride.AccountDomainUrl. Toujours dans OverrideFields pour
+                     hériter du même activer/désactiver que le reste, câblé en code-behind. -->
+                <Grid Margin="10,12,0,0" ColumnDefinitions="200,400" Name="CustomDomainFields">
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center"
+                               Text="{ext:Locale Dialog_Nextendo_OverrideCustomDomain}" />
+                    <TextBox Grid.Column="1" Name="CustomDomainBox" MaxLength="253"
+                             Watermark="{ext:Locale Dialog_Nextendo_OverrideCustomDomainHint}" />
+                </Grid>
+                <TextBlock Margin="10,4,0,0" Opacity="0.7" TextWrapping="Wrap" FontSize="11"
+                           Text="{ext:Locale Dialog_Nextendo_OverrideCustomDomainWarning}" />
 
                 <StackPanel Margin="10,0,0,0" Orientation="Horizontal" Spacing="10">
                     <Button Name="SaveOverrideButton"

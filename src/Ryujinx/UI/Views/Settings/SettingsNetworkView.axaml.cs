@@ -23,9 +23,15 @@ namespace Ryujinx.Ava.UI.Views.Settings
             ServerOverrideToggle.IsChecked = NextendoServerOverride.Enabled;
             ServerIpBox.Text = NextendoServerOverride.ServerIpText;
             NatIpBox.Text = NextendoServerOverride.NatIpText;
+            CustomDomainBox.Text = NextendoServerOverride.CustomDomainText;
             OverrideFields.IsEnabled = NextendoServerOverride.Enabled;
+            CustomDomainFields.IsEnabled = NextendoServerOverride.Enabled;
             ServerOverrideToggle.IsCheckedChanged += (_, _) =>
-                OverrideFields.IsEnabled = ServerOverrideToggle.IsChecked == true;
+            {
+                bool actif = ServerOverrideToggle.IsChecked == true;
+                OverrideFields.IsEnabled = actif;
+                CustomDomainFields.IsEnabled = actif;
+            };
             SaveOverrideButton.Click += (_, _) => SaveOverride();
         }
 
@@ -56,6 +62,7 @@ namespace Ryujinx.Ava.UI.Views.Settings
             bool actif = ServerOverrideToggle.IsChecked == true;
             string serveur = (ServerIpBox.Text ?? "").Trim();
             string nat = (NatIpBox.Text ?? "").Trim();
+            string domaineCompte = (CustomDomainBox.Text ?? "").Trim();
 
             if (actif && !IPAddress.TryParse(serveur, out _))
             {
@@ -74,16 +81,30 @@ namespace Ryujinx.Ava.UI.Views.Settings
                 return;
             }
 
-            // Deux répondeurs à la MÊME adresse font échouer le contrôle NAT en silence :
-            // Pia les déduplique et n'envoie jamais la seconde sonde.
-            if (actif && nat == serveur)
+            // Deux répondeurs à la MÊME adresse (texte identique) font échouer le contrôle NAT
+            // en silence : Pia les déduplique et n'envoie jamais la seconde sonde. Comparaison
+            // textuelle, pas par IP résolue : deux noms différents pointant (aujourd'hui) vers
+            // la même IP restent deux réglages valides tant qu'on ne peut pas prédire s'ils
+            // continueront à coïncider.
+            if (actif && string.Equals(nat, serveur, StringComparison.OrdinalIgnoreCase))
             {
                 ShowOverrideStatus(LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_OverrideSameIp], false);
 
                 return;
             }
 
-            NextendoServerOverride.Save(actif, serveur, nat);
+            // Obligatoire, pas facultatif : un "serveur personnalisé" sans backend de compte
+            // derrière n'a plus de raison d'être dans ce réglage (voir NextendoServerOverride).
+            // Seule une URL https:// (ou boucle locale, pour les tests) est acceptée — http://
+            // enverrait le jeton du compte en clair.
+            if (actif && !NextendoServerOverride.EstDomaineCompteValide(domaineCompte))
+            {
+                ShowOverrideStatus(LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_OverrideBadDomain], false);
+
+                return;
+            }
+
+            NextendoServerOverride.Save(actif, serveur, nat, domaineCompte);
             ShowOverrideStatus(LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_OverrideSaved], true);
         }
 

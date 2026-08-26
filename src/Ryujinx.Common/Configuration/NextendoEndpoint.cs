@@ -17,6 +17,14 @@ namespace Ryujinx.Common.Configuration
     ///
     /// The override is kept, because local testing genuinely needs it, but it is now restricted to
     /// destinations that cannot be a stranger's server.
+    ///
+    /// [Nextendo] The one exception: <see cref="NextendoServerOverride.AccountDomainUrl"/>, checked
+    /// FIRST in <see cref="Resolve"/>. That setting has a different threat model than the env var
+    /// above — it is typed by hand into the Settings UI by the person playing, not something that
+    /// can ride along in a shared .bat file or a "run this for faster servers" paste. A deliberate,
+    /// self-typed choice to point your own account at a friend's or a community's Nextendo-compatible
+    /// server is exactly the "local testing" use case this class already carves out for loopback; it
+    /// just is not local. Still HTTPS-only (or loopback), same as everything else here.
     /// </summary>
     public static class NextendoEndpoint
     {
@@ -44,6 +52,16 @@ namespace Ryujinx.Common.Configuration
 
         private static string Resolve()
         {
+            // [Nextendo] Réglage UI explicite en priorité — voir la note de classe : un domaine
+            // tapé à la main dans les Réglages n'a pas le profil de risque que cette classe
+            // défend contre (une variable d'environnement plantée à l'insu de la victime).
+            string domaineCompte = NextendoServerOverride.AccountDomainUrl;
+
+            if (domaineCompte is not null)
+            {
+                return domaineCompte;
+            }
+
             string raw = Environment.GetEnvironmentVariable(EnvVar);
 
             // Smart-quote pastes (from Discord, typically) glue a curly quote to the host, which

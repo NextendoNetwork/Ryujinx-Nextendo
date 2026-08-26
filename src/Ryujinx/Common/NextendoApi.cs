@@ -133,6 +133,15 @@ namespace Ryujinx.Ava.Common
         // The "create an account / log in" buttons open THIS, not the API host.
         public static string SiteUrl()
         {
+            // [Nextendo] Same override, same reasoning, as NextendoEndpoint.BaseUrl(): a custom
+            // account domain typed by hand into Settings redirects the website too, not just the
+            // API -- someone pointed at a friend's server should land on THEIR login page.
+            string domaineCompte = NextendoServerOverride.AccountDomainUrl;
+            if (domaineCompte is not null)
+            {
+                return domaineCompte;
+            }
+
             string url = Environment.GetEnvironmentVariable("NEXTENDO_SITE");
             if (string.IsNullOrEmpty(url))
             {

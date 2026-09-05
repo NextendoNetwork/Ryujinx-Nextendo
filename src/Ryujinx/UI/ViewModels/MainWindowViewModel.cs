@@ -587,13 +587,9 @@ namespace Ryujinx.Ava.UI.ViewModels
         {
             get
             {
-                if (IsCarousel)
-                {
-                    return CarouselSelectedApplication;
-                }
-
                 return Glyph switch
                 {
+                    Glyph.Home => CarouselSelectedApplication,
                     Glyph.List => ListSelectedApplication,
                     Glyph.Grid => GridSelectedApplication,
                     _ => null,
@@ -728,12 +724,15 @@ namespace Ryujinx.Ava.UI.ViewModels
             }
         }
 
-        public bool IsGrid => !IsCarousel && Glyph == Glyph.Grid;
+        public bool IsGrid => Glyph == Glyph.Grid;
 
-        public bool IsList => !IsCarousel && Glyph == Glyph.List;
+        public bool IsList => Glyph == Glyph.List;
 
-        // [Nextendo] The Switch-style home carousel is the default launcher view.
-        public bool IsCarousel { get; private set; } = true;
+        // [Nextendo] Le mode de vue est PERSISTE, comme la liste et la grille l'etaient deja :
+        // il se lit dans UI.GameListViewMode via Glyph. C'etait auparavant un champ fixe a
+        // `true`, si bien que le carrousel revenait a chaque demarrage meme apres avoir choisi
+        // la liste — le choix du joueur ne survivait pas a la fermeture.
+        public bool IsCarousel => Glyph == Glyph.Home;
 
         internal void Sort(bool isAscending)
         {
@@ -812,6 +811,7 @@ namespace Ryujinx.Ava.UI.ViewModels
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsGrid));
                 OnPropertyChanged(nameof(IsList));
+                OnPropertyChanged(nameof(IsCarousel));
 
                 ConfigurationState.Instance.ToFileFormat().SaveConfig(Program.ConfigurationPath);
             }
@@ -1646,21 +1646,19 @@ namespace Ryujinx.Ava.UI.ViewModels
 
         public void SetListMode()
         {
-            IsCarousel = false;
             Glyph = Glyph.List;
             NotifyViewModes();
         }
 
         public void SetGridMode()
         {
-            IsCarousel = false;
             Glyph = Glyph.Grid;
             NotifyViewModes();
         }
 
         public void SetCarouselMode()
         {
-            IsCarousel = true;
+            Glyph = Glyph.Home;
             NotifyViewModes();
         }
 

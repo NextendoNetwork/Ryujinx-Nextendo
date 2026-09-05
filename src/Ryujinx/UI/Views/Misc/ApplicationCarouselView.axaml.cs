@@ -200,9 +200,9 @@ namespace Ryujinx.Ava.UI.Views.Misc
                 var profile = new NextendoProfileView();
                 var dialog = new ContentDialog
                 {
-                    Title = "Perfil",
+                    Title = LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxCarouselPerfil],
                     Content = profile,
-                    CloseButtonText = "Cerrar",
+                    CloseButtonText = LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_DialogCloseButton],
                 };
 
                 // Tracked so the gamepad's B button can close it (see PollGamepad).
@@ -252,7 +252,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
 
         private async void NewsButton_OnClick(object? sender, RoutedEventArgs e)
         {
-            // [Nextendo] "What's new" news panel.
+            // [Nextendo] LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxCarouselWhatNew] news panel.
             ClearBottomFocus();
             try { await Ryujinx.Ava.Common.NextendoPatchNotes.ShowAsync(); }
             catch (Exception) { /* ignore */ }

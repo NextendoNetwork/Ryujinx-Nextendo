@@ -24,7 +24,7 @@
             Margin="5,2,0,2"
             VerticalAlignment="Stretch"
             Command="{Binding SetCarouselMode}"
-            ToolTip.Tip="Home">
+            ToolTip.Tip="{ext:Locale Dialog_Nextendo_MainToolbarHomeTooltip}">
             <ui:FontIcon
                 Margin="0"
                 HorizontalAlignment="Stretch"

@@ -65,7 +65,7 @@
                 BorderThickness="0"
                 Padding="0"
                 Click="ProfileButton_OnClick"
-                ToolTip.Tip="Nextendo">
+                ToolTip.Tip="{ext:Locale Dialog_Nextendo_NxCarouselNextendo}">
                 <Grid>
                     <Border
                         Width="72"
@@ -114,10 +114,10 @@
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         Click="StatusButton_OnClick"
-                        ToolTip.Tip="Estado del servicio (nextendo.network/status)">
+                        ToolTip.Tip="{ext:Locale Dialog_Nextendo_NxCarouselEstadoDelServicioNextendoNetwork}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Ellipse Name="NextendoStatusDot" Width="14" Height="14" Fill="#7A7A7A" VerticalAlignment="Center" />
-                            <TextBlock Text="Nextendo" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <TextBlock Text="{ext:Locale Dialog_Nextendo_NxCarouselNextendo}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -283,7 +283,7 @@
                         Width="72"
                         Height="72"
                         Click="WebsiteButton_OnClick"
-                        ToolTip.Tip="Sitio web">
+                        ToolTip.Tip="{ext:Locale Dialog_Nextendo_NxCarouselSitioWeb}">
                         <Image
                             Source="resm:Ryujinx.Assets.UIImages.Logo_Web_Nextendo.png?assembly=Ryujinx"
                             Width="40"
@@ -296,7 +296,7 @@
                         Width="72"
                         Height="72"
                         Click="DiscordButton_OnClick"
-                        ToolTip.Tip="Discord">
+                        ToolTip.Tip="{ext:Locale Dialog_Nextendo_NxCarouselDiscord}">
                         <!-- SVG vectorial se asignará en code-behind -->
                     </Button>
                     <Button
@@ -305,7 +305,7 @@
                         Width="72"
                         Height="72"
                         Click="NewsButton_OnClick"
-                        ToolTip.Tip="Noticias">
+                        ToolTip.Tip="{ext:Locale Dialog_Nextendo_NxCarouselNoticias}">
                         <Grid Width="34" Height="34">
                             <Border
                                 Width="32"
@@ -328,7 +328,7 @@
                         Width="72"
                         Height="72"
                         Click="MiiEditorButton_OnClick"
-                        ToolTip.Tip="Editor de Mii">
+                        ToolTip.Tip="{ext:Locale Dialog_Nextendo_NxCarouselEditorDeMii}">
                         <i:Icon Value="fa-solid fa-face-smile" FontSize="36" />
                     </Button>
                     <Button
@@ -337,7 +337,7 @@
                         Width="72"
                         Height="72"
                         Click="ControlsButton_OnClick"
-                        ToolTip.Tip="Controles">
+                        ToolTip.Tip="{ext:Locale Dialog_Nextendo_NxCarouselControles}">
                         <i:Icon Value="fa-solid fa-gamepad" FontSize="32" />
                     </Button>
                     <Button
@@ -346,7 +346,7 @@
                         Width="72"
                         Height="72"
                         Click="SettingsButton_OnClick"
-                        ToolTip.Tip="Ajustes del emulador">
+                        ToolTip.Tip="{ext:Locale Dialog_Nextendo_NxCarouselAjustesDelEmulador}">
                         <i:Icon Value="fa-solid fa-gear" FontSize="32" />
                     </Button>
                 </StackPanel>

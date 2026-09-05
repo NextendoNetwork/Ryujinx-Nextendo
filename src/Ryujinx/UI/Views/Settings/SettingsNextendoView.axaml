@@ -156,6 +156,26 @@
                             Content="{ext:Locale Dialog_Nextendo_WizardRerunButton}" />
                 </StackPanel>
 
+                <!-- [Nextendo] La vue ouverte au demarrage. Le carrousel etait impose en dur :
+                     ce choix-la est desormais celui du joueur, et il survit a la fermeture. -->
+                <Separator Height="1" Margin="0,10,0,0" />
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="h1" Text="{ext:Locale Dialog_Nextendo_StartupViewTitle}" />
+                    <TextBlock
+                        Foreground="{DynamicResource SecondaryTextColor}"
+                        TextWrapping="Wrap"
+                        Text="{ext:Locale Dialog_Nextendo_StartupViewNote}" />
+                    <RadioButton Name="StartupViewHomeRadio" GroupName="NextendoStartupView"
+                                 Content="{ext:Locale Dialog_Nextendo_StartupViewHome}"
+                                 Click="StartupView_Click" />
+                    <RadioButton Name="StartupViewListRadio" GroupName="NextendoStartupView"
+                                 Content="{ext:Locale Dialog_Nextendo_StartupViewList}"
+                                 Click="StartupView_Click" />
+                    <RadioButton Name="StartupViewGridRadio" GroupName="NextendoStartupView"
+                                 Content="{ext:Locale Dialog_Nextendo_StartupViewGrid}"
+                                 Click="StartupView_Click" />
+                </StackPanel>
+
                 <!-- [Nextendo] Crédits de l'équipe (bas de page, toujours visibles) -->
                 <Border Margin="0,16,0,0" Background="#1A808080" CornerRadius="8" Padding="16">
                     <StackPanel Spacing="5">

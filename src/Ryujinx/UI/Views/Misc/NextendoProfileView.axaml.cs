@@ -42,14 +42,14 @@ namespace Ryujinx.Ava.UI.Views.Misc
         /// <summary>Motivos de reporte y la pista que acompaña al cuadro de texto.</summary>
         private static readonly (string Id, string Title, string Desc, string Hint)[] _motifs =
         [
-            ("cheating",         "Trampas",                      "Cheats, emulador de teclado, macros…",              "Describe la trampa y cuándo la viste."),
-            ("name",             "Nombre inapropiado",           "El nombre incluye insultos o contenido sexual.",    "¿Qué nombre concreto muestra?"),
-            ("name_mismatch",    "Nombre incoherente",           "El nombre no coincide con el perfil mostrado.",     "¿Qué nombre muestra y qué deberías ver?"),
-            ("avatar",           "Imagen de perfil inapropiada", "Avatar ofensivo o fuera de la temática.",           "Describe la imagen y por qué es inapropiada."),
-            ("harassment",       "Acoso e insultos",             "Mensajes ofensivos, amenazas o acoso.",             "¿Qué te escribió y dónde?"),
-            ("griefing",         "Sabotaje",                     "Arruina el juego a propósito o molesta a otros.",   "Cuéntanos qué hizo."),
-            ("impersonation",    "Suplantación",                 "Se hace pasar por otra persona o por el staff.",    "¿A quién suplanta?"),
-            ("other",            "Otro",                         "Elige este motivo y detállalo en el cuadro.",       "¿Qué pasó?"),
+            ("cheating",         LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_ReportReasonCheating],                      LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileCheatsEmuladorDeTecladoMacros],              LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileDescribeLaTrampaCuandoLa]),
+            ("name",             LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_ReportReasonName],           LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileElNombreIncluyeInsultosContenido],    LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileQueNombreConcretoMuestra]),
+            ("name_mismatch",    LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileNombreIncoherente],           LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileElNombreNoCoincideCon],     LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileQueNombreMuestraQueDeberias]),
+            ("avatar",           LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileImagenDePerfilInapropiada], LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileAvatarOfensivoFueraDeLa],           LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileDescribeLaImagenPorQue]),
+            ("harassment",       LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileAcosoInsultos],             LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileMensajesOfensivosAmenazasAcoso],             LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileQueTeEscribioDonde]),
+            ("griefing",         LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileSabotaje],                     LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileArruinaElJuegoPropositoMolesta],   LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileCuentanosQueHizo]),
+            ("impersonation",    LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileSuplantacion],                 LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileSeHacePasarPorOtra],    LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileQuienSuplanta]),
+            ("other",            LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileOtro],                         LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileEligeEsteMotivoDetallaloEn],       LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileQuePaso]),
         ];
 
         private readonly DispatcherTimer _refreshTimer;
@@ -127,14 +127,14 @@ namespace Ryujinx.Ava.UI.Views.Misc
             bool linked = NextendoAccount.IsLinked;
 
             ProfileName.Text = string.IsNullOrEmpty(NextendoAccount.Username)
-                ? (linked ? "Perfil" : "No conectado")
+                ? (linked ? LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxCarouselPerfil] : LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileNoConectado])
                 : NextendoAccount.Username;
             ProfileFriendCode.Text = string.IsNullOrEmpty(NextendoAccount.FriendCode)
                 ? "SW-…"
                 : NextendoAccount.FriendCode;
 
             ProfileStatusDot.Fill = Brush.Parse(linked ? "#33E86B" : "#55808080");
-            ProfileStatusText.Text = linked ? "En línea" : "Sin cuenta Nextendo";
+            ProfileStatusText.Text = linked ? LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileEnLinea] : LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileSinCuentaNextendo];
 
             SignOutButton.IsVisible = linked;
             ConnectButton.IsVisible = !linked;
@@ -172,7 +172,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
             (bool ok, string error) = await NextendoApi.SignInWithBrowserAsync();
             if (ok)
             {
-                ShowStatus(FriendsStatusText, "Cuenta conectada.", true);
+                ShowStatus(FriendsStatusText, LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileCuentaConectada], true);
                 RefreshOwnStatus();
                 _ = LoadProfileAsync();
                 _ = LoadFriends();
@@ -188,11 +188,11 @@ namespace Ryujinx.Ava.UI.Views.Misc
         private async void SignOut_Click(object sender, RoutedEventArgs e)
         {
             bool confirm = await ContentDialogHelper.CreateConfirmationDialog(
-                "Se cerrará tu sesión de Nextendo y se limpiará tu perfil enlazado.",
-                "¿Continuar?",
-                "Cerrar sesión",
-                "Cancelar",
-                "Cerrar sesión") == UserResult.Yes;
+                LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileSeCerraraTuSesionDe],
+                LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileContinuar],
+                LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_DialogSignOutButton],
+                LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_CancelButton],
+                LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_DialogSignOutButton]) == UserResult.Yes;
 
             if (!confirm)
             {
@@ -257,7 +257,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
             }
 
             PlayingNowText.Text = inGame.Count == 0
-                ? "Ninguno de tus amigos está jugando en este momento."
+                ? LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileNingunoDeTusAmigosEsta]
                 : "";
 
             // Recent encounters: people met online, with avatar fetched separately.
@@ -374,7 +374,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
             {
                 int n = await NextendoApi.AcceptAllRequestsAsync();
                 await LoadFriends();
-                ShowStatus(FriendsStatusText, n > 0 ? $"Aceptadas {n} solicitudes." : "No hay solicitudes que aceptar.", n > 0);
+                ShowStatus(FriendsStatusText, n > 0 ? LocaleManager.Instance.UpdateAndGetDynamicValue(LocaleKeys.Dialog_Nextendo_NxProfileAceptadasSolicitudes, n) : LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileNoHaySolicitudesQueAceptar], n > 0);
             }
             finally
             {
@@ -429,7 +429,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
         }
 
         // ============================================================ [Nextendo]
-        // Recientes → añadir amigo + reportar (réplica de "Nextendo - Recently met")
+        // Recientes → añadir amigo + reportar (réplica de LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileNextendoRecentlyMet])
         // ============================================================
 
         private async void AddRecentFriend_Click(object sender, RoutedEventArgs e)
@@ -441,7 +441,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
 
             if (!_recentCodes.TryGetValue(pid, out string code) || string.IsNullOrEmpty(code))
             {
-                ShowStatus(RecentStatusText, "No hay un código de amigo disponible para este jugador.", false);
+                ShowStatus(RecentStatusText, LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileNoHayUnCodigoDe], false);
 
                 return;
             }
@@ -585,7 +585,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
             if (ok)
             {
                 CerrarModale();
-                ShowStatus(RecentStatusText, "Reporte enviado. Gracias.", true);
+                ShowStatus(RecentStatusText, LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileReporteEnviadoGracias], true);
 
                 return;
             }
@@ -593,9 +593,9 @@ namespace Ryujinx.Ava.UI.Views.Misc
             // El servidor distingue sus rechazos: el jugador merece saber cuál.
             string mensaje = error switch
             {
-                "not_encountered" => "No se pudo confirmar que hayas coincidido con este jugador.",
-                "quota" => "Ya has enviado demasiados reportes en poco tiempo. Inténtalo más tarde.",
-                _ => $"El reporte no se pudo enviar: {error}",
+                "not_encountered" => LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileNoSePudoConfirmarQue],
+                "quota" => LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileYaHasEnviadoDemasiadosReportes],
+                _ => LocaleManager.Instance.UpdateAndGetDynamicValue(LocaleKeys.Dialog_Nextendo_NxProfileElReporteNoSePudo, error),
             };
 
             Logger.Info?.Print(LogClass.Application, $"[Nextendo] report refused: {error}");
@@ -613,14 +613,14 @@ namespace Ryujinx.Ava.UI.Views.Misc
         {
             if (seconds < 60)
             {
-                return "Un instante";
+                return LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileUnInstante];
             }
             if (seconds < 3600)
             {
                 return $"{seconds / 60} min";
             }
             long hours = seconds / 3600;
-            return hours <= 1 ? "1 hora o más" : $"{hours} h";
+            return hours <= 1 ? LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileHoraMas] : LocaleManager.Instance.UpdateAndGetDynamicValue(LocaleKeys.Dialog_Nextendo_NxProfileHeureCourte, hours);
         }
 
         private static string FormatLast(string iso)
@@ -634,18 +634,18 @@ namespace Ryujinx.Ava.UI.Views.Misc
             int days = (int)(DateTime.UtcNow.Date - dt.ToUniversalTime().Date).TotalDays;
             if (days <= 0)
             {
-                return "Hoy";
+                return LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileHoy];
             }
             if (days == 1)
             {
-                return "Ayer";
+                return LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileAyer];
             }
             if (days < 30)
             {
-                return $"Hace {days} días";
+                return LocaleManager.Instance.UpdateAndGetDynamicValue(LocaleKeys.Dialog_Nextendo_NxProfileHaceDias, days);
             }
             int months = days / 30;
-            return months == 1 ? "Hace 1 mes" : $"Hace {months} meses";
+            return months == 1 ? LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxProfileHaceMes] : LocaleManager.Instance.UpdateAndGetDynamicValue(LocaleKeys.Dialog_Nextendo_NxProfileHaceMeses, months);
         }
     }
 }

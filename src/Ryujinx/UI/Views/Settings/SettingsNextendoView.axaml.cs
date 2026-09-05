@@ -8,6 +8,7 @@ using FluentAvalonia.UI.Controls;
 using Ryujinx.Ava;
 using Ryujinx.Ava.Common;
 using Ryujinx.Ava.Common.Locale;
+using Ryujinx.Ava.Systems.Configuration;
 using Ryujinx.Ava.Systems.AppLibrary;
 using Ryujinx.Ava.UI.Views.Main;
 using Ryujinx.Ava.UI.Controls;
@@ -86,6 +87,8 @@ namespace Ryujinx.Ava.UI.Views.Settings
 
         private void Refresh()
         {
+            RefreshStartupView();
+
             bool linked = NextendoAccount.IsLinked;
             NotLinkedPanel.IsVisible = !linked;
             LinkedPanel.IsVisible = linked;
@@ -170,6 +173,34 @@ namespace Ryujinx.Ava.UI.Views.Settings
         private void NotificationsToggle_Changed(object sender, RoutedEventArgs e)
         {
             NextendoNotificationSettings.Enabled = NotificationsToggle.IsChecked == true;
+        }
+
+        /// <summary>
+        /// [Nextendo] Coche le mode de vue enregistre. On lit la MEME valeur que la barre
+        /// d'outils (UI.GameListViewMode, via Glyph) : deux sources auraient fini par diverger,
+        /// et le reglage aurait affiche autre chose que ce que le lanceur ouvre reellement.
+        /// </summary>
+        private void RefreshStartupView()
+        {
+            Glyph mode = (Glyph)ConfigurationState.Instance.UI.GameListViewMode.Value;
+
+            StartupViewHomeRadio.IsChecked = mode == Glyph.Home;
+            StartupViewListRadio.IsChecked = mode == Glyph.List;
+            StartupViewGridRadio.IsChecked = mode == Glyph.Grid;
+        }
+
+        /// <summary>
+        /// On ecrit au clic, comme le reste de cet onglet. `Click` plutot que `IsCheckedChanged` :
+        /// cocher une case depuis le code declenche aussi le second, ce qui ferait reecrire la
+        /// configuration au simple affichage de la page.
+        /// </summary>
+        private void StartupView_Click(object sender, RoutedEventArgs e)
+        {
+            Glyph mode = StartupViewListRadio.IsChecked == true ? Glyph.List
+                       : StartupViewGridRadio.IsChecked == true ? Glyph.Grid
+                       : Glyph.Home;
+
+            ConfigurationState.Instance.UI.GameListViewMode.Value = (int)mode;
         }
 
         private async Task LoadSocial()

@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace Ryujinx.Ava.Common
 {
     /// <summary>
-    /// [Nextendo] Discord-style "playing this game" avatars on each game row: the round overlapping
+    /// [Nextendo] Discord-style LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxActivityPlayingThisGame] avatars on each game row: the round overlapping
     /// pictures of the friends currently in that title, shown on the right of the row.
     ///
     /// Polls friend presence, groups the in-game friends by base title id, and pushes the matching
@@ -46,7 +46,7 @@ namespace Ryujinx.Ava.Common
                 (List<NextendoApi.Friend> friends, _) = await NextendoApi.GetSocialAsync();
 
                 // Group the in-game friends by BASE title id (region/update tolerant). byGameAll keeps
-                // everyone for the "Friends playing:" names row; byGame caps at 5 for the avatar row.
+                // everyone for the LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NxActivityFriendsPlaying] names row; byGame caps at 5 for the avatar row.
                 Dictionary<string, List<NextendoFriendModel>> byGameAll = new();
                 foreach (NextendoApi.Friend f in friends)
                 {

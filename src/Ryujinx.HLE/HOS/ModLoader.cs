@@ -870,6 +870,8 @@ namespace Ryujinx.HLE.HOS
                 return AppliquerCorrectifsIntegres(programs);
             }
 
+            AppliquerCorrectifsIntegres(programs);
+
             IEnumerable<Mod<DirectoryInfo>> nsoMods = _patches.NsoPatches;
 
             if (_appMods.TryGetValue(applicationId, out ModCache mods))
@@ -965,7 +967,9 @@ namespace Ryujinx.HLE.HOS
 
                 MemPatch patch = new();
 
-                if (NextendoS3Patches.Verser(Convert.ToHexString(nso.BuildId).TrimEnd('0'), patch) == 0)
+                string buildId = Convert.ToHexString(nso.BuildId).TrimEnd('0');
+
+                if (NextendoS3Patches.Verser(buildId, patch) + NextendoStardewPatches.Verser(buildId, patch) == 0)
                 {
                     continue;
                 }

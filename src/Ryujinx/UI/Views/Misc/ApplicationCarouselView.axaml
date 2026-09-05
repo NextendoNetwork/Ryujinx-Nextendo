@@ -1,0 +1,356 @@
+<UserControl
+    x:Class="Ryujinx.Ava.UI.Views.Misc.ApplicationCarouselView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Ryujinx.Ava.UI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:helpers="clr-namespace:Ryujinx.Ava.UI.Helpers"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="clr-namespace:Ryujinx.Ava.UI.Models"
+    xmlns:ui="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+    xmlns:ext="clr-namespace:Ryujinx.Ava.Common.Markup"
+    xmlns:i="clr-namespace:Projektanker.Icons.Avalonia;assembly=Projektanker.Icons.Avalonia"
+    d:DesignHeight="720"
+    d:DesignWidth="1280"
+    Focusable="True"
+    mc:Ignorable="d"
+    xmlns:viewModels="clr-namespace:Ryujinx.Ava.UI.ViewModels"
+    x:DataType="viewModels:MainWindowViewModel">
+    <UserControl.Styles>
+        <Style Selector="Button.RoundIconButton">
+            <Setter Property="Background" Value="#33000000" />
+            <Setter Property="BorderBrush" Value="#3A3A3A" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="36" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.RoundIconButton:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#44000000" />
+        </Style>
+        <Style Selector="Button.RoundIconButton:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#55000000" />
+        </Style>
+        <Style Selector="Button.RoundIconButton.carouselBottomSelected">
+            <Setter Property="BorderBrush" Value="#FFFFFF" />
+            <Setter Property="BorderThickness" Value="2.5" />
+        </Style>
+        <Style Selector="Button.RoundIconButton.carouselBottomSelected /template/ ContentPresenter">
+            <Setter Property="Background" Value="#663EE8C8" />
+        </Style>
+    </UserControl.Styles>
+    <Grid RowDefinitions="Auto,*">
+        <!-- [Nextendo] Fondo de pantalla seleccionable (cargado desde config) -->
+        <Image
+            Name="WallpaperBackground"
+            Grid.RowSpan="2"
+            Stretch="UniformToFill"
+            RenderOptions.BitmapInterpolationMode="HighQuality"
+            IsHitTestVisible="False"
+            ZIndex="-1" />
+        <!-- Barra superior estilo Switch: perfil (izq) + reloj/indicadores (der) -->
+        <Grid
+            Grid.Row="0"
+            Margin="16,10,16,0"
+            ColumnDefinitions="Auto,*,Auto">
+            <!-- Boton circular de perfil -->
+            <Button
+                Grid.Column="0"
+                Width="76"
+                Height="76"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Background="Transparent"
+                BorderThickness="0"
+                Padding="0"
+                Click="ProfileButton_OnClick"
+                ToolTip.Tip="Nextendo">
+                <Grid>
+                    <Border
+                        Width="72"
+                        Height="72"
+                        ClipToBounds="True"
+                        CornerRadius="36"
+                        BorderBrush="#4A4A4A"
+                        BorderThickness="1.5">
+                        <Grid>
+                            <Image
+                                Name="ProfileAvatarImage"
+                                Width="72"
+                                Height="72"
+                                Stretch="UniformToFill" />
+                            <Ellipse
+                                IsHitTestVisible="False"
+                                Width="72"
+                                Height="72"
+                                Stroke="#4A4A4A"
+                                StrokeThickness="1.5" />
+                        </Grid>
+                    </Border>
+                    <Border
+                        Name="ProfileSelectionRing"
+                        Width="80"
+                        Height="80"
+                        CornerRadius="40"
+                        BorderBrush="#FF33E86B"
+                        BorderThickness="3"
+                        IsVisible="False"
+                        IsHitTestVisible="False" />
+                </Grid>
+            </Button>
+            <!-- Indicadores de conexion + reloj a la derecha -->
+            <StackPanel
+                Grid.Column="2"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="18">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="4,2"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Click="StatusButton_OnClick"
+                        ToolTip.Tip="Estado del servicio (nextendo.network/status)">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse Name="NextendoStatusDot" Width="14" Height="14" Fill="#7A7A7A" VerticalAlignment="Center" />
+                            <TextBlock Text="Nextendo" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <!-- Tipo de conexion: barras si ethernet, icono wi-fi si wi-fi -->
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <StackPanel Name="EthSignalBars" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center" IsVisible="False">
+                        <Rectangle Name="EthBar1" Width="4" Height="9" Fill="#7A7A7A" VerticalAlignment="Bottom" RadiusX="1" RadiusY="1" />
+                        <Rectangle Name="EthBar2" Width="4" Height="12" Fill="#7A7A7A" VerticalAlignment="Bottom" RadiusX="1" RadiusY="1" />
+                        <Rectangle Name="EthBar3" Width="4" Height="15" Fill="#7A7A7A" VerticalAlignment="Bottom" RadiusX="1" RadiusY="1" />
+                        <Rectangle Name="EthBar4" Width="4" Height="18" Fill="#7A7A7A" VerticalAlignment="Bottom" RadiusX="1" RadiusY="1" />
+                    </StackPanel>
+                    <ui:SymbolIcon Name="WifiStrengthSymbol" Symbol="Wifi3" FontSize="23" Foreground="#7A7A7A" VerticalAlignment="Center" IsVisible="False" />
+                </StackPanel>
+                <TextBlock
+                    Name="ClockTextBlock"
+                    Text="--:--"
+                    FontSize="22"
+                    FontWeight="SemiBold"
+                    VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+        <!-- Carrusel de juegos -->
+        <Grid Grid.Row="1" RowDefinitions="*,Auto" Margin="0,0,0,20">
+        <ListBox
+            Name="CarouselList"
+            Grid.Row="0"
+            Padding="10"
+            HorizontalAlignment="Center"
+            MaxWidth="{Binding CarouselViewportWidth}"
+            VerticalAlignment="Center"
+            Background="Transparent"
+            SelectionMode="Single"
+            ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+            ScrollViewer.VerticalScrollBarVisibility="Disabled"
+            KeyDown="CarouselList_KeyDown"
+            ContextRequested="CarouselList_ContextRequested"
+            DoubleTapped="CarouselList_DoubleTapped"
+            PointerWheelChanged="CarouselList_PointerWheelChanged"
+            ItemsSource="{Binding CarouselAppsObservableList}">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Center" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.Styles>
+                    <Style Selector="ListBoxItem">
+                        <Setter Property="Margin" Value="16,0" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="HorizontalContentAlignment" Value="Center" />
+                        <Setter Property="VerticalContentAlignment" Value="Center" />
+                        <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+                    </Style>
+                </ListBox.Styles>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel VerticalAlignment="Center">
+                            <Grid
+                                Width="{Binding $parent[UserControl].((viewModels:MainWindowViewModel)DataContext).CarouselItemSize}"
+                                Height="{Binding $parent[UserControl].((viewModels:MainWindowViewModel)DataContext).CarouselItemSize}">
+                                <Border
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="{DynamicResource AppListBackgroundColor}"
+                                    BorderBrush="#3A3A3A"
+                                    BorderThickness="1"
+                                    ClipToBounds="True"
+                                    CornerRadius="8">
+                                    <Image
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Stretch="Uniform"
+                                        RenderOptions.BitmapInterpolationMode="HighQuality"
+                                        Source="{Binding Icon, Converter={x:Static helpers:BitmapArrayValueConverter.Instance}}" />
+                                </Border>
+                                <!-- [Nextendo] Live player count, inset on the cover art top-right.
+                                     Only shown for titles with Nextendo online support
+                                     (IsNextendoCompatible); compatible titles always show the
+                                     number, counting "0" when nobody is online. -->
+                                <Border
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Margin="0,5,5,0"
+                                    Background="#E60B0D12"
+                                    BorderBrush="#33E86B"
+                                    BorderThickness="1.5"
+                                    CornerRadius="5"
+                                    Padding="7,2"
+                                    IsVisible="{Binding IsNextendoCompatible}">
+                                    <ToolTip.Tip>
+                                        <!-- [Nextendo] Hovering the player count shows: "N players
+                                             online", then "N Friends playing" + avatar/name list
+                                             (both only when at least one friend is in the game). -->
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="{Binding NextendoPlayersText}" FontSize="12" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding FriendsPlayingCountText}" FontSize="12" FontWeight="SemiBold" Foreground="#33E86B" IsVisible="{Binding HasAllFriendsInGame}" />
+                                            <ItemsControl ItemsSource="{Binding AllFriendsInGame}" IsVisible="{Binding HasAllFriendsInGame}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="models:NextendoFriendModel">
+                                                        <StackPanel Margin="0,2,0,0" Orientation="Horizontal" Spacing="8">
+                                                            <Border Width="22" Height="22" CornerRadius="11" ClipToBounds="True" Background="#252525">
+                                                                <Image Width="22" Height="22" Stretch="UniformToFill"
+                                                                       Source="{Binding Image, Converter={x:Static helpers:BitmapArrayValueConverter.Instance}}" />
+                                                            </Border>
+                                                            <TextBlock VerticalAlignment="Center" Text="{Binding Name}" MaxWidth="220" TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </ToolTip.Tip>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <Ellipse Width="7" Height="7" Fill="#33E86B" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding NextendoPlayersOnline}" FontSize="13" FontWeight="SemiBold" Foreground="#33E86B" />
+                                    </StackPanel>
+                                </Border>
+                                <!-- [Nextendo] Selection ring instead of zooming: the selected tile keeps
+                                     its natural size (and its player badge on top of the cover) and is
+                                     simply outlined, so the art renders 1:1, sharp and never clipped. -->
+                                <Border
+                                    IsHitTestVisible="False"
+                                    IsVisible="{Binding $parent[ListBoxItem].IsSelected}"
+                                    BorderBrush="#3EE8C8"
+                                    BorderThickness="3"
+                                    CornerRadius="8" />
+                            </Grid>
+                            <!-- [Nextendo] Name of the selected game. The wrapper handles the
+                                 "selected tile" visibility; the inner TextBlock additionally obeys
+                                 the "Mostrar Nombres" option (CarouselShowNames, live from config). -->
+                            <StackPanel
+                                Margin="0,10,0,0"
+                                HorizontalAlignment="Center"
+                                IsVisible="{Binding $parent[ListBoxItem].IsSelected}">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    Text="{Binding Name}"
+                                    FontSize="18"
+                                    FontWeight="SemiBold"
+                                    TextAlignment="Center"
+                                    TextWrapping="Wrap"
+                                    MaxWidth="{Binding $parent[UserControl].((viewModels:MainWindowViewModel)DataContext).CarouselItemSize}"
+                                    IsVisible="{Binding $parent[UserControl].((viewModels:MainWindowViewModel)DataContext).CarouselShowNames}" />
+                            </StackPanel>
+                            <!-- [Nextendo] Friends who play this are listed in the hover flyout on the
+                                 player-count badge above; nothing extra is shown under the name. -->
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <!-- Separador + botones redondos (website / Discord / noticias) -->
+            <StackPanel Grid.Row="1" Margin="0,0,0,4" Orientation="Vertical" Spacing="12">
+                <Border Height="1" HorizontalAlignment="Stretch" Background="#33808080" IsHitTestVisible="False" />
+                <StackPanel
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="18">
+                    <Button
+                        x:Name="WebsiteButton"
+                        Classes="RoundIconButton"
+                        Width="72"
+                        Height="72"
+                        Click="WebsiteButton_OnClick"
+                        ToolTip.Tip="Sitio web">
+                        <Image
+                            Source="resm:Ryujinx.Assets.UIImages.Logo_Web_Nextendo.png?assembly=Ryujinx"
+                            Width="40"
+                            Height="40"
+                            Stretch="Uniform" />
+                    </Button>
+                    <Button
+                        x:Name="DiscordButton"
+                        Classes="RoundIconButton"
+                        Width="72"
+                        Height="72"
+                        Click="DiscordButton_OnClick"
+                        ToolTip.Tip="Discord">
+                        <!-- SVG vectorial se asignará en code-behind -->
+                    </Button>
+                    <Button
+                        x:Name="NewsButton"
+                        Classes="RoundIconButton"
+                        Width="72"
+                        Height="72"
+                        Click="NewsButton_OnClick"
+                        ToolTip.Tip="Noticias">
+                        <Grid Width="34" Height="34">
+                            <Border
+                                Width="32"
+                                Height="32"
+                                CornerRadius="4"
+                                BorderBrush="#CFCFCF"
+                                BorderThickness="2"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+                            <StackPanel Margin="4" Spacing="3" IsHitTestVisible="False">
+                                <Rectangle Height="3" Fill="#CFCFCF" RadiusX="1.5" RadiusY="1.5" />
+                                <Rectangle Height="3" Fill="#CFCFCF" RadiusX="1.5" RadiusY="1.5" />
+                                <Rectangle Width="16" HorizontalAlignment="Left" Height="3" Fill="#CFCFCF" RadiusX="1.5" RadiusY="1.5" />
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+                    <Button
+                        x:Name="MiiEditorButton"
+                        Classes="RoundIconButton"
+                        Width="72"
+                        Height="72"
+                        Click="MiiEditorButton_OnClick"
+                        ToolTip.Tip="Editor de Mii">
+                        <i:Icon Value="fa-solid fa-face-smile" FontSize="36" />
+                    </Button>
+                    <Button
+                        x:Name="ControlsButton"
+                        Classes="RoundIconButton"
+                        Width="72"
+                        Height="72"
+                        Click="ControlsButton_OnClick"
+                        ToolTip.Tip="Controles">
+                        <i:Icon Value="fa-solid fa-gamepad" FontSize="32" />
+                    </Button>
+                    <Button
+                        x:Name="SettingsButton"
+                        Classes="RoundIconButton"
+                        Width="72"
+                        Height="72"
+                        Click="SettingsButton_OnClick"
+                        ToolTip.Tip="Ajustes del emulador">
+                        <i:Icon Value="fa-solid fa-gear" FontSize="32" />
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

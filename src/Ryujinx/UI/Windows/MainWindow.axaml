@@ -40,7 +40,7 @@
         <KeyBinding Gesture="F9" Command="{Binding ToggleDockMode}" />
         <KeyBinding Gesture="Escape" Command="{Binding ExitCurrentState}" />
         <KeyBinding Gesture="Ctrl+A" Command="{Binding OpenAmiiboWindow}" />
-        <KeyBinding Gesture="Ctrl+F" Command="{Binding OpenNextendoFriends}" />
+        <KeyBinding Gesture="Ctrl+F" Command="{Binding OpenNextendoProfile}" />
         <KeyBinding Gesture="Ctrl+B" Command="{Binding ScanAmiiboFromBin}" />
         <KeyBinding Gesture="Ctrl+R" Command="{Binding RestartEmulation}" />
         <KeyBinding Gesture="Ctrl+Shift+R" Command="{Binding ReloadRenderDocApi}" />
@@ -100,6 +100,14 @@
                         HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Stretch"
                         IsVisible="{Binding IsGrid}" />
+                    <viewsMisc:ApplicationCarouselView
+                        x:Name="ApplicationCarousel"
+                        Grid.Row="1"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        IsVisible="{Binding IsCarousel}" />
                 </Grid>
             </ContentControl>
             <Grid

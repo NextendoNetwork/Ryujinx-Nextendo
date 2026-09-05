@@ -201,6 +201,11 @@ namespace Ryujinx.Ava.Systems.Configuration
             /// </summary>
             public ReactiveObject<bool> PauseEmulationWhileScanningAmiibo { get; private set; }
 
+            /// <summary>
+            /// [Nextendo] Path to the wallpaper image shown behind the Switch-style launcher
+            /// </summary>
+            public ReactiveObject<string> WallpaperPath { get; private set; }
+
             public UISection()
             {
                 GuiColumns = new Columns();
@@ -224,6 +229,7 @@ namespace Ryujinx.Ava.Systems.Configuration
                 ShowDynamicInputSwapWarning.Value = true;
                 PauseEmulationWhileScanningAmiibo = new ReactiveObject<bool>();
                 PauseEmulationWhileScanningAmiibo.Value = true;
+                WallpaperPath = new ReactiveObject<string>();
             }
         }
 

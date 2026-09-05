@@ -1326,6 +1326,21 @@ namespace Ryujinx.Ava.Systems
                 return false;
             }
 
+            // [Nextendo] The guest's foreground process has ended on its own — e.g. the Mii
+            // editor applet when the player closes it with B, or a game that quits to home.
+            // Without this, the host loop keeps spinning on a 0 FPS "home" screen forever;
+            // ending the frame loop makes Start() unwind into DisposeContext -> AppExit, and
+            // the UI returns to the launcher cleanly.
+            if (Device.Processes.ActiveApplication is null)
+            {
+                Logger.Info?.Print(LogClass.Application,
+                    "[Nextendo] guest main process exited; stopping emulation");
+
+                _isActive = false;
+
+                return false;
+            }
+
             if (!_viewModel.IsActive)
             {
                 _inputManager.KeyboardDriver.Clear();

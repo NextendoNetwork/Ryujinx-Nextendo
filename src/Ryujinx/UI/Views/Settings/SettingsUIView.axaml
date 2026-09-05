@@ -160,6 +160,17 @@
                             </ComboBox>
                             <TextBlock Classes="globalConfigMarker" IsVisible="{Binding IsGameTitleNotNull}" />
                         </StackPanel>
+                        <!-- [Nextendo] Mostrar Nombres: toggle to show/hide game names on the launcher -->
+                        <StackPanel
+                            IsEnabled="{Binding !IsGameTitleNotNull}"
+                            Opacity="{Binding PanelOpacity}"
+                            Margin="0, 10, 0, 0"
+                            Orientation="Horizontal">
+                            <CheckBox IsChecked="{Binding ShowNames}">
+                                <TextBlock Text="{ext:Locale Settings_Interface_ShowNamesCheckboxLabel}" />
+                            </CheckBox>
+                            <TextBlock Classes="globalConfigMarker" IsVisible="{Binding IsGameTitleNotNull}" />
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
                 <Border Grid.Column="1"
@@ -271,6 +282,46 @@
                                 Click="RemoveAutoloadDirButton_OnClick">
                                 <TextBlock HorizontalAlignment="Center"
                                            Text="{ext:Locale SettingsTabGeneralRemove}" />
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                    <Separator Height="1" />
+                    <!-- [Nextendo] Launcher wallpaper (Switch-style background image) -->
+                    <StackPanel Orientation="Vertical" Spacing="5">
+                        <TextBlock Classes="h1" Text="{ext:Locale Settings_Interface_WallpaperTitle}" />
+                        <TextBlock
+                            Foreground="{DynamicResource SecondaryTextColor}"
+                            Text="{ext:Locale Settings_Interface_WallpaperNote}" />
+                    </StackPanel>
+                    <StackPanel
+                        Margin="10,0,0,0"
+                        HorizontalAlignment="Stretch"
+                        Orientation="Vertical"
+                        Spacing="10">
+                        <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto,Auto">
+                            <TextBox
+                                Name="WallpaperPathBox"
+                                Margin="0"
+                                Text="{Binding WallpaperPath}"
+                                Watermark="{ext:Locale Settings_Interface_WallpaperWatermark}"
+                                VerticalAlignment="Stretch" />
+                            <Button
+                                Name="BrowseWallpaperButton"
+                                Grid.Column="1"
+                                MinWidth="90"
+                                Margin="10,0,0,0"
+                                Click="BrowseWallpaperButton_OnClick">
+                                <TextBlock HorizontalAlignment="Center"
+                                           Text="{ext:Locale Settings_Interface_WallpaperBrowseButton}" />
+                            </Button>
+                            <Button
+                                Name="ClearWallpaperButton"
+                                Grid.Column="2"
+                                MinWidth="90"
+                                Margin="5,0,0,0"
+                                Click="ClearWallpaperButton_OnClick">
+                                <TextBlock HorizontalAlignment="Center"
+                                           Text="{ext:Locale Settings_Interface_WallpaperClearButton}" />
                             </Button>
                         </Grid>
                     </StackPanel>

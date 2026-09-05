@@ -17,6 +17,7 @@ namespace Ryujinx.Ava.UI.Helpers
             { Glyph.Device, char.ConvertFromUtf32(0xE7F7) },
             { Glyph.Bug, char.ConvertFromUtf32(0xEBE8) },
             { Glyph.Important, char.ConvertFromUtf32((int)Symbol.Important) },
+            { Glyph.Home, char.ConvertFromUtf32(0xE80F) },
         };
 
         public GlyphValueConverter(string key)

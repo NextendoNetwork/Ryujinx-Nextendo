@@ -20,6 +20,9 @@ namespace Ryujinx.Ava.UI.Models
         /// On masque alors les boutons : on ne peut ni l'ajouter, ni le signaler utilement.</summary>
         public bool Known { get; init; }
 
+        /// <summary>Déjà dans ma liste d'amis : masque le bouton « ajouter ».</summary>
+        public bool IsFriend { get; init; }
+
         /// <summary>Hôte du salon. Toujours faux dans l'onglet des rencontres.</summary>
         public bool Host { get; init; }
 
@@ -58,6 +61,9 @@ namespace Ryujinx.Ava.UI.Models
 
         /// <summary>Les boutons n'ont de sens que sur un compte connu qui n'est pas moi.</summary>
         public bool CanAct => Known && !IsMe;
+
+        /// <summary>Le bouton « ajouter » ne s'affiche que si la personne n'est pas déjà amie.</summary>
+        public bool CanAdd => Known && !IsMe && !IsFriend;
 
         /// <summary>Le badge « hôte » ne s'affiche que dans l'onglet du salon.</summary>
         public bool ShowHostBadge => Host && !IsMe;

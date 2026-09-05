@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Gommon;
+using Ryujinx.Ava.Common.Locale;
 using Ryujinx.Ava.UI.Controls;
 using Ryujinx.Ava.UI.Helpers;
 using Ryujinx.Ava.UI.ViewModels;
@@ -80,6 +81,36 @@ namespace Ryujinx.Ava.UI.Views.Settings
             {
                 AutoloadDirsList.SelectedIndex = oldIndex < AutoloadDirsList.ItemCount ? oldIndex : 0;
             }
+        }
+
+        // [Nextendo] Pick a local image (jpg/png/svg/...) as the launcher wallpaper; writing the
+        // path to the config makes the carousel show it live, before hitting OK/Apply.
+        private async void BrowseWallpaperButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            Optional<IStorageFile> result = await RyujinxApp.MainWindow.ViewModel.StorageProvider.OpenSingleFilePickerAsync(new FilePickerOpenOptions
+            {
+                AllowMultiple = false,
+                Title = LocaleManager.Instance[LocaleKeys.Settings_Interface_WallpaperTitle],
+                FileTypeFilter = new List<FilePickerFileType>
+                {
+                    new(LocaleManager.Instance[LocaleKeys.Common_FilePicker_AllSupportedFormats])
+                    {
+                        Patterns = ["*.jpg", "*.jpeg", "*.png", "*.bmp", "*.gif", "*.svg", "*.webp"],
+                        AppleUniformTypeIdentifiers = ["public.jpeg", "public.png", "com.microsoft.bmp", "public.gif", "public.svg-image"],
+                        MimeTypes = ["image/jpeg", "image/png", "image/bmp", "image/gif", "image/svg+xml"],
+                    },
+                },
+            });
+
+            if (result.HasValue)
+            {
+                ViewModel.WallpaperPath = result.Value.Path.LocalPath;
+            }
+        }
+
+        private void ClearWallpaperButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            ViewModel.WallpaperPath = string.Empty;
         }
     }
 }

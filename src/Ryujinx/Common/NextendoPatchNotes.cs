@@ -1,4 +1,6 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
 using Avalonia.Media;
 using FluentAvalonia.UI.Controls;
 using Ryujinx.Ava.Common.Locale;
@@ -73,22 +75,18 @@ namespace Ryujinx.Ava.Common
             }
         }
 
+        private const uint Accent = 0xFF3EE8C8;
+        private const uint Divider = 0x33808080;
+
         /// <summary>Shows the condensed patch notes as a modal dialog, then marks them seen.</summary>
         public static async Task ShowAsync()
         {
             try
             {
-                TextBlock body = new()
-                {
-                    Text = LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_PatchNoteBody],
-                    TextWrapping = TextWrapping.Wrap,
-                    FontSize = 14,
-                };
-
                 ContentDialog dialog = new()
                 {
                     Title = LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_PatchNoteTitle],
-                    Content = new ScrollViewer { Content = body, MaxHeight = 420 },
+                    Content = BuildBody(),
                     CloseButtonText = LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_PatchNoteButton],
                 };
 
@@ -102,6 +100,111 @@ namespace Ryujinx.Ava.Common
             {
                 MarkShown();
             }
+        }
+
+        /// <summary>
+        /// Builds the notes panel. The localized body uses one line per feature; a line starting with
+        /// "## " opens a new version section (its remainder is the version label), any other non-empty
+        /// line is a feature bullet. Bodies without "## " markers render as a single section.
+        /// </summary>
+        private static ScrollViewer BuildBody()
+        {
+            SolidColorBrush accent = new(Accent);
+            SolidColorBrush divider = new(Divider);
+
+            StackPanel root = new() { Margin = new Thickness(2, 0, 2, 0) };
+            bool firstSection = true;
+
+            foreach (string line in LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_PatchNoteBody].Split('\n'))
+            {
+                string trimmed = line.Trim();
+
+                if (trimmed.Length == 0)
+                {
+                    continue;
+                }
+
+                if (trimmed.StartsWith("## ", StringComparison.Ordinal))
+                {
+                    root.Children.Add(BuildVersionHeader(trimmed[3..].Trim(), firstSection, accent, divider));
+                    firstSection = false;
+                }
+                else
+                {
+                    string bullet = trimmed.StartsWith("•", StringComparison.Ordinal) ? trimmed[1..].Trim() : trimmed;
+                    root.Children.Add(BuildBullet(bullet, accent));
+                }
+            }
+
+            return new ScrollViewer
+            {
+                Content = root,
+                MaxHeight = 420,
+                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            };
+        }
+
+        private static StackPanel BuildVersionHeader(string version, bool first, IBrush accent, IBrush divider)
+        {
+            TextBlock label = new()
+            {
+                Text = version,
+                FontSize = 16,
+                FontWeight = FontWeight.SemiBold,
+                Foreground = accent,
+                Margin = new Thickness(0, first ? 0 : 14, 0, 2),
+            };
+
+            Border line = new()
+            {
+                Height = 1,
+                Background = divider,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 0, 0, 8),
+            };
+
+            StackPanel header = new();
+            header.Children.Add(label);
+            header.Children.Add(line);
+
+            return header;
+        }
+
+        private static Grid BuildBullet(string text, IBrush accent)
+        {
+            TextBlock glyph = new()
+            {
+                Text = "•",
+                FontSize = 14,
+                Foreground = accent,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(0, 2, 0, 0),
+            };
+
+            TextBlock body = new()
+            {
+                Text = text,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 14,
+                LineHeight = 20,
+            };
+
+            Grid row = new()
+            {
+                Margin = new Thickness(0, 0, 0, 7),
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition(new GridLength(18)),
+                    new ColumnDefinition(GridLength.Star),
+                },
+            };
+
+            Grid.SetColumn(glyph, 0);
+            Grid.SetColumn(body, 1);
+            row.Children.Add(glyph);
+            row.Children.Add(body);
+
+            return row;
         }
     }
 }

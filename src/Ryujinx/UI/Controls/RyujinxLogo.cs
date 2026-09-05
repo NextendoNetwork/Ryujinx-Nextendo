@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Ryujinx.Ava.Systems.Configuration;
 using Ryujinx.Ava.UI.ViewModels;
@@ -14,7 +15,7 @@ namespace Ryujinx.Ava.UI.Controls
         // The border gets reduced to colored pixels in the 4 corners.
         public static readonly Bitmap Bitmap =
             new(Assembly.GetAssembly(typeof(MainWindowViewModel))!
-                .GetManifestResourceStream("Ryujinx.Assets.UIImages.Logo_Ryujinx_AntiAlias.png")!);
+                .GetManifestResourceStream("Ryujinx.Assets.UIImages.Logo_Nextendo.png")!);
 
         public RyujinxLogo()
         {
@@ -22,6 +23,10 @@ namespace Ryujinx.Ava.UI.Controls
             Height = 25;
             Width = 25;
             Source = Bitmap;
+            Stretch = Stretch.Uniform;
+            // [Nextendo] The source is a 1600x1600 PNG: without this the tiny 25x25 display
+            // falls back to nearest-neighbour and the logo looks crunchy at the edges.
+            RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.HighQuality);
             IsVisible = !ConfigurationState.Instance.ShowOldUI;
         }
     }

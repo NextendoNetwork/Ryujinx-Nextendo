@@ -23,8 +23,22 @@
             MinWidth="40"
             Margin="5,2,0,2"
             VerticalAlignment="Stretch"
+            Command="{Binding SetCarouselMode}"
+            ToolTip.Tip="Home">
+            <ui:FontIcon
+                Margin="0"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Center"
+                FontFamily="avares://FluentAvalonia/Fonts#Symbols"
+                Glyph="{helpers:GlyphValueConverter Home}" />
+        </Button>
+        <Button
+            Width="40"
+            MinWidth="40"
+            Margin="5,2,0,2"
+            VerticalAlignment="Stretch"
             Command="{Binding SetListMode}"
-            IsEnabled="{Binding IsGrid}">
+            IsEnabled="{Binding !IsList}">
             <ui:FontIcon
                 Margin="0"
                 HorizontalAlignment="Stretch"
@@ -38,7 +52,7 @@
             Margin="5,2,5,2"
             VerticalAlignment="Stretch"
             Command="{Binding SetGridMode}"
-            IsEnabled="{Binding IsList}">
+            IsEnabled="{Binding !IsGrid}">
             <ui:FontIcon
                 Margin="0"
                 HorizontalAlignment="Stretch"

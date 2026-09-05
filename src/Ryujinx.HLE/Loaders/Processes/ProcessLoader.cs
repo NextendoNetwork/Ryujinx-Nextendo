@@ -30,6 +30,11 @@ namespace Ryujinx.HLE.Loaders.Processes
 
         private readonly object _pidLock = new();
 
+        // [Nextendo] A standalone applet (e.g. Mii editor) requested to exit and return to the
+        // home menu (ExitProcessAndReturn). Since the home menu isn't emulated, this signals the
+        // host to stop emulation instead of leaving the guest asleep forever at 0 FPS.
+        public bool AppletExitRequested { get; set; }
+
 #nullable enable
         public ProcessResult? ActiveApplication
         {
@@ -37,6 +42,13 @@ namespace Ryujinx.HLE.Loaders.Processes
             {
                 lock (_pidLock)
                 {
+                    // [Nextendo] Applet requested exit -> treat as no active application so the
+                    // host loop stops emulation and returns to the launcher.
+                    if (AppletExitRequested)
+                    {
+                        return null;
+                    }
+
                     // Check if _latestPid is still valid
                     if (_latestPid == 0)
                     {
@@ -135,6 +147,7 @@ namespace Ryujinx.HLE.Loaders.Processes
             {
                 if (processResult.Start(_device))
                 {
+                    AppletExitRequested = false;
                     _latestPid = processResult.ProcessId;
 
                     TitleIDs.CurrentApplication.Value = processResult.ProgramIdText;
@@ -164,6 +177,7 @@ namespace Ryujinx.HLE.Loaders.Processes
             {
                 if (processResult.Start(_device))
                 {
+                    AppletExitRequested = false;
                     _latestPid = processResult.ProcessId;
 
                     TitleIDs.CurrentApplication.Value = processResult.ProgramIdText;
@@ -194,6 +208,7 @@ namespace Ryujinx.HLE.Loaders.Processes
                     // NOTE: Check if process is SystemApplicationId or ApplicationId
                     if (processResult.ProgramId > 0x01000000000007FF)
                     {
+                        AppletExitRequested = false;
                         _latestPid = processResult.ProcessId;
 
                         TitleIDs.CurrentApplication.Value = processResult.ProgramIdText;
@@ -214,6 +229,7 @@ namespace Ryujinx.HLE.Loaders.Processes
             {
                 if (processResult.Start(_device))
                 {
+                    AppletExitRequested = false;
                     _latestPid = processResult.ProcessId;
 
                     TitleIDs.CurrentApplication.Value = processResult.ProgramIdText;
@@ -333,6 +349,7 @@ namespace Ryujinx.HLE.Loaders.Processes
                 {
                     if (processResult.Start(_device))
                     {
+                        AppletExitRequested = false;
                         _latestPid = processResult.ProcessId;
 
                         return true;

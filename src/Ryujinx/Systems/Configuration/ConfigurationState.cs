@@ -161,6 +161,7 @@ namespace Ryujinx.Ava.Systems.Configuration
                 ShowDirtyHacks = Hacks.ShowDirtyHacks,
                 DirtyHacks = Hacks.EnabledHacks.Select(it => it.Pack()).ToArray(),
                 PauseEmulationWhileScanningAmiibo = UI.PauseEmulationWhileScanningAmiibo,
+                WallpaperPath = UI.WallpaperPath,
             };
 
             return configurationFile;
@@ -282,6 +283,7 @@ namespace Ryujinx.Ava.Systems.Configuration
             UI.WindowStartup.WindowPositionY.Value = 0;
             UI.WindowStartup.WindowMaximized.Value = false;
             UI.PauseEmulationWhileScanningAmiibo.Value = true;
+            UI.WallpaperPath.Value = string.Empty;
             Hid.EnableKeyboard.Value = false;
             Hid.EnableMouse.Value = false;
             Hid.DisableInputWhenOutOfFocus.Value = false;

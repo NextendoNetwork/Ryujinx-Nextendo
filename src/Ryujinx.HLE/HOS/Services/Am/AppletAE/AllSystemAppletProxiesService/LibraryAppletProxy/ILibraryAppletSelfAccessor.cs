@@ -68,11 +68,19 @@ namespace Ryujinx.HLE.HOS.Services.Am.AppletAE.AllSystemAppletProxiesService.Lib
         // ExitProcessAndReturn -> nn::am::service::LibraryAppletInfo
         public ResultCode ExitProcessAndReturn(ServiceCtx context)
         {
-            // Exits the LibraryApplet and returns to running the title which launched this LibraryApplet (qlaunch for example).
-            // On success, official sw will enter an infinite loop with sleep-thread value 86400000000000.
-            // Since we don't currently support qlaunch, it's fine to stub it.
-            
-            Logger.Stub?.PrintStub(LogClass.Service);
+            // The applet (e.g. Mii editor) is closing and "returning to the title which launched it"
+            // (qlaunch). Since the home menu isn't emulated, we signal the host to stop emulation:
+            // AppHost.UpdateFrame notices ActiveApplication == null and unwinds to the launcher.
+            // We must NOT terminate the process from here: killing it while its other threads are
+            // mid-IPC (e.g. sm:GetService) disposed shared wait handles and crashed the emulator.
+            // Returning Success lets the guest settle into its sleep loop while the host teardown
+            // (Horizon.Dispose) terminates the process safely.
+
+            Logger.Info?.Print(LogClass.Service,
+                "[Nextendo] applet 0x0100000000001009 requested ExitProcessAndReturn; stopping emulation to return to the launcher.");
+
+            context.Device.Processes.AppletExitRequested = true;
+
             return ResultCode.Success;
         }
 

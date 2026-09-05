@@ -95,6 +95,39 @@ namespace Ryujinx.Ava.Systems.AppLibrary
             PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(HasFriendsInGame)));
         }
 
+        // [Nextendo] UNCAPPED friend list for the "Friends playing: …" names in the hover
+        // tooltip of the player-count badge, so it never truncates beyond the 5 avatar cap.
+        private readonly ObservableCollection<NextendoFriendModel> _allFriendsInGame = [];
+
+        [JsonIgnore]
+        public ObservableCollection<NextendoFriendModel> AllFriendsInGame => _allFriendsInGame;
+
+        /// <summary>[Nextendo] True when at least one friend is in this game — drives the avatar row.</summary>
+        [JsonIgnore]
+        public bool HasAllFriendsInGame => _allFriendsInGame.Count > 0;
+
+        /// <summary>[Nextendo] Localised "N Friends playing" — shown in the player-count tooltip.</summary>
+        [JsonIgnore]
+        public string FriendsPlayingCountText =>
+            LocaleManager.Instance.UpdateAndGetDynamicValue(
+                LocaleKeys.Dialog_Nextendo_FriendsPlayingFormat, _allFriendsInGame.Count);
+
+        /// <summary>[Nextendo] Replace the uncapped friends set (UI thread) and refresh the tooltip.</summary>
+        public void SetAllFriendsInGame(List<NextendoFriendModel> friends)
+        {
+            _allFriendsInGame.Clear();
+            if (friends != null)
+            {
+                foreach (NextendoFriendModel f in friends)
+                {
+                    _allFriendsInGame.Add(f);
+                }
+            }
+
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(HasAllFriendsInGame)));
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(FriendsPlayingCountText)));
+        }
+
         public bool Favorite { get; set; }
         public bool HasIndependentConfiguration { get; set; }
         public byte[] Icon { get; set; }
@@ -348,6 +381,9 @@ namespace Ryujinx.Ava.Systems.AppLibrary
             "01006bd001e06000" => "1.0.17", // Minecraft: Nintendo Switch Edition
             "01009b500007c000" => "5.5.1",  // ARMS
             "0100bde00862a000" => "3.1.1",  // Mario Tennis Aces
+            "0100277011f1a000" => "1.1.2",  // Super Mario Bros. 35
+            "0100ad9012510000" => "1.0.0",  // Pac-Man 99
+            "01009b90006dc000" => "3.0.1",  // Super Mario Maker 2
             _ => "",
         };
 

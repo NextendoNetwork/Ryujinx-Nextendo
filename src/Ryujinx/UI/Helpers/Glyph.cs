@@ -8,5 +8,6 @@ namespace Ryujinx.Ava.UI.Helpers
         Device,
         Bug,
         Important,
+        Home,
     }
 }

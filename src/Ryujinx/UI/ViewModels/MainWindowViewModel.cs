@@ -111,6 +111,11 @@ namespace Ryujinx.Ava.UI.ViewModels
 
 #pragma warning disable MVVMTK0042 // Must stay a normal observable field declaration since this is used as an out parameter target
         [ObservableProperty] private ReadOnlyObservableCollection<ApplicationData> _appsObservableList;
+
+        // [Nextendo] Carousel-specific ordering: favorites, then Nextendo-compatible titles,
+        // then everything else, alphabetical within each group. Independent of the user's
+        // global sort mode so list/grid views are not affected.
+        [ObservableProperty] private ReadOnlyObservableCollection<ApplicationData> _carouselAppsObservableList;
 #pragma warning restore MVVMTK0042
 
         [ObservableProperty] public partial Brush VSyncModeColor { get; set; }
@@ -210,6 +215,26 @@ namespace Ryujinx.Ava.UI.ViewModels
 
         public MainWindow Window { get; init; }
 
+        // [Nextendo] Tile size (width/height) used by the Switch-style game carousel. Driven by
+        // the same "Grid size" slider as the list/grid views (1 = small .. 4 = huge) so both
+        // library modes stay in sync. Bigger tiles than the old fixed 180, sized to leave room
+        // for the selection scale-up without covers stacking on top of each other.
+        private static readonly double[] CarouselItemSizes = { 170, 240, 320, 430 };
+
+        public double CarouselItemSize
+        {
+            get
+            {
+                int gridSize = Math.Clamp(ConfigurationState.Instance.UI.GridSize - 1, 0, CarouselItemSizes.Length - 1);
+                return CarouselItemSizes[gridSize];
+            }
+        }
+
+        // [Nextendo] Carousel viewport width for exactly five tiles (tile + 32px of margins each,
+        // plus the ListBox padding) so the row never shows an arbitrary half-cut tile: you get a
+        // clean 5 on screen, or 4-and-a-half with symmetric peeks when the list overflows.
+        public double CarouselViewportWidth => CarouselItemSize * 5 + 180;
+
         internal AppHost AppHost { get; set; }
 
         public RelayCommand ToggleSkylanderCommand { get; }
@@ -226,6 +251,13 @@ namespace Ryujinx.Ava.UI.ViewModels
                 .Bind(out _appsObservableList)
                 .Subscribe();
 
+            // [Nextendo] Second, fixed-order pipeline that only feeds the game carousel.
+            Applications.ToObservableChangeSet()
+                .Filter(Filter)
+                .Sort(GetCarouselComparer())
+                .Bind(out _carouselAppsObservableList)
+                .Subscribe();
+
             _rendererWaitEvent = new AutoResetEvent(false);
 
             LocaleManager.Instance.PropertyChanged += (sender, args) =>
@@ -239,6 +271,7 @@ namespace Ryujinx.Ava.UI.ViewModels
 
                 IsRyuLdnEnabled = ConfigurationState.Instance.Multiplayer.Mode.Value is MultiplayerMode.LdnRyu;
                 ConfigurationState.Instance.Multiplayer.Mode.Event += OnLdnModeChanged;
+                ConfigurationState.Instance.UI.ShowNames.Event += OnShowNamesChanged;
 
                 Volume = ConfigurationState.Instance.System.AudioVolume;
                 CustomVSyncInterval = ConfigurationState.Instance.Graphics.CustomVSyncInterval.Value;
@@ -252,8 +285,12 @@ namespace Ryujinx.Ava.UI.ViewModels
             if (Program.PreviewerDetached)
             {
                 ConfigurationState.Instance.Multiplayer.Mode.Event -= OnLdnModeChanged;
+                ConfigurationState.Instance.UI.ShowNames.Event -= OnShowNamesChanged;
             }
         }
+
+        private void OnShowNamesChanged(object sender, ReactiveEventArgs<bool> e) =>
+            OnPropertyChanged(nameof(CarouselShowNames));
 
         private void OnLdnModeChanged(object sender, ReactiveEventArgs<MultiplayerMode> e) =>
             Dispatcher.UIThread.Post(() =>
@@ -536,10 +573,25 @@ namespace Ryujinx.Ava.UI.ViewModels
             }
         }
 
+        public ApplicationData CarouselSelectedApplication
+        {
+            get;
+            set
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
+
         public ApplicationData SelectedApplication
         {
             get
             {
+                if (IsCarousel)
+                {
+                    return CarouselSelectedApplication;
+                }
+
                 return Glyph switch
                 {
                     Glyph.List => ListSelectedApplication,
@@ -551,6 +603,7 @@ namespace Ryujinx.Ava.UI.ViewModels
             {
                 ListSelectedApplication = value;
                 GridSelectedApplication = value;
+                CarouselSelectedApplication = value;
             }
         }
 
@@ -675,8 +728,12 @@ namespace Ryujinx.Ava.UI.ViewModels
             }
         }
 
-        public bool IsGrid => Glyph == Glyph.Grid;
-        public bool IsList => Glyph == Glyph.List;
+        public bool IsGrid => !IsCarousel && Glyph == Glyph.Grid;
+
+        public bool IsList => !IsCarousel && Glyph == Glyph.List;
+
+        // [Nextendo] The Switch-style home carousel is the default launcher view.
+        public bool IsCarousel { get; private set; } = true;
 
         internal void Sort(bool isAscending)
         {
@@ -775,6 +832,11 @@ namespace Ryujinx.Ava.UI.ViewModels
             }
         }
 
+        // [Nextendo] Carousel-only read of the "Mostrar Nombres" option. No GridSize gating: it
+        // simply decides whether the selected game's name appears under the cover in the carousel.
+        // Raised live via OnShowNamesChanged so a Settings toggle applies immediately.
+        public bool CarouselShowNames => ConfigurationState.Instance.UI.ShowNames;
+
         internal ApplicationSort SortMode
         {
             get => (ApplicationSort)ConfigurationState.Instance.UI.ApplicationSort.Value;
@@ -838,6 +900,8 @@ namespace Ryujinx.Ava.UI.ViewModels
                 OnPropertyChanged(nameof(IsGridHuge));
                 OnPropertyChanged(nameof(ListItemSelectorSize));
                 OnPropertyChanged(nameof(GridItemSelectorSize));
+                OnPropertyChanged(nameof(CarouselItemSize));
+                OnPropertyChanged(nameof(CarouselViewportWidth));
                 OnPropertyChanged(nameof(ShowNames));
 
                 ConfigurationState.Instance.ToFileFormat().SaveConfig(Program.ConfigurationPath);
@@ -968,6 +1032,28 @@ namespace Ryujinx.Ava.UI.ViewModels
 #pragma warning restore IDE0055
             };
 
+        // [Nextendo] Fixed carousel order: favorites first, then Nextendo-compatible games,
+        // then the rest — alphabetical (case-insensitive) inside each group.
+        private static IComparer<ApplicationData> GetCarouselComparer()
+        {
+            return Comparer<ApplicationData>.Create((a, b) =>
+            {
+                int favorite = b.Favorite.CompareTo(a.Favorite);
+                if (favorite != 0)
+                {
+                    return favorite;
+                }
+
+                int nextendo = b.IsNextendoCompatible.CompareTo(a.IsNextendoCompatible);
+                if (nextendo != 0)
+                {
+                    return nextendo;
+                }
+
+                return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+            });
+        }
+
         public void RefreshView()
         {
             RefreshGrid();
@@ -982,6 +1068,15 @@ namespace Ryujinx.Ava.UI.ViewModels
                 .AsObservableList();
 
             AppsObservableList = apps;
+
+            // [Nextendo] Rebuild the carousel's fixed ordering too (its comparer ignores SortMode).
+            IObservableList<ApplicationData> carouselAppsList = Applications.ToObservableChangeSet()
+                .Filter(Filter)
+                .Sort(GetCarouselComparer())
+                .Bind(out ReadOnlyObservableCollection<ApplicationData> carouselApps)
+                .AsObservableList();
+
+            CarouselAppsObservableList = carouselApps;
         }
 
         private bool Filter(object arg)
@@ -1542,9 +1637,32 @@ namespace Ryujinx.Ava.UI.ViewModels
 
         public void ToggleShowConsole() => ShowConsole = !ShowConsole;
 
-        public void SetListMode() => Glyph = Glyph.List;
+        private void NotifyViewModes()
+        {
+            OnPropertyChanged(nameof(IsCarousel));
+            OnPropertyChanged(nameof(IsList));
+            OnPropertyChanged(nameof(IsGrid));
+        }
 
-        public void SetGridMode() => Glyph = Glyph.Grid;
+        public void SetListMode()
+        {
+            IsCarousel = false;
+            Glyph = Glyph.List;
+            NotifyViewModes();
+        }
+
+        public void SetGridMode()
+        {
+            IsCarousel = false;
+            Glyph = Glyph.Grid;
+            NotifyViewModes();
+        }
+
+        public void SetCarouselMode()
+        {
+            IsCarousel = true;
+            NotifyViewModes();
+        }
 
         public void SetAspectRatio(AspectRatio aspectRatio) =>
             ConfigurationState.Instance.Graphics.AspectRatio.Value = aspectRatio;
@@ -2308,6 +2426,12 @@ namespace Ryujinx.Ava.UI.ViewModels
         /// be opened, read and left open while a game keeps running.
         /// </summary>
         public void OpenNextendoFriends() => NextendoFriendsWindow.Open();
+
+        /// <summary>
+        /// [Nextendo] Ctrl+F now opens the launcher profile dialog (the circular profile
+        /// button), which floats above a running game the same way the friends window did.
+        /// </summary>
+        public void OpenNextendoProfile() => RyujinxApp.MainWindow.ApplicationCarousel?.OpenNextendoProfile();
 
         public async Task OpenAmiiboWindow()
         {

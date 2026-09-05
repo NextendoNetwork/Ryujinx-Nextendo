@@ -5,6 +5,7 @@ using Ryujinx.Common.Logging;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -44,8 +45,9 @@ namespace Ryujinx.Ava.Common
             {
                 (List<NextendoApi.Friend> friends, _) = await NextendoApi.GetSocialAsync();
 
-                // Group the in-game friends by BASE title id (region/update tolerant), capped at 5.
-                Dictionary<string, List<NextendoFriendModel>> byGame = new();
+                // Group the in-game friends by BASE title id (region/update tolerant). byGameAll keeps
+                // everyone for the "Friends playing:" names row; byGame caps at 5 for the avatar row.
+                Dictionary<string, List<NextendoFriendModel>> byGameAll = new();
                 foreach (NextendoApi.Friend f in friends)
                 {
                     if (f.OnlineStatus == 0 || string.IsNullOrEmpty(f.AppId))
@@ -60,15 +62,10 @@ namespace Ryujinx.Ava.Common
                     }
 
                     string key = Canonical(baseId);
-                    if (!byGame.TryGetValue(key, out List<NextendoFriendModel> list))
+                    if (!byGameAll.TryGetValue(key, out List<NextendoFriendModel> list))
                     {
                         list = new List<NextendoFriendModel>();
-                        byGame[key] = list;
-                    }
-
-                    if (list.Count >= MaxAvatars)
-                    {
-                        continue;
+                        byGameAll[key] = list;
                     }
 
                     byte[] img = null;
@@ -88,7 +85,13 @@ namespace Ryujinx.Ava.Common
                     });
                 }
 
-                await Dispatcher.UIThread.InvokeAsync(() => Publish(byGame));
+                Dictionary<string, List<NextendoFriendModel>> byGame = new();
+                foreach (KeyValuePair<string, List<NextendoFriendModel>> pair in byGameAll)
+                {
+                    byGame[pair.Key] = pair.Value.Take(MaxAvatars).ToList();
+                }
+
+                await Dispatcher.UIThread.InvokeAsync(() => Publish(byGame, byGameAll));
             }
             catch
             {
@@ -120,8 +123,9 @@ namespace Ryujinx.Ava.Common
         private static string Canonical(string baseId)
             => baseId != null && _regionCanonical.TryGetValue(baseId, out string c) ? c : baseId;
 
-        // Runs on the UI thread: mutates the per-app ObservableCollection the game rows bind to.
-        private static void Publish(Dictionary<string, List<NextendoFriendModel>> byGame)
+        // Runs on the UI thread: mutates the per-app ObservableCollections the game rows bind to.
+        private static void Publish(Dictionary<string, List<NextendoFriendModel>> byGame,
+                                    Dictionary<string, List<NextendoFriendModel>> byGameAll)
         {
             ApplicationLibrary lib = _library;
             if (lib == null)
@@ -134,7 +138,9 @@ namespace Ryujinx.Ava.Common
                 foreach (ApplicationData app in lib.Applications.Items)
                 {
                     byGame.TryGetValue(Canonical(app.IdBaseString), out List<NextendoFriendModel> list);
+                    byGameAll.TryGetValue(Canonical(app.IdBaseString), out List<NextendoFriendModel> all);
                     app.SetFriendsInGame(list);
+                    app.SetAllFriendsInGame(all);
                 }
             }
             catch (Exception ex)

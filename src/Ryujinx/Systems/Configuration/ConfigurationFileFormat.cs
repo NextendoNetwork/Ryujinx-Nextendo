@@ -17,7 +17,7 @@ namespace Ryujinx.Ava.Systems.Configuration
         /// <summary>
         /// The current version of the file format
         /// </summary>
-        public const int CurrentVersion = 74;
+        public const int CurrentVersion = 75;
 
         /// <summary>
         /// Version of the configuration file format
@@ -525,6 +525,11 @@ namespace Ryujinx.Ava.Systems.Configuration
         /// Pause emulation while scanning Amiibo
         /// </summary>
         public bool PauseEmulationWhileScanningAmiibo { get; set; }
+
+        /// <summary>
+        /// [Nextendo] Path to the wallpaper image shown behind the Switch-style launcher
+        /// </summary>
+        public string WallpaperPath { get; set; }
 
         /// <summary>
         /// Loads a configuration file from disk

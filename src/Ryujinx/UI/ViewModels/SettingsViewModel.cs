@@ -135,6 +135,36 @@ namespace Ryujinx.Ava.UI.ViewModels
             }
         }
 
+        // [Nextendo] "Mostrar Nombres": whether grid/list tiles show the game title below the cover.
+        // Set directly on the shared config so the app list updates live while Settings is open.
+        public bool ShowNames
+        {
+            get => ConfigurationState.Instance.UI.ShowNames;
+            set
+            {
+                if (ConfigurationState.Instance.UI.ShowNames.Value != value)
+                {
+                    ConfigurationState.Instance.UI.ShowNames.Value = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        // [Nextendo] Launcher wallpaper: backed directly by the config so the carousel previews it
+        // live (it listens to UI.WallpaperPath events) while the settings window is open.
+        public string WallpaperPath
+        {
+            get => ConfigurationState.Instance.UI.WallpaperPath;
+            set
+            {
+                if (ConfigurationState.Instance.UI.WallpaperPath.Value != value)
+                {
+                    ConfigurationState.Instance.UI.WallpaperPath.Value = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         public int GraphicsBackendMultithreadingIndex
         {
             get;

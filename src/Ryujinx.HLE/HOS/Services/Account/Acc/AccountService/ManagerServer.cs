@@ -52,6 +52,7 @@ namespace Ryujinx.HLE.HOS.Services.Account.Acc.AccountService
 
         private byte[] _cachedTokenData;
         private DateTime _cachedTokenExpiry;
+        private string _cachedTokenVersion;
 
         public ManagerServer(UserId userId)
         {
@@ -100,7 +101,7 @@ namespace Ryujinx.HLE.HOS.Services.Account.Acc.AccountService
             return rsa;
         }
 
-        private static string GenerateIdToken()
+        private static string GenerateIdToken(string installedVersion)
         {
             RSAParameters parameters = _nextendoIdTokenRsa.ExportParameters(true);
 
@@ -142,6 +143,11 @@ namespace Ryujinx.HLE.HOS.Services.Account.Acc.AccountService
             if (!string.IsNullOrEmpty(nexToken))
             {
                 claims["nnex"] = nexToken;
+            }
+
+            if (!string.IsNullOrEmpty(installedVersion))
+            {
+                claims["tv"] = installedVersion;
             }
 
             SecurityTokenDescriptor descriptor = new()
@@ -234,10 +240,14 @@ namespace Ryujinx.HLE.HOS.Services.Account.Acc.AccountService
             }
             */
 
-            if (_cachedTokenData == null || DateTime.UtcNow > _cachedTokenExpiry)
+            string installedVersion = context.Device.Processes.ActiveApplication?.DisplayVersion;
+
+            if (_cachedTokenData == null || DateTime.UtcNow > _cachedTokenExpiry ||
+                installedVersion != _cachedTokenVersion)
             {
                 _cachedTokenExpiry = DateTime.UtcNow + TimeSpan.FromHours(3);
-                _cachedTokenData = Encoding.ASCII.GetBytes(GenerateIdToken());
+                _cachedTokenVersion = installedVersion;
+                _cachedTokenData = Encoding.ASCII.GetBytes(GenerateIdToken(installedVersion));
             }
 
             byte[] tokenData = _cachedTokenData;

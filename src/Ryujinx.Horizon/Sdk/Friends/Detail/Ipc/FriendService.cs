@@ -424,6 +424,42 @@ namespace Ryujinx.Horizon.Sdk.Friends.Detail.Ipc
             return Result.Success;
         }
 
+        // [Nextendo] ARMS's raw nn::friends presence status floors at Online (1) even while the
+        // player is hosting/joined to a private battle, and ARMS's own friends-list UI only ever
+        // consults its JoinMode app-field key when status==2 — so a real, joinable session still
+        // shows friends as greyed-out/non-joinable otherwise. Mirrors citron's IsArmsSessionActive
+        // fixup (friend.cpp): parse the null-delimited key/value app-field tokens and bump status
+        // to OnlinePlay whenever JoinMode indicates an active session.
+        private static bool IsArmsSessionActive(ReadOnlySpan<byte> appField)
+        {
+            int pos = 0;
+            while (pos < appField.Length)
+            {
+                int end = appField[pos..].IndexOf((byte)0);
+                int tokenEnd = end < 0 ? appField.Length : pos + end;
+                if (tokenEnd == pos)
+                {
+                    break;
+                }
+                string key = Encoding.ASCII.GetString(appField[pos..tokenEnd]);
+                pos = tokenEnd + 1;
+                if (pos >= appField.Length)
+                {
+                    break;
+                }
+                int valueEnd = appField[pos..].IndexOf((byte)0);
+                int valueTokenEnd = valueEnd < 0 ? appField.Length : pos + valueEnd;
+                string value = Encoding.ASCII.GetString(appField[pos..valueTokenEnd]);
+                pos = valueTokenEnd + 1;
+
+                if (key == "JoinMode")
+                {
+                    return value == "1" || value == "2" || value == "3" || value == "4";
+                }
+            }
+            return false;
+        }
+
         [CmifCommand(10610)]
         public Result UpdateUserPresence(
             Uid userId,
@@ -441,7 +477,16 @@ namespace Ryujinx.Horizon.Sdk.Friends.Detail.Ipc
                 Span<byte> af = MemoryMarshal.CreateSpan(
                     ref System.Runtime.CompilerServices.Unsafe.As<UserPresenceImpl.AppKeyValueStorageHolder, byte>(
                         ref up.AppKeyValueStorage), 0xC0);
-                NextendoFriends.PublishPresence((int)userPresence.Status, af.ToArray());
+
+                int status = (int)userPresence.Status;
+                if (IsArmsSessionActive(af))
+                {
+                    status = Math.Max(status, (int)PresenceStatus.OnlinePlay);
+                    Logger.Info?.Print(LogClass.ServiceFriend,
+                        "[Nextendo] ARMS JoinMode indicates an active session; bumping status to OnlinePlay (raw status floors at Online otherwise)");
+                }
+
+                NextendoFriends.PublishPresence(status, af.ToArray());
             }
             catch
             {

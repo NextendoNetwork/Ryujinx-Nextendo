@@ -28,6 +28,13 @@ namespace Ryujinx.Input.SDL3
 
         public static NpadHdRumble Create(SDL_Gamepad* gamepadHandle)
         {
+            // On macOS, calling SDL_hid_open while SDL_Gamepad has already opened the device
+            // causes IOHIDDeviceOpen to deadlock/hang indefinitely in the IOKit kernel trap.
+            if (OperatingSystem.IsMacOS())
+            {
+                return null;
+            }
+
             _vendor = SDL_GetGamepadVendor(gamepadHandle);
             if (!Enum.IsDefined(typeof(HDRumbleSupportedVendor), _vendor))
             {

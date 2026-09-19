@@ -151,6 +151,9 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Sfdnsres.Proxy
             // repondeur NAT ; il partage donc sa variable. Pose AVANT les jokers, sinon
             // *.nintendo.net l attraperait en premier.
             ("g2b309e01-lp1.s.n.srv.nintendo.net", ResolveConfiguredIp("NEXTENDO_NAT_IP")),
+            // Splatoon 2's Pia rendezvous endpoint is served by the NAT responder;
+            // keep it out of the general NEX/backend redirect below.
+            ("g2df33d01-lp1.p.srv.nintendo.net", ResolveConfiguredIp("NEXTENDO_NAT_IP")),
             ("*.nintendo.net",     ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
             ("*.nintendo.com",     ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
             ("*.nintendowifi.net", ResolveConfiguredIp("NEXTENDO_SERVER_IP")),

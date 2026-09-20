@@ -418,8 +418,11 @@ namespace Ryujinx.Ava.UI.Windows
                     return;
                 }
 
-                // A real prod.keys is a sizeable list of "name = hex" lines; reject obviously wrong files.
-                if (new FileInfo(src).Length < 1024)
+                // A real prod.keys is a list of "name = hex" lines that always carries the master
+                // and header keys. Size alone is not enough: title.keys sits next to it, matches the
+                // "*.keys" filter and is easily over 1 KB, and installing it under the prod.keys name
+                // leaves the user with a wizard that says "Keys installed" and games that never boot.
+                if (!LooksLikeProdKeys(src))
                 {
                     if (_keysStatus != null)
                     {
@@ -431,6 +434,15 @@ namespace Ryujinx.Ava.UI.Windows
 
                 Directory.CreateDirectory(AppDataManager.KeysDirPath);
                 File.Copy(src, Path.Combine(AppDataManager.KeysDirPath, "prod.keys"), overwrite: true);
+
+                // Dumps ship title.keys alongside prod.keys; bring it along so updates and DLC
+                // decrypt too, instead of asking the user to find the keys folder by hand later.
+                string titleKeys = Path.Combine(Path.GetDirectoryName(src) ?? "", "title.keys");
+                if (File.Exists(titleKeys))
+                {
+                    File.Copy(titleKeys, Path.Combine(AppDataManager.KeysDirPath, "title.keys"), overwrite: true);
+                }
+
                 _keysInstalled = true;
 
                 if (_keysStatus != null)
@@ -445,6 +457,32 @@ namespace Ryujinx.Ava.UI.Windows
                     _keysStatus.Text = ex.Message;
                 }
             }
+        }
+
+        /// <summary>
+        /// True when the file has at least one master_key_XX or header_key line, which every
+        /// prod.keys dump has and no other .keys file (title.keys, console.keys) does.
+        /// </summary>
+        private static bool LooksLikeProdKeys(string path)
+        {
+            try
+            {
+                foreach (string line in File.ReadLines(path))
+                {
+                    string trimmed = line.TrimStart();
+                    if (trimmed.StartsWith("master_key_", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("header_key", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch (IOException)
+            {
+                // Unreadable file: treat as invalid rather than crash the wizard.
+            }
+
+            return false;
         }
 
         // Live "available / already taken" feedback when the nickname field loses focus.

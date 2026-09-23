@@ -100,7 +100,12 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
                     {
                         outputEvents |= PollEventTypeMask.Error;
 
-                        if (!socket.Connected || !socket.IsBound)
+                        // POSIX may report an ICMP port-unreachable error for a UDP
+                        // hole-punch probe. Socket.Connected is false for the managed
+                        // datagram socket, but that is not a peer disconnect and must
+                        // not be exposed to Pia as POLLHUP.
+                        if (socket.SocketType == SocketType.Stream &&
+                            (!socket.Connected || !socket.IsBound))
                         {
                             outputEvents |= PollEventTypeMask.Disconnected;
                         }

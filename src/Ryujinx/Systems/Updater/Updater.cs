@@ -267,9 +267,14 @@ namespace Ryujinx.Ava.Systems
                                 };
 
                                 // `ping` rather than `timeout`, which needs a console we don't have.
-                                delayedStart.ArgumentList.Add("/c");
-                                delayedStart.ArgumentList.Add(
-                                    $"ping 127.0.0.1 -n 3 > nul & start \"\" \"{ryuName}\" {quotedArgs}");
+                                //
+                                // Pass the command line as a raw string. `ArgumentList` would escape
+                                // the inner quotes as `\"` for the CRT parser, which cmd.exe does not
+                                // understand: `start` then tried to run `\` and the relaunch died
+                                // with "Windows cannot find the file". `/s` makes cmd strip only the
+                                // outer pair and take the rest verbatim.
+                                delayedStart.Arguments =
+                                    $"/s /c \"ping 127.0.0.1 -n 3 > nul & start \"\" \"{ryuName}\" {quotedArgs}\"";
 
                                 Process.Start(delayedStart);
                                 relaunched = true;

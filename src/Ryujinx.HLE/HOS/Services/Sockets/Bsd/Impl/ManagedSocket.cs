@@ -497,6 +497,9 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
                 {
                     receiveSize = -1;
 
+                    Logger.Debug?.Print(LogClass.ServiceBsd,
+                        $"[Nextendo] UDP ReceiveFrom remote={remoteEndPoint} size={size} result={LinuxError.EOPNOTSUPP} error=NotBound");
+
                     return LinuxError.EOPNOTSUPP;
                 }
 
@@ -504,6 +507,9 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
                 remoteEndPoint = (IPEndPoint)temp;
                 result = LinuxError.SUCCESS;
+
+                Logger.Debug?.Print(LogClass.ServiceBsd,
+                    $"[Nextendo] UDP ReceiveFrom remote={remoteEndPoint} size={size} received={receiveSize} result={result}");
             }
             catch (SocketException exception)
             {
@@ -515,6 +521,9 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
                 receiveSize = -1;
 
                 result = WinSockHelper.ConvertError((WsaError)exception.ErrorCode);
+
+                Logger.Debug?.Print(LogClass.ServiceBsd,
+                    $"[Nextendo] UDP ReceiveFrom remote={remoteEndPoint} size={size} received=-1 result={result} socketError={exception.SocketErrorCode} errorCode={exception.ErrorCode}");
             }
 
             if (shouldBlockAfterOperation)
@@ -590,6 +599,9 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
             {
                 sendSize = Socket.SendTo(buffer[..size], ConvertBsdSocketFlags(flags), remoteEndPoint);
 
+                Logger.Debug?.Print(LogClass.ServiceBsd,
+                    $"[Nextendo] UDP SendTo remote={remoteEndPoint} size={size} sent={sendSize} result={LinuxError.SUCCESS}");
+
                 return LinuxError.SUCCESS;
             }
             catch (SocketException exception)
@@ -601,7 +613,12 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
                 sendSize = -1;
 
-                return WinSockHelper.ConvertError((WsaError)exception.ErrorCode);
+                LinuxError result = WinSockHelper.ConvertError((WsaError)exception.ErrorCode);
+
+                Logger.Debug?.Print(LogClass.ServiceBsd,
+                    $"[Nextendo] UDP SendTo remote={remoteEndPoint} size={size} sent=-1 result={result} socketError={exception.SocketErrorCode} errorCode={exception.ErrorCode}");
+
+                return result;
             }
         }
 

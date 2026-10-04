@@ -14,6 +14,7 @@ namespace Ryujinx.HLE.HOS.Applets.SoftwareKeyboard
         private const int RendererWaitTimeoutMilliseconds = 100;
 
         private readonly object _stateLock = new();
+        private readonly object _renderLock = new();
 
         private readonly SoftwareKeyboardUIState _state = new();
         private readonly SoftwareKeyboardRendererBase _renderer;
@@ -26,7 +27,7 @@ namespace Ryujinx.HLE.HOS.Applets.SoftwareKeyboard
             _renderer = new SoftwareKeyboardRendererBase(uiTheme);
 
             StartTextBoxBlinker(_textBoxBlinkTimedAction, _state, _stateLock);
-            StartRenderer(_renderAction, _renderer, _state, _stateLock);
+            StartRenderer(_renderAction, _renderer, _state, _stateLock, _renderLock);
         }
 
         private static void StartTextBoxBlinker(TimedAction timedAction, SoftwareKeyboardUIState state, object stateLock)
@@ -45,7 +46,7 @@ namespace Ryujinx.HLE.HOS.Applets.SoftwareKeyboard
             }, TextBoxBlinkSleepMilliseconds);
         }
 
-        private static void StartRenderer(TimedAction timedAction, SoftwareKeyboardRendererBase renderer, SoftwareKeyboardUIState state, object stateLock)
+        private static void StartRenderer(TimedAction timedAction, SoftwareKeyboardRendererBase renderer, SoftwareKeyboardUIState state, object stateLock, object renderLock)
         {
             SoftwareKeyboardUIState internalState = new();
 
@@ -62,7 +63,7 @@ namespace Ryujinx.HLE.HOS.Applets.SoftwareKeyboard
                     }
 
 #pragma warning disable IDE0055 // Disable formatting
-                    needsUpdate  = UpdateStateField(ref state.InputText,           ref internalState.InputText);
+                    needsUpdate |= UpdateStateField(ref state.InputText,           ref internalState.InputText);
                     needsUpdate |= UpdateStateField(ref state.CursorBegin,         ref internalState.CursorBegin);
                     needsUpdate |= UpdateStateField(ref state.CursorEnd,           ref internalState.CursorEnd);
                     needsUpdate |= UpdateStateField(ref state.AcceptPressed,       ref internalState.AcceptPressed);
@@ -81,16 +82,20 @@ namespace Ryujinx.HLE.HOS.Applets.SoftwareKeyboard
                     }
                 }
 
-                if (canCreateSurface)
+                lock (renderLock)
                 {
-                    renderer.CreateSurface(internalState.SurfaceInfo);
-                }
+                    if (canCreateSurface)
+                    {
+                        renderer.CreateSurface(internalState.SurfaceInfo);
+                        needsUpdate = true;
+                    }
 
-                if (needsUpdate)
-                {
-                    renderer.DrawMutableElements(internalState);
-                    renderer.CopyImageToBuffer();
-                    needsUpdate = false;
+                    if (needsUpdate)
+                    {
+                        renderer.DrawMutableElements(internalState);
+                        renderer.CopyImageToBuffer();
+                        needsUpdate = false;
+                    }
                 }
             });
         }
@@ -148,6 +153,18 @@ namespace Ryujinx.HLE.HOS.Applets.SoftwareKeyboard
         {
             lock (_stateLock)
             {
+                // The first indirect-layer request needs a complete image immediately.
+                // Do not depend on the asynchronous renderer or the cursor blink to publish it.
+                if (_state.SurfaceInfo == null)
+                {
+                    lock (_renderLock)
+                    {
+                        _renderer.CreateSurface(surfaceInfo);
+                        _renderer.DrawMutableElements(_state);
+                        _renderer.CopyImageToBuffer();
+                    }
+                }
+
                 _state.SurfaceInfo = surfaceInfo;
 
                 // Tell the render thread there is something new to render.

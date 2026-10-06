@@ -33,6 +33,7 @@ namespace Ryujinx.Ava.Systems.AppLibrary
         public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
 
         private int _nextendoPlayersOnline;
+        private bool _isNextendoServerAvailable;
 
         /// <summary>
         /// [Nextendo] Players currently online for this title, pushed by NextendoOnlineCounts.
@@ -52,6 +53,26 @@ namespace Ryujinx.Ava.Systems.AppLibrary
                 PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(NextendoPlayersOnline)));
                 PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(NextendoPlayersText)));
                 PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(HasNextendoPlayersOnline)));
+            }
+        }
+
+        /// <summary>
+        /// [Nextendo] True when the live online-count feed includes this title. This reflects
+        /// server availability independently from the version-verified online compatibility.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsNextendoServerAvailable
+        {
+            get => _isNextendoServerAvailable;
+            set
+            {
+                if (_isNextendoServerAvailable == value)
+                {
+                    return;
+                }
+
+                _isNextendoServerAvailable = value;
+                PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(IsNextendoServerAvailable)));
             }
         }
 
@@ -403,6 +424,19 @@ namespace Ryujinx.Ava.Systems.AppLibrary
             "01009b500007c000" => "5.5.1",  // ARMS
             "0100bde00862a000" => "3.1.1",  // Mario Tennis Aces
             "0100c9c00e25c000" => "4.0.0",  // Mario Golf: Super Rush
+            "01001b300b9be000" => "2.7.7.92380", // Diablo III: Eternal Collection
+            "0100770008dd8000" => "1.4.0",  // Monster Hunter Generations Ultimate
+            "01006fe013472000" => "1.1.1",  // Mario Party Superstars
+            "0100a7c01b792000" => "1.1.1.0", // Minecraft Dungeons II
+            "0100b3f000be2000" => "1.3.3",  // Pokkén Tournament DX
+            "010047700d540000" => "2.0.1",  // Clubhouse Games: 51 Worldwide Classics
+            "0100c6f01c4f8000" => "1.3.0",  // METAL GEAR SOLID: Peace Walker - Master Collection Version
+            "010019401051c000" => "1.3.2",  // Mario Strikers: Battle League
+            "0100c9a00ece6000" => "4.2.0",  // Nintendo 64 - Nintendo Classics
+            "01006fd0080b2000" => "1.0.15", // Overcooked! 2
+            "01004a2013112000" => "1.1.0",  // PAC-MAN 99
+            "0100de600beee000" => "1.6.1",  // Saints Row: The Third - The Full Package
+            "010040600c5ce000" => "2.6.0",  // TETRIS 99
             // [Nextendo 2026-09-20] Crash Team Racing Nitro-Fueled runs on Demonware, not NEX.
             // The built-in patches are keyed to build 1C689518406930512C13DDF4217E7676, which is
             // specific to this exact version; another update would not receive them.

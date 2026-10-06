@@ -5,7 +5,9 @@ using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Ryujinx.Ava.Common;
 using Ryujinx.Ava.Common.Locale;
 using Ryujinx.Ava.UI.Helpers;
@@ -56,6 +58,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
         private bool _navigationLeftDown;
         private bool _navigationConfirmDown;
         private bool _navigationBackDown;
+        private bool _closeDashboardOnBackRelease;
         private int _contentFocusIndex;
         private int _selectedNavigationIndex;
         private Control _selectedPanel;
@@ -227,6 +230,12 @@ namespace Ryujinx.Ava.UI.Views.Misc
         {
             _navigatingSidebar = false;
             SetSelectedPanel(RequestsTab);
+        }
+
+        public void ShowInvitesTab()
+        {
+            SelectRequestsTab(this, null);
+            Dispatcher.UIThread.Post(FocusFirstContentControl);
         }
 
         /// <summary>Shows the game's MyPage invite picker inside the Invites dashboard category.</summary>
@@ -413,7 +422,13 @@ namespace Ryujinx.Ava.UI.Views.Misc
 
         private static Ryujinx.Ava.UI.ViewModels.MainWindowViewModel RunningViewModel => RyujinxApp.MainWindow?.ViewModel;
 
-        private void ToggleFullscreen_Click(object sender, RoutedEventArgs e) => RunningViewModel?.ToggleFullscreen();
+        private void ToggleFullscreen_Click(object sender, RoutedEventArgs e)
+        {
+            Ryujinx.Ava.UI.Windows.MainWindow mainWindow = RyujinxApp.MainWindow;
+            RunningViewModel?.ToggleFullscreen();
+            CloseRequested?.Invoke(this, EventArgs.Empty);
+            Dispatcher.UIThread.Post(() => mainWindow?.Activate());
+        }
 
         private void PauseGame_Click(object sender, RoutedEventArgs e)
         {
@@ -443,6 +458,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
                 if (!ConfigurationState.Instance.ShowConfirmExit)
                 {
                     host.Stop();
+                    CloseRequested?.Invoke(this, EventArgs.Empty);
                     return;
                 }
 
@@ -452,19 +468,56 @@ namespace Ryujinx.Ava.UI.Views.Misc
                     Content = LocaleManager.Instance[LocaleKeys.DialogStopEmulationMessage],
                     PrimaryButtonText = LocaleManager.Instance[LocaleKeys.InputDialogYes],
                     SecondaryButtonText = LocaleManager.Instance[LocaleKeys.InputDialogNo],
-                    DefaultButton = ContentDialogButton.Primary,
+                    DefaultButton = ContentDialogButton.None,
                 };
+
+                Style gamepadSelectedButtonStyle = new(x => x.OfType<Button>().Class("gamepad-selected"));
+                gamepadSelectedButtonStyle.Setters.Add(new Setter(Button.BackgroundProperty, Brush.Parse("#FF3EE8C8")));
+                gamepadSelectedButtonStyle.Setters.Add(new Setter(Button.ForegroundProperty, Brush.Parse("#FF17191D")));
+                gamepadSelectedButtonStyle.Setters.Add(new Setter(Button.BorderBrushProperty, Brush.Parse("#FF3EE8C8")));
+                gamepadSelectedButtonStyle.Setters.Add(new Setter(Button.BorderThicknessProperty, new Thickness(2)));
+                gamepadSelectedButtonStyle.Setters.Add(new Setter(Button.FontWeightProperty, FontWeight.SemiBold));
+                dialog.Styles.Add(gamepadSelectedButtonStyle);
+
+                bool confirmed = false;
+                dialog.PrimaryButtonClick += (_, _) => confirmed = true;
 
                 // Let the dashboard's gamepad poll drive this choice while the confirmation is
                 // open. In game context A accepts and B cancels, matching the dashboard controls.
                 _navigationTimer.Stop();
                 bool selectedPrimary = true;
+                void UpdateDialogSelection()
+                {
+                    Button[] buttons = dialog.GetVisualDescendants().OfType<Button>().ToArray();
+                    Button primaryButton = buttons.FirstOrDefault(button =>
+                        string.Equals(button.Content?.ToString(), dialog.PrimaryButtonText, StringComparison.Ordinal));
+                    Button secondaryButton = buttons.FirstOrDefault(button =>
+                        string.Equals(button.Content?.ToString(), dialog.SecondaryButtonText, StringComparison.Ordinal));
+
+                    primaryButton?.Classes.Set("gamepad-selected", selectedPrimary);
+                    secondaryButton?.Classes.Set("gamepad-selected", !selectedPrimary);
+                }
+
+                dialog.Opened += (_, _) => UpdateDialogSelection();
                 bool upWasDown = false;
                 bool downWasDown = false;
                 bool leftWasDown = false;
                 bool rightWasDown = false;
                 bool confirmWasDown = false;
                 bool backWasDown = false;
+                IGamepad initialGamepad = GetNavigationGamepad();
+                if (initialGamepad != null)
+                {
+                    GamepadStateSnapshot initialSnapshot = initialGamepad.GetMappedStateSnapshot();
+                    (float initialStickX, float initialStickY) = initialSnapshot.GetStick(StickInputId.Left);
+                    upWasDown = initialSnapshot.IsPressed(GamepadButtonInputId.DpadUp) || initialStickY > 0.5f;
+                    downWasDown = initialSnapshot.IsPressed(GamepadButtonInputId.DpadDown) || initialStickY < -0.5f;
+                    leftWasDown = initialSnapshot.IsPressed(GamepadButtonInputId.DpadLeft) || initialStickX < -0.5f;
+                    rightWasDown = initialSnapshot.IsPressed(GamepadButtonInputId.DpadRight) || initialStickX > 0.5f;
+                    confirmWasDown = initialSnapshot.IsPressed(GamepadButtonInputId.A);
+                    backWasDown = initialSnapshot.IsPressed(GamepadButtonInputId.B);
+                }
+
                 DispatcherTimer dialogNavigationTimer = new() { Interval = TimeSpan.FromMilliseconds(75) };
                 dialogNavigationTimer.Tick += (_, _) =>
                 {
@@ -487,11 +540,12 @@ namespace Ryujinx.Ava.UI.Views.Misc
                         (left && !leftWasDown) || (right && !rightWasDown))
                     {
                         selectedPrimary = !selectedPrimary;
-                        dialog.DefaultButton = selectedPrimary ? ContentDialogButton.Primary : ContentDialogButton.Secondary;
+                        UpdateDialogSelection();
                     }
 
                     if (confirm && !confirmWasDown)
                     {
+                        confirmed = selectedPrimary;
                         dialog.Hide(selectedPrimary ? ContentDialogResult.Primary : ContentDialogResult.Secondary);
                     }
                     else if (back && !backWasDown)
@@ -511,9 +565,9 @@ namespace Ryujinx.Ava.UI.Views.Misc
                 {
                     Task<ContentDialogResult> dialogTask = ContentDialogHelper.ShowAsync(dialog);
                     dialogNavigationTimer.Start();
-                    ContentDialogResult result = await dialogTask;
+                    await dialogTask;
 
-                    if (result == ContentDialogResult.Primary)
+                    if (confirmed)
                     {
                         host.Stop();
                     }
@@ -522,6 +576,11 @@ namespace Ryujinx.Ava.UI.Views.Misc
                 {
                     dialogNavigationTimer.Stop();
                     _navigationTimer.Start();
+                }
+
+                if (confirmed)
+                {
+                    CloseRequested?.Invoke(this, EventArgs.Empty);
                 }
             }
         }
@@ -765,12 +824,20 @@ namespace Ryujinx.Ava.UI.Views.Misc
             IGamepad gamepad = GetNavigationGamepad();
             if (gamepad == null)
             {
+                bool closeDashboard = _closeDashboardOnBackRelease;
+                _closeDashboardOnBackRelease = false;
                 ResetNavigationButtons();
+                if (closeDashboard)
+                {
+                    CloseRequested?.Invoke(this, EventArgs.Empty);
+                }
+
                 return;
             }
 
             GamepadStateSnapshot snapshot = gamepad.GetMappedStateSnapshot();
             (float stickX, float stickY) = snapshot.GetStick(StickInputId.Left);
+            (_, float rightStickY) = snapshot.GetStick(StickInputId.Right);
             bool up = snapshot.IsPressed(GamepadButtonInputId.DpadUp) || stickY > 0.5f;
             bool down = snapshot.IsPressed(GamepadButtonInputId.DpadDown) || stickY < -0.5f;
             bool right = snapshot.IsPressed(GamepadButtonInputId.DpadRight) || stickX > 0.5f;
@@ -780,6 +847,20 @@ namespace Ryujinx.Ava.UI.Views.Misc
             bool confirm = snapshot.IsPressed(_isGameRunningContext ? GamepadButtonInputId.A : GamepadButtonInputId.B);
             bool back = snapshot.IsPressed(_isGameRunningContext ? GamepadButtonInputId.B : GamepadButtonInputId.A);
             bool showingFriend = FriendsTab.IsVisible && FriendProfileScroll.IsVisible;
+
+            if (_closeDashboardOnBackRelease)
+            {
+                _navigationBackDown = back;
+                if (!back)
+                {
+                    _closeDashboardOnBackRelease = false;
+                    CloseRequested?.Invoke(this, EventArgs.Empty);
+                }
+
+                return;
+            }
+
+            ScrollSelectedPanel(rightStickY);
 
             if (ReportOverlay.IsVisible && back && !_navigationBackDown)
             {
@@ -825,7 +906,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
                 }
                 else if (back && !_navigationBackDown)
                 {
-                    CloseRequested?.Invoke(this, EventArgs.Empty);
+                    _closeDashboardOnBackRelease = true;
                 }
             }
             else
@@ -863,6 +944,27 @@ namespace Ryujinx.Ava.UI.Views.Misc
             _navigationRightDown = right;
             _navigationConfirmDown = confirm;
             _navigationBackDown = back;
+        }
+
+        private void ScrollSelectedPanel(float rightStickY)
+        {
+            if (Math.Abs(rightStickY) < 0.2f)
+            {
+                return;
+            }
+
+            ScrollViewer scrollViewer = _selectedPanel.GetLogicalDescendants()
+                .OfType<ScrollViewer>()
+                .FirstOrDefault(viewer => IsVisibleInLogicalTree(viewer) && viewer.Extent.Height > viewer.Viewport.Height);
+
+            if (scrollViewer == null)
+            {
+                return;
+            }
+
+            double maxOffset = Math.Max(0, scrollViewer.Extent.Height - scrollViewer.Viewport.Height);
+            double offsetY = Math.Clamp(scrollViewer.Offset.Y - rightStickY * 45, 0, maxOffset);
+            scrollViewer.Offset = new Vector(scrollViewer.Offset.X, offsetY);
         }
 
         private List<Control> GetVisibleFocusableControls()
@@ -1102,6 +1204,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
             _invites.Clear();
             _syncedHistory.Clear();
 
+            UpdateInviteCountBadge();
             RefreshOwnStatus();
         }
 
@@ -1111,6 +1214,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
 
             Fill(_friends, OrderFriendsByPriority(friends));
             Fill(_requests, requests);
+            UpdateInviteCountBadge();
             RefreshGameInviteFriends(friends);
             NoFriendsText.IsVisible = _friends.Count == 0;
             FriendRequestsSection.IsVisible = _requests.Count > 0;
@@ -1316,9 +1420,17 @@ namespace Ryujinx.Ava.UI.Views.Misc
                         Image = _friends.FirstOrDefault(friend => friend.Pid == invite.SenderPid)?.Image,
                     });
                 }
+                UpdateInviteCountBadge();
                 InvitesPanel.IsVisible = _invites.Count > 0;
                 NoRequestsText.IsVisible = !GameInviteSection.IsVisible && _invites.Count == 0 && _requests.Count == 0;
             });
+        }
+
+        private void UpdateInviteCountBadge()
+        {
+            int pendingCount = _requests.Count + _invites.Count;
+            InviteCountText.Text = pendingCount.ToString();
+            InviteCountBadge.IsVisible = pendingCount > 0;
         }
 
         private void AcceptInvite_Click(object sender, RoutedEventArgs e)

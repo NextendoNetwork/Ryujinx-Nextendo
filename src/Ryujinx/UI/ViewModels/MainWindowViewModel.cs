@@ -1032,25 +1032,19 @@ namespace Ryujinx.Ava.UI.ViewModels
 #pragma warning restore IDE0055
             };
 
-        // [Nextendo] Fixed carousel order: favorites first, then Nextendo-compatible games,
-        // then the rest — alphabetical (case-insensitive) inside each group.
+        // [Nextendo] Fixed carousel order: favorites first, then non-favorite Nextendo-compatible
+        // games, then the rest — alphabetical (case-insensitive) inside each group.
         private static IComparer<ApplicationData> GetCarouselComparer()
         {
             return Comparer<ApplicationData>.Create((a, b) =>
             {
-                int favorite = b.Favorite.CompareTo(a.Favorite);
-                if (favorite != 0)
-                {
-                    return favorite;
-                }
+                int aGroup = a.Favorite ? 0 : a.IsNextendoCompatible ? 1 : 2;
+                int bGroup = b.Favorite ? 0 : b.IsNextendoCompatible ? 1 : 2;
+                int group = aGroup.CompareTo(bGroup);
 
-                int nextendo = b.IsNextendoCompatible.CompareTo(a.IsNextendoCompatible);
-                if (nextendo != 0)
-                {
-                    return nextendo;
-                }
-
-                return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+                return group != 0
+                    ? group
+                    : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
             });
         }
 

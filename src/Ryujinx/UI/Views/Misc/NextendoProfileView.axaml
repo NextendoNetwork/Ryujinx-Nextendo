@@ -63,7 +63,16 @@
                         <TextBlock Name="SidebarOnlineCountText" Text="Online: 0" FontSize="11" Foreground="#33E86B" />
                     </StackPanel>
                 </Button>
-                <Button Name="RequestsTabButton" Classes="navItem" Click="SelectRequestsTab" Content="Invites" />
+                <Button Name="RequestsTabButton" Classes="navItem" Click="SelectRequestsTab" HorizontalContentAlignment="Stretch">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Text="Invites" VerticalAlignment="Center" />
+                        <Border Name="InviteCountBadge" Grid.Column="1" Background="#FFE53935" CornerRadius="10"
+                                Padding="7,2" VerticalAlignment="Center" IsVisible="False">
+                            <TextBlock Name="InviteCountText" Text="0" Foreground="White" FontSize="11"
+                                       FontWeight="Bold" HorizontalAlignment="Center" />
+                        </Border>
+                    </Grid>
+                </Button>
                 <Button Name="LobbyTabButton" Classes="navItem" Click="SelectLobbyTab" Content="{ext:Locale Dialog_Nextendo_LobbyTabCurrent}" />
                 <Button Name="ActivityTabButton" Classes="navItem" Click="SelectActivityTab" Content="{ext:Locale Dialog_Nextendo_NxProfileEncontradosRecientemente}" />
                 <Button Name="HistoryTabButton" Classes="navItem" Click="SelectHistoryTab" Content="{ext:Locale Dialog_Nextendo_NxProfileHistorial}" />

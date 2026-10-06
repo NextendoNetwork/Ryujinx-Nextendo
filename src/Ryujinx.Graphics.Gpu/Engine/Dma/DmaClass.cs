@@ -1,4 +1,5 @@
 using Ryujinx.Common;
+using Ryujinx.Common.Logging;
 using Ryujinx.Common.Memory;
 using Ryujinx.Graphics.Device;
 using Ryujinx.Graphics.Gpu.Engine.Threed;
@@ -634,6 +635,12 @@ namespace Ryujinx.Graphics.Gpu.Engine.Dma
         /// <param name="size">Size in bytes of the copy</param>
         private static void CopyGobBlockLinearToLinear(MemoryManager memoryManager, ulong srcGpuVa, ulong dstGpuVa, ulong size)
         {
+            if (!IsMappedRange(memoryManager, srcGpuVa, size) || !IsMappedRange(memoryManager, dstGpuVa, size))
+            {
+                Logger.Warning?.Print(LogClass.Gpu, $"Skipping DMA copy with unmapped memory (src=0x{srcGpuVa:X}, dst=0x{dstGpuVa:X}, size=0x{size:X}).");
+                return;
+            }
+
             if (((srcGpuVa | dstGpuVa | size) & 0xf) == 0)
             {
                 for (ulong offset = 0; offset < size; offset += 16)
@@ -661,6 +668,12 @@ namespace Ryujinx.Graphics.Gpu.Engine.Dma
         /// <param name="size">Size in bytes of the copy</param>
         private static void CopyGobLinearToBlockLinear(MemoryManager memoryManager, ulong srcGpuVa, ulong dstGpuVa, ulong size)
         {
+            if (!IsMappedRange(memoryManager, srcGpuVa, size) || !IsMappedRange(memoryManager, dstGpuVa, size))
+            {
+                Logger.Warning?.Print(LogClass.Gpu, $"Skipping DMA copy with unmapped memory (src=0x{srcGpuVa:X}, dst=0x{dstGpuVa:X}, size=0x{size:X}).");
+                return;
+            }
+
             if (((srcGpuVa | dstGpuVa | size) & 0xf) == 0)
             {
                 for (ulong offset = 0; offset < size; offset += 16)
@@ -692,6 +705,42 @@ namespace Ryujinx.Graphics.Gpu.Engine.Dma
                 ((address & 0x10) << 1) |
                 ((address & 0x180) >> 1) |
                 ((address & 0x20) << 3);
+        }
+
+        /// <summary>
+        /// Validates that a memory range is fully mapped, checking page by page.
+        /// </summary>
+        /// <param name="memoryManager">GPU memory manager</param>
+        /// <param name="address">Start address of the range</param>
+        /// <param name="size">Size in bytes of the range</param>
+        /// <returns>True if the entire range is mapped, false otherwise</returns>
+        private static bool IsMappedRange(MemoryManager memoryManager, ulong address, ulong size)
+        {
+            if (size == 0 || address > ulong.MaxValue - (size - 1))
+            {
+                return false;
+            }
+
+            ulong endAddress = address + size - 1;
+
+            for (ulong currentAddress = address; ; )
+            {
+                if (!memoryManager.IsMapped(currentAddress))
+                {
+                    return false;
+                }
+
+                ulong nextPage = (currentAddress & ~MemoryManager.PageMask) + MemoryManager.PageSize;
+
+                if (nextPage <= currentAddress || nextPage > endAddress)
+                {
+                    break;
+                }
+
+                currentAddress = nextPage;
+            }
+
+            return true;
         }
 
         /// <summary>

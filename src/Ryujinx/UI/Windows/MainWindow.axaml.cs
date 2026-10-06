@@ -138,6 +138,30 @@ namespace Ryujinx.Ava.UI.Windows
             }
         }
 
+        public void OpenNextendoInvitesDashboard()
+        {
+            if (!Dispatcher.UIThread.CheckAccess())
+            {
+                Dispatcher.UIThread.Post(OpenNextendoInvitesDashboard);
+                return;
+            }
+
+            if (!IsNextendoDashboardOpen)
+            {
+                ToggleNextendoDashboard();
+            }
+
+            _activeNextendoDashboard?.ShowInvitesTab();
+            if (_nextendoGameDashboardWindow?.IsVisible == true)
+            {
+                _nextendoGameDashboardWindow.Activate();
+            }
+            else
+            {
+                Activate();
+            }
+        }
+
         /// <summary>Routes the firmware's MyPage invite picker into the in-game dashboard.</summary>
         public void OpenGameInvitationDashboard(FriendInvitationRequest request, Action<bool> completed)
         {

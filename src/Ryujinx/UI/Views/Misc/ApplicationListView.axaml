@@ -141,9 +141,10 @@
                                                 FontWeight="SemiBold"
                                                 Foreground="#3EE8C8" />
                                         </Border>
-                                        <!-- [Nextendo] Live player count; hidden at zero. -->
+                                        <!-- [Nextendo] Server listing and live player count are
+                                             independent from version-verified compatibility. -->
                                         <Border
-                                            IsVisible="{Binding IsNextendoCompatible}"
+                                            IsVisible="{Binding IsNextendoServerAvailable}"
                                             Background="#1833E86B"
                                             BorderBrush="#33E86B"
                                             BorderThickness="1"

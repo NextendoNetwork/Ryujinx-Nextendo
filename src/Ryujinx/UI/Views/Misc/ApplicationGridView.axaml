@@ -108,7 +108,8 @@
                             </ToolTip.Tip>
                             <TextBlock Text="Nextendo" FontSize="10" Foreground="#3EE8C8" />
                         </Border>
-                        <!-- [Nextendo] Live player count, top-left; hidden at zero. -->
+                        <!-- [Nextendo] Server listing and live player count, independent from
+                             version-verified compatibility. -->
                         <Border
                             Margin="4,4,0,0"
                             HorizontalAlignment="Left"
@@ -118,7 +119,7 @@
                             BorderThickness="1"
                             CornerRadius="4"
                             Padding="5,1"
-                            IsVisible="{Binding IsNextendoCompatible}">
+                            IsVisible="{Binding IsNextendoServerAvailable}">
                             <ToolTip.Tip>
                                 <TextBlock Text="{Binding NextendoPlayersText}" />
                             </ToolTip.Tip>

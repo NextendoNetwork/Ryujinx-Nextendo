@@ -77,6 +77,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
         public ApplicationCarouselView()
         {
             InitializeComponent();
+            RenderOptions.SetBitmapInterpolationMode(WebsiteLogoImage, BitmapInterpolationMode.HighQuality);
 
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => UpdateClock();
@@ -117,13 +118,15 @@ namespace Ryujinx.Ava.UI.Views.Misc
             try
             {
                 using var stream = AssetLoader.Open(new Uri("resm:Ryujinx.Assets.UIImages.Logo_Discord_Nextendo.png?assembly=Ryujinx"));
-                DiscordButton.Content = new Image
+                Image discordImage = new()
                 {
                     Source = new Bitmap(stream),
                     Width = 40,
                     Height = 40,
                     Stretch = Stretch.Uniform,
                 };
+                RenderOptions.SetBitmapInterpolationMode(discordImage, BitmapInterpolationMode.HighQuality);
+                DiscordButton.Content = discordImage;
             }
             catch
             {

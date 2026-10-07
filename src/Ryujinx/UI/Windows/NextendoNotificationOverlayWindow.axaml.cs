@@ -2,13 +2,16 @@ using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Ryujinx.Ava.Common;
 using Ryujinx.Ava.UI.Helpers;
 using Ryujinx.Ava.UI.Models;
 using System;
+using System.Linq;
 using System.Runtime.Versioning;
 
 namespace Ryujinx.Ava.UI.Windows
@@ -115,16 +118,39 @@ namespace Ryujinx.Ava.UI.Windows
             };
         }
 
-        // Accept/Decline on a game invitation toast.
-        private static void OnToastButtonClick(object sender, RoutedEventArgs e)
+        // Accept/Decline on a game invitation or friend request toast.
+        private static async void OnToastButtonClick(object sender, RoutedEventArgs e)
         {
-            if (e.Source is not Button { Tag: NextendoToastModel { IsInvite: true } toast } button)
+            if (e.Source is not Button { Tag: NextendoToastModel { HasActions: true } toast } button)
             {
                 return;
             }
 
+            bool accept = button.Classes.Contains("accept");
+            if (toast.IsFriendRequest)
+            {
+                bool succeeded = toast.FriendRequestPid is ulong pid &&
+                    (accept
+                        ? await NextendoApi.AcceptFriendAsync(pid)
+                        : await NextendoApi.DeclineFriendAsync(pid));
+                if (succeeded)
+                {
+                    NextendoInGameNotifications.Dismiss(toast.Id);
+                }
+                else
+                {
+                    NextendoInGameNotifications.PushNotice(
+                        toast.Title,
+                        accept
+                            ? "Could not accept this friend request. Try again from Invites."
+                            : "Could not decline this friend request. Try again from Invites.");
+                }
+
+                return;
+            }
+
             NextendoInGameNotifications.Dismiss(toast.Id);
-            if (!button.Classes.Contains("accept"))
+            if (!accept)
             {
                 NextendoGameInvites.Decline(toast.InviteId);
                 return;
@@ -135,6 +161,17 @@ namespace Ryujinx.Ava.UI.Windows
             {
                 NextendoInGameNotifications.PushNotice(toast.Title, error);
             }
+        }
+
+        private static void OnToastPointerPressed(object sender, PointerPressedEventArgs e)
+        {
+            if (sender is not Border { DataContext: NextendoToastModel { OpensInvites: true } } ||
+                e.Source is Visual source && source.GetSelfAndVisualAncestors().OfType<Button>().Any())
+            {
+                return;
+            }
+
+            RyujinxApp.MainWindow?.OpenNextendoInvitesDashboard();
         }
 
         private static void ShowOverlay()

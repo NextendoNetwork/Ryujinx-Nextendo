@@ -24,7 +24,8 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="models:NextendoToastModel">
-                    <Border Background="#FF25282E" CornerRadius="8" Padding="12,10" MinWidth="256" MaxWidth="430">
+                    <Border Background="#FF25282E" CornerRadius="8" Padding="12,10" MinWidth="256" MaxWidth="430"
+                            PointerPressed="OnToastPointerPressed">
                         <Grid ColumnDefinitions="Auto,*">
                             <Panel Grid.Column="0" Width="42" Height="42" VerticalAlignment="Center">
                                 <Image Width="42" Height="42" Stretch="UniformToFill"
@@ -41,7 +42,7 @@
                                 <TextBlock Text="{Binding Text}" FontSize="12"
                                            Foreground="#E5E5E5" TextWrapping="Wrap" />
                                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0"
-                                            IsVisible="{Binding IsInvite}">
+                                            IsVisible="{Binding HasActions}">
                                     <Button Classes="accept" Tag="{Binding}" MinWidth="88"
                                             Background="#FF2E9E4E" Foreground="White"
                                             Content="{ext:Locale Dialog_Nextendo_GameInviteAccept}" />

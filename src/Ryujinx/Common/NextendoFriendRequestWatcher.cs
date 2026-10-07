@@ -1,6 +1,5 @@
 using Ryujinx.Ava.Common.Locale;
 using Ryujinx.Ava.UI.Helpers;
-using Ryujinx.Ava.UI.Windows;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -92,7 +91,7 @@ namespace Ryujinx.Ava.Common
                         LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_FriendRequestNotifTitle],
                         LocaleManager.Instance.UpdateAndGetDynamicValue(
                             LocaleKeys.Dialog_Nextendo_FriendRequestNotifFormat, name),
-                        onClick: NextendoFriendsWindow.Open);
+                        onClick: () => RyujinxApp.MainWindow?.OpenNextendoInvitesDashboard());
                 }
             }
             catch

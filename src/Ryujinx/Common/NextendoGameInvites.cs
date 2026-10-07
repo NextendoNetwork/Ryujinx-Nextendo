@@ -99,6 +99,7 @@ namespace Ryujinx.Ava.Common
                         Title = LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_GameInviteToastTitle],
                         Text = text,
                         InviteId = invite.Id,
+                        OpensInvites = true,
                     }));
                 }
 

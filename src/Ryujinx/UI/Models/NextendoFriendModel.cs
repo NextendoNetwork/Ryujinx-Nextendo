@@ -87,5 +87,24 @@ namespace Ryujinx.Ava.UI.Models
                         LocaleKeys.Dialog_Nextendo_FriendPlayingDetailFormat, game, AppDetail);
             }
         }
+
+        public string GameDisplayName
+        {
+            get
+            {
+                if (!IsOnline)
+                {
+                    return LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_FriendOffline];
+                }
+
+                if (string.IsNullOrWhiteSpace(AppId))
+                {
+                    return "Main Menu";
+                }
+
+                return NextendoGameNames.Resolve(AppId)
+                    ?? LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_FriendOnline];
+            }
+        }
     }
 }

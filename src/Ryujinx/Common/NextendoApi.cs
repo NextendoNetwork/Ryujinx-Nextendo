@@ -690,9 +690,18 @@ namespace Ryujinx.Ava.Common
                 using HttpClient http = Client();
                 using StringContent body = new($"{{\"pid\":{pid}}}", Encoding.UTF8, "application/json");
                 HttpResponseMessage resp = await http.PostAsync($"{BaseUrl()}/api/friends/accept", body);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    Logger.Warning?.Print(LogClass.Application, $"[Nextendo] Accept friend failed: HTTP {(int)resp.StatusCode}");
+                }
+
                 return resp.IsSuccessStatusCode;
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                Logger.Warning?.Print(LogClass.Application, $"[Nextendo] Accept friend failed: {ex.Message}");
+                return false;
+            }
         }
 
         /// <summary>
@@ -716,17 +725,24 @@ namespace Ryujinx.Ava.Common
             return accepted;
         }
 
-        public static async Task DeclineFriendAsync(ulong pid)
+        public static async Task<bool> DeclineFriendAsync(ulong pid)
         {
             try
             {
                 using HttpClient http = Client();
                 using StringContent body = new($"{{\"pid\":{pid}}}", Encoding.UTF8, "application/json");
-                await http.PostAsync($"{BaseUrl()}/api/friends/decline", body);
+                using HttpResponseMessage resp = await http.PostAsync($"{BaseUrl()}/api/friends/decline", body);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    Logger.Warning?.Print(LogClass.Application, $"[Nextendo] Decline failed: HTTP {(int)resp.StatusCode}");
+                }
+
+                return resp.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
                 Logger.Warning?.Print(LogClass.Application, $"[Nextendo] Decline failed: {ex.Message}");
+                return false;
             }
         }
 

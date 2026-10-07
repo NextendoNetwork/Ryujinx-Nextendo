@@ -196,9 +196,8 @@
                                         Source="{Binding Icon, Converter={x:Static helpers:BitmapArrayValueConverter.Instance}}" />
                                 </Border>
                                 <!-- [Nextendo] Live player count, inset on the cover art top-right.
-                                     Only shown for titles with Nextendo online support
-                                     (IsNextendoCompatible); compatible titles always show the
-                                     number, counting "0" when nobody is online. -->
+                                     Server availability is separate from version-verified
+                                     compatibility; listed servers show "0" when empty. -->
                                 <Border
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Top"
@@ -208,7 +207,7 @@
                                     BorderThickness="1.5"
                                     CornerRadius="5"
                                     Padding="7,2"
-                                    IsVisible="{Binding IsNextendoCompatible}">
+                                    IsVisible="{Binding IsNextendoServerAvailable}">
                                     <ToolTip.Tip>
                                         <!-- [Nextendo] Hovering the player count shows: "N players
                                              online", then "N Friends playing" + avatar/name list
@@ -285,6 +284,7 @@
                         Click="WebsiteButton_OnClick"
                         ToolTip.Tip="{ext:Locale Dialog_Nextendo_NxCarouselSitioWeb}">
                         <Image
+                            x:Name="WebsiteLogoImage"
                             Source="resm:Ryujinx.Assets.UIImages.Logo_Web_Nextendo.png?assembly=Ryujinx"
                             Width="40"
                             Height="40"

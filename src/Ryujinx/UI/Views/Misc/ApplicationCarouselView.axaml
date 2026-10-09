@@ -236,12 +236,6 @@
                                         <TextBlock Text="{Binding NextendoPlayersOnline}" FontSize="13" FontWeight="SemiBold" Foreground="#33E86B" />
                                     </StackPanel>
                                 </Border>
-                                <!-- Additional catalog display; existing built-in badges stay unchanged. -->
-                                <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="5,0,5,5"
-                                    Background="#E60B0D12" BorderBrush="#3EE8C8" BorderThickness="1" CornerRadius="4" Padding="5,1"
-                                    IsVisible="{Binding IsAvailableOnService}">
-                                    <TextBlock Text="{Binding ServiceBadge}" FontSize="10" Foreground="#3EE8C8" TextWrapping="NoWrap" />
-                                </Border>
                                 <Border
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Top"

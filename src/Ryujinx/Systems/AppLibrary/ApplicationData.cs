@@ -55,6 +55,27 @@ namespace Ryujinx.Ava.Systems.AppLibrary
             }
         }
 
+        private bool _isNextendoServerAvailable;
+
+        /// <summary>
+        /// [Nextendo] True when the live online-count feed includes this title.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsNextendoServerAvailable
+        {
+            get => _isNextendoServerAvailable;
+            set
+            {
+                if (_isNextendoServerAvailable == value)
+                {
+                    return;
+                }
+
+                _isNextendoServerAvailable = value;
+                PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(IsNextendoServerAvailable)));
+            }
+        }
+
         /// <summary>[Nextendo] Hide the badge entirely at zero rather than showing "0 online".</summary>
         [JsonIgnore]
         public bool HasNextendoPlayersOnline => _nextendoPlayersOnline > 0;

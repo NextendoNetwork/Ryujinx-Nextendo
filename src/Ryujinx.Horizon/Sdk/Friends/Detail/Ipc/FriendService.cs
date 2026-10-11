@@ -20,6 +20,18 @@ namespace Ryujinx.Horizon.Sdk.Friends.Detail.Ipc
         private SystemEventType _completionEvent;
         private bool _isAsyncSession;
 
+        // Preserve the bounded, opt-in cache experiment used by the Classics lab.
+        // Other titles keep the nonblocking path required by their online threads.
+        private static bool WarmClassicsFriendInfo =>
+            (Environment.GetEnvironmentVariable("NEXTENDO_GBA_FRIEND_TRACE") == "1" &&
+             Environment.GetEnvironmentVariable("NEXTENDO_GBA_FRIEND_WARM") == "1" &&
+             string.Equals(NextendoFriends.CurrentTitleId, "010012f017576000", StringComparison.OrdinalIgnoreCase)) ||
+            (Environment.GetEnvironmentVariable("NEXTENDO_NES_FRIEND_TRACE") == "1" &&
+             string.Equals(NextendoFriends.CurrentTitleId, "0100d870045b6000", StringComparison.OrdinalIgnoreCase)) ||
+            (Environment.GetEnvironmentVariable("NEXTENDO_GB_FRIEND_TRACE") == "1" &&
+             string.Equals(NextendoFriends.CurrentTitleId, "0100c62011050000", StringComparison.OrdinalIgnoreCase));
+
+
         public FriendService(IEmulatorAccountManager accountManager, FriendsServicePermissionLevel permissionLevel)
         {
             _accountManager = accountManager;
@@ -223,7 +235,10 @@ namespace Ryujinx.Horizon.Sdk.Friends.Detail.Ipc
             // details the OUTPUT, one entry per requested id, in the SAME order — an entry we cannot
             // resolve stays IsValid=false rather than being skipped, otherwise the caller mis-pairs
             // the remaining ids with the wrong friends.
-            IReadOnlyList<NextendoFriends.Entry> known = NextendoFriends.Get();
+            bool warmClassics = WarmClassicsFriendInfo;
+            IReadOnlyList<NextendoFriends.Entry> known = warmClassics
+                ? NextendoFriends.GetWarm(3000)
+                : NextendoFriends.Get();
 
             for (int i = 0; i < friendIds.Length && i < info.Length; i++)
             {
@@ -249,6 +264,17 @@ namespace Ryujinx.Horizon.Sdk.Friends.Detail.Ipc
                         break;
                     }
                 }
+            }
+
+            if (warmClassics)
+            {
+                int resolved = 0;
+                for (int i = 0; i < friendIds.Length && i < info.Length; i++)
+                {
+                    if (info[i].IsValid) resolved++;
+                }
+                Logger.Info?.Print(LogClass.ServiceFriend,
+                    $"[Classics] Friend details: cached={known.Count} requested={friendIds.Length} resolved={resolved}");
             }
 
             return Result.Success;

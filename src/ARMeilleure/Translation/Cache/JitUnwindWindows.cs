@@ -29,7 +29,7 @@ namespace ARMeilleure.Translation.Cache
             public unsafe fixed ushort UnwindCodes[MaxUnwindCodesArraySize];
         }
         
-        private unsafe struct InternalFunctionHandler
+        private sealed unsafe class InternalFunctionHandler
         {
             public InternalFunctionHandler(JitCache jitCache, nint workBufferPtr)
             {
@@ -38,7 +38,12 @@ namespace ARMeilleure.Translation.Cache
                 _runtimeFunction = (RuntimeFunction*)workBufferPtr;
 
                 _unwindInfo = (UnwindInfo*)(workBufferPtr + _sizeOfRuntimeFunction);
+                Callback = FunctionTableHandler;
             }
+
+            // Windows retains the callback until its table is removed. Each cache
+            // must keep its own delegate alive while another cache is installed.
+            public GetRuntimeFunctionCallback Callback { get; }
 
             readonly JitCache _jitCache;
 
@@ -82,7 +87,6 @@ namespace ARMeilleure.Translation.Cache
         private static unsafe partial bool RtlDeleteFunctionTable(
             ulong tableIdentifier);
 
-        private static GetRuntimeFunctionCallback _getRuntimeFunctionCallback;
 
         private static readonly int _sizeOfRuntimeFunction;
         
@@ -105,13 +109,11 @@ namespace ARMeilleure.Translation.Cache
             {
                 handler =  new InternalFunctionHandler(jitCache, workBufferPtr);
 
-                _getRuntimeFunctionCallback = handler.FunctionTableHandler;
-
                 result = RtlInstallFunctionTableCallback(
                     codeCachePtr | 3,
                     codeCachePtr,
                     codeCacheLength,
-                    _getRuntimeFunctionCallback,
+                    handler.Callback,
                     codeCachePointer,
                     null);
             }

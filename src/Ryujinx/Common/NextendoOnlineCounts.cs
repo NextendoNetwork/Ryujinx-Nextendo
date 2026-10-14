@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 namespace Ryujinx.Ava.Common
 {
     /// <summary>
-    /// [Nextendo] Live "N players online" per supported game, shown next to each title in the
-    /// game list.
+    /// [Nextendo] Live "N players online" per game server listed by Nextendo, shown next to each
+    /// title in the game list. Server listing is tracked separately from version-verified support.
     ///
     /// The account server aggregates the real counts from the game servers themselves, so this
     /// only has to poll one endpoint and hand the numbers to the matching ApplicationData. It is
@@ -30,14 +30,20 @@ namespace Ryujinx.Ava.Common
         /// <summary>Players currently online for a title id, or 0 when unknown.</summary>
         public static int For(string titleIdString)
         {
+            return TryGetCount(titleIdString, out int count) ? count : 0;
+        }
+
+        private static bool TryGetCount(string titleIdString, out int count)
+        {
+            count = 0;
             if (string.IsNullOrEmpty(titleIdString))
             {
-                return 0;
+                return false;
             }
 
             lock (_lock)
             {
-                return _counts.TryGetValue(titleIdString.ToLowerInvariant(), out int n) ? n : 0;
+                return _counts.TryGetValue(titleIdString.ToLowerInvariant(), out count);
             }
         }
 
@@ -88,7 +94,11 @@ namespace Ryujinx.Ava.Common
                 const string sm3dwTitleId = "010028600ebda000";
                 if (!parsed.ContainsKey(sm3dwTitleId))
                 {
-                    parsed[sm3dwTitleId] = For(sm3dwTitleId);
+                    if (TryGetCount(sm3dwTitleId, out int previousCount))
+                    {
+                        parsed[sm3dwTitleId] = previousCount;
+                    }
+
                     try
                     {
                         using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(2));
@@ -99,11 +109,17 @@ namespace Ryujinx.Ava.Common
                             using JsonDocument stats = JsonDocument.Parse(
                                 await sm3dw.Content.ReadAsStringAsync(timeout.Token));
                             if (stats.RootElement.TryGetProperty("online", out JsonElement online)
-                                && online.ValueKind == JsonValueKind.True
-                                && stats.RootElement.TryGetProperty("connected", out JsonElement connected)
-                                && connected.TryGetInt32(out int count) && count >= 0)
+                                && online.ValueKind == JsonValueKind.True)
                             {
-                                parsed[sm3dwTitleId] = count;
+                                if (stats.RootElement.TryGetProperty("connected", out JsonElement connected)
+                                    && connected.TryGetInt32(out int count) && count >= 0)
+                                {
+                                    parsed[sm3dwTitleId] = count;
+                                }
+                            }
+                            else if (online.ValueKind == JsonValueKind.False)
+                            {
+                                parsed.Remove(sm3dwTitleId);
                             }
                         }
                     }
@@ -126,7 +142,7 @@ namespace Ryujinx.Ava.Common
             }
         }
 
-        // Push the fresh numbers into the loaded games so the list updates itself.
+        // Push fresh counts and server-list availability so the library updates without a rescan.
         private static void Publish()
         {
             ApplicationLibrary lib = _library;
@@ -139,10 +155,9 @@ namespace Ryujinx.Ava.Common
             {
                 foreach (ApplicationData app in lib.Applications.Items)
                 {
-                    if (app.IsNextendoCompatible)
-                    {
-                        app.NextendoPlayersOnline = For(app.IdString);
-                    }
+                    bool serverAvailable = TryGetCount(app.IdString, out int count);
+                    app.IsNextendoServerAvailable = serverAvailable;
+                    app.NextendoPlayersOnline = serverAvailable ? count : 0;
                 }
             }
             catch (Exception ex)

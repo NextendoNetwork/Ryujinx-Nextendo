@@ -213,7 +213,9 @@ namespace Ryujinx.Ava.Common
                             fresh.Add(Build(r,
                                 LocaleManager.Instance[LocaleKeys.Dialog_Nextendo_NotifFriendRequestTitle],
                                 LocaleManager.Instance.UpdateAndGetDynamicValue(
-                                    LocaleKeys.Dialog_Nextendo_NotifFriendRequestFormat, NameOf(r))));
+                                    LocaleKeys.Dialog_Nextendo_NotifFriendRequestFormat, NameOf(r)),
+                                opensInvites: true,
+                                friendRequestPid: r.Pid));
                         }
                     }
                     _knownRequests = requests.Select(r => r.Pid).ToHashSet();
@@ -361,7 +363,12 @@ namespace Ryujinx.Ava.Common
                        .Replace("  ", " ").Trim();
         }
 
-        private static NextendoToastModel Build(NextendoApi.Friend f, string title, string text)
+        private static NextendoToastModel Build(
+            NextendoApi.Friend f,
+            string title,
+            string text,
+            bool opensInvites = false,
+            ulong? friendRequestPid = null)
         {
             byte[] img = null;
             if (!string.IsNullOrEmpty(f.ImageBase64))
@@ -369,7 +376,15 @@ namespace Ryujinx.Ava.Common
                 try { img = Convert.FromBase64String(f.ImageBase64); } catch { /* ignore */ }
             }
 
-            return new NextendoToastModel { Id = NextId(), Image = img, Title = title, Text = text };
+            return new NextendoToastModel
+            {
+                Id = NextId(),
+                Image = img,
+                Title = title,
+                Text = text,
+                OpensInvites = opensInvites,
+                FriendRequestPid = friendRequestPid,
+            };
         }
 
         /// <summary>UI thread: a plain message toast with no avatar.</summary>
@@ -392,7 +407,8 @@ namespace Ryujinx.Ava.Common
         public static long NextId() => Interlocked.Increment(ref _nextId);
 
         // UI thread: newest on top, cap at 3 (drop the oldest), auto-expire after a few seconds.
-        private static void Push(NextendoToastModel toast) => Push(toast, _toastDuration);
+        private static void Push(NextendoToastModel toast) =>
+            Push(toast, toast.IsFriendRequest ? _inviteToastDuration : _toastDuration);
 
         private static void Push(NextendoToastModel toast, TimeSpan duration)
         {

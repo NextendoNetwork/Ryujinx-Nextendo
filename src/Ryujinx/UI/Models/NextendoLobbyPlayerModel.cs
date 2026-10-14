@@ -31,6 +31,7 @@ namespace Ryujinx.Ava.UI.Models
 
         /// <summary>Nom du jeu où la rencontre a eu lieu, déjà résolu pour l'affichage.</summary>
         public string GameName { get; init; } = "";
+        public string TitleId { get; init; } = "";
 
         /// <summary>Date de la rencontre. MinValue dans l'onglet du salon.</summary>
         public DateTime SeenAt { get; init; } = DateTime.MinValue;

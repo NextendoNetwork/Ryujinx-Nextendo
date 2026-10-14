@@ -22,7 +22,7 @@
             Grid.Row="1"
             Grid.RowSpan="2"
             Grid.Column="0"
-            Height="80"
+            Height="96"
             MinWidth="50"
             Margin="5,10,20,10"
             Source="resm:Ryujinx.Assets.UIImages.Logo_Ryujinx.png?assembly=Ryujinx" />

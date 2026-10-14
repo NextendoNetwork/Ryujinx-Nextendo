@@ -16,6 +16,12 @@ namespace Ryujinx.Ava.UI.Models
         /// <summary>Game invitation this toast answers with its Accept/Decline buttons; null otherwise.</summary>
         public string InviteId { get; init; }
 
+        /// <summary>Incoming friend request this toast answers; null otherwise.</summary>
+        public ulong? FriendRequestPid { get; init; }
+
         public bool IsInvite => InviteId != null;
+        public bool IsFriendRequest => FriendRequestPid.HasValue;
+        public bool HasActions => IsInvite || IsFriendRequest;
+        public bool OpensInvites { get; init; }
     }
 }

@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using DynamicData;
 using FluentAvalonia.UI.Controls;
 using Gommon;
@@ -76,7 +77,15 @@ namespace Ryujinx.Ava.UI.Windows
         private Point _nextendoDashboardResizeStart;
         private double _nextendoDashboardResizeWidth;
         private double _nextendoDashboardResizeHeight;
+        private double _nextendoDashboardResizeOffsetX;
+        private double _nextendoDashboardResizeOffsetY;
+        private int _nextendoDashboardResizeDirectionX;
+        private int _nextendoDashboardResizeDirectionY;
         private bool _isResizingNextendoDashboard;
+        private Point _nextendoDashboardMoveStart;
+        private double _nextendoDashboardMoveOffsetX;
+        private double _nextendoDashboardMoveOffsetY;
+        private bool _isMovingNextendoDashboard;
         private bool _dashboardBlockedGameInput;
         private bool _nextendoDashboardTakesFocus;
         private NextendoProfileView _activeNextendoDashboard;
@@ -85,7 +94,15 @@ namespace Ryujinx.Ava.UI.Windows
         private Point _gameDashboardResizeStart;
         private double _gameDashboardResizeWidth;
         private double _gameDashboardResizeHeight;
+        private double _gameDashboardResizeOffsetX;
+        private double _gameDashboardResizeOffsetY;
+        private int _gameDashboardResizeDirectionX;
+        private int _gameDashboardResizeDirectionY;
         private bool _isResizingGameDashboard;
+        private Point _gameDashboardMoveStart;
+        private double _gameDashboardMoveOffsetX;
+        private double _gameDashboardMoveOffsetY;
+        private bool _isMovingGameDashboard;
 
         /// <summary>Shows or hides the Nextendo dashboard in the main window over the renderer.</summary>
         public void ToggleNextendoDashboard()
@@ -100,6 +117,7 @@ namespace Ryujinx.Ava.UI.Windows
             NextendoProfileView dashboard = new(ViewModel.IsGameRunning);
             _activeNextendoDashboard = dashboard;
             dashboard.CloseRequested += (_, _) => CloseNextendoDashboard();
+            AttachDashboardMoveHandlers(dashboard);
             SuspendGameControllerInputForDashboard();
 
             int savedWidth = ConfigurationState.Instance.UI.WindowStartup.NextendoDashboardWidth.Value;
@@ -129,12 +147,37 @@ namespace Ryujinx.Ava.UI.Windows
                 NextendoDashboardFrame.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
             }
 
+            NextendoDashboardFrame.RenderTransform = new Avalonia.Media.TranslateTransform();
             NextendoDashboardOverlay.IsVisible = true;
 
             // Persist the initial friend-grid size on first use.
             if (savedWidth < 700 || savedHeight < 400)
             {
                 Dispatcher.UIThread.Post(SaveInitialNextendoDashboardSize, DispatcherPriority.Loaded);
+            }
+        }
+
+        public void OpenNextendoInvitesDashboard()
+        {
+            if (!Dispatcher.UIThread.CheckAccess())
+            {
+                Dispatcher.UIThread.Post(OpenNextendoInvitesDashboard);
+                return;
+            }
+
+            if (!IsNextendoDashboardOpen)
+            {
+                ToggleNextendoDashboard();
+            }
+
+            _activeNextendoDashboard?.ShowInvitesTab();
+            if (_nextendoGameDashboardWindow?.IsVisible == true)
+            {
+                _nextendoGameDashboardWindow.Activate();
+            }
+            else
+            {
+                Activate();
             }
         }
 
@@ -153,6 +196,7 @@ namespace Ryujinx.Ava.UI.Windows
                 dashboard = new NextendoProfileView(isGameRunning: true);
                 _activeNextendoDashboard = dashboard;
                 dashboard.CloseRequested += (_, _) => CloseNextendoDashboard();
+                AttachDashboardMoveHandlers(dashboard);
                 SuspendGameControllerInputForDashboard();
                 OpenGameDashboardWindow(dashboard,
                     ConfigurationState.Instance.UI.WindowStartup.NextendoDashboardWidth.Value,
@@ -196,32 +240,25 @@ namespace Ryujinx.Ava.UI.Windows
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(14),
                 BoxShadow = Avalonia.Media.BoxShadows.Parse("0 12 40 0 #80000000"),
+                RenderTransform = new Avalonia.Media.TranslateTransform(),
             };
 
             Grid frameContent = new() { ClipToBounds = true };
             frameContent.Children.Add(dashboard);
-            Border grip = new()
+            Border[] grips =
             {
-                Width = 24,
-                Height = 24,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Bottom,
-                Background = Avalonia.Media.Brush.Parse("#FF202329"),
-                BorderBrush = Avalonia.Media.Brush.Parse("#887F8C9B"),
-                BorderThickness = new Thickness(1, 1, 0, 0),
-                Child = new TextBlock
-                {
-                    Text = "◢",
-                    FontSize = 15,
-                    Foreground = Avalonia.Media.Brush.Parse("#FF3EE8C8"),
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                },
+                CreateGameDashboardResizeGrip("TopLeft", Avalonia.Layout.HorizontalAlignment.Left, Avalonia.Layout.VerticalAlignment.Top),
+                CreateGameDashboardResizeGrip("TopRight", Avalonia.Layout.HorizontalAlignment.Right, Avalonia.Layout.VerticalAlignment.Top),
+                CreateGameDashboardResizeGrip("BottomLeft", Avalonia.Layout.HorizontalAlignment.Left, Avalonia.Layout.VerticalAlignment.Bottom),
+                CreateGameDashboardResizeGrip("BottomRight", Avalonia.Layout.HorizontalAlignment.Right, Avalonia.Layout.VerticalAlignment.Bottom),
             };
-            grip.PointerPressed += GameDashboardResize_PointerPressed;
-            grip.PointerMoved += GameDashboardResize_PointerMoved;
-            grip.PointerReleased += GameDashboardResize_PointerReleased;
-            frameContent.Children.Add(grip);
+            foreach (Border grip in grips)
+            {
+                grip.PointerPressed += GameDashboardResize_PointerPressed;
+                grip.PointerMoved += GameDashboardResize_PointerMoved;
+                grip.PointerReleased += GameDashboardResize_PointerReleased;
+                frameContent.Children.Add(grip);
+            }
             frame.Child = frameContent;
             overlay.Children.Add(frame);
 
@@ -274,6 +311,167 @@ namespace Ryujinx.Ava.UI.Windows
             }
         }
 
+        private static Border CreateGameDashboardResizeGrip(string tag, Avalonia.Layout.HorizontalAlignment horizontalAlignment, Avalonia.Layout.VerticalAlignment verticalAlignment)
+        {
+            return new Border
+            {
+                Width = 16,
+                Height = 16,
+                Tag = tag,
+                Background = Avalonia.Media.Brushes.Transparent,
+                HorizontalAlignment = horizontalAlignment,
+                VerticalAlignment = verticalAlignment,
+            };
+        }
+
+        private void AttachDashboardMoveHandlers(NextendoProfileView dashboard)
+        {
+            Grid handle = dashboard.DashboardDragHandle;
+            handle.PointerPressed += DashboardMove_PointerPressed;
+            handle.PointerMoved += DashboardMove_PointerMoved;
+            handle.PointerReleased += DashboardMove_PointerReleased;
+        }
+
+        private void DashboardMove_PointerPressed(object sender, PointerPressedEventArgs e)
+        {
+            if (sender is not Control handle)
+            {
+                return;
+            }
+
+            if (!e.GetCurrentPoint(handle).Properties.IsLeftButtonPressed ||
+                e.Source is Control source &&
+                (source is Avalonia.Controls.Button ||
+                 source.GetVisualAncestors().Any(ancestor => ancestor is Avalonia.Controls.Button)))
+            {
+                return;
+            }
+
+            if (_nextendoGameDashboardWindow?.IsVisible == true && _nextendoGameDashboardFrame is not null)
+            {
+                _gameDashboardMoveStart = e.GetPosition(_nextendoGameDashboardWindow);
+                (_gameDashboardMoveOffsetX, _gameDashboardMoveOffsetY) = GetDashboardFrameOffset(_nextendoGameDashboardFrame);
+                _isMovingGameDashboard = true;
+            }
+            else if (NextendoDashboardOverlay.IsVisible)
+            {
+                _nextendoDashboardMoveStart = e.GetPosition(this);
+                (_nextendoDashboardMoveOffsetX, _nextendoDashboardMoveOffsetY) = GetDashboardFrameOffset(NextendoDashboardFrame);
+                _isMovingNextendoDashboard = true;
+            }
+            else
+            {
+                return;
+            }
+
+            e.Pointer.Capture(handle);
+            e.Handled = true;
+        }
+
+        private void DashboardMove_PointerMoved(object sender, PointerEventArgs e)
+        {
+            if (_isMovingGameDashboard && _nextendoGameDashboardWindow is not null && _nextendoGameDashboardFrame is not null)
+            {
+                Point current = e.GetPosition(_nextendoGameDashboardWindow);
+                SetDashboardFrameOffset(
+                    _nextendoGameDashboardFrame,
+                    _nextendoGameDashboardWindow,
+                    _gameDashboardMoveOffsetX + current.X - _gameDashboardMoveStart.X,
+                    _gameDashboardMoveOffsetY + current.Y - _gameDashboardMoveStart.Y,
+                    _nextendoGameDashboardFrame.Bounds.Width,
+                    _nextendoGameDashboardFrame.Bounds.Height);
+                e.Handled = true;
+            }
+            else if (_isMovingNextendoDashboard)
+            {
+                Point current = e.GetPosition(this);
+                SetDashboardFrameOffset(
+                    NextendoDashboardFrame,
+                    NextendoDashboardOverlay,
+                    _nextendoDashboardMoveOffsetX + current.X - _nextendoDashboardMoveStart.X,
+                    _nextendoDashboardMoveOffsetY + current.Y - _nextendoDashboardMoveStart.Y,
+                    NextendoDashboardFrame.Bounds.Width,
+                    NextendoDashboardFrame.Bounds.Height);
+                e.Handled = true;
+            }
+        }
+
+        private void DashboardMove_PointerReleased(object sender, PointerReleasedEventArgs e)
+        {
+            if (_isMovingGameDashboard || _isMovingNextendoDashboard)
+            {
+                _isMovingGameDashboard = false;
+                _isMovingNextendoDashboard = false;
+                e.Pointer.Capture(null);
+                e.Handled = true;
+            }
+        }
+
+        private static (int Horizontal, int Vertical) GetDashboardResizeDirections(Control grip)
+        {
+            return grip.Tag?.ToString() switch
+            {
+                "TopLeft" => (-1, -1),
+                "TopRight" => (1, -1),
+                "BottomLeft" => (-1, 1),
+                "BottomRight" => (1, 1),
+                _ => throw new InvalidOperationException("Unknown dashboard resize handle."),
+            };
+        }
+
+        private static double GetDashboardResizeScale(
+            double initialWidth,
+            double initialHeight,
+            double deltaX,
+            double deltaY,
+            int directionX,
+            int directionY,
+            double minWidth,
+            double maxWidth,
+            double minHeight,
+            double maxHeight)
+        {
+            double directedDeltaX = deltaX * directionX;
+            double directedDeltaY = deltaY * directionY;
+            double scaleDelta = (directedDeltaX * initialWidth + directedDeltaY * initialHeight) /
+                                (initialWidth * initialWidth + initialHeight * initialHeight);
+            double minScale = Math.Max(minWidth / initialWidth, minHeight / initialHeight);
+            double maxScale = Math.Min(maxWidth / initialWidth, maxHeight / initialHeight);
+
+            if (minScale > maxScale)
+            {
+                minScale = maxScale;
+            }
+
+            return Math.Clamp(1 + scaleDelta, minScale, maxScale);
+        }
+
+        private static (double X, double Y) GetDashboardFrameOffset(Border frame)
+        {
+            if (frame.RenderTransform is Avalonia.Media.TranslateTransform transform)
+            {
+                return (transform.X, transform.Y);
+            }
+
+            return (0, 0);
+        }
+
+        private static void SetDashboardFrameOffset(Border frame, Control viewport, double x, double y, double width, double height)
+        {
+            double maxOffsetX = Math.Max(0, (viewport.Bounds.Width - 48 - width) / 2);
+            double maxOffsetY = Math.Max(0, (viewport.Bounds.Height - 48 - height) / 2);
+
+            Avalonia.Media.TranslateTransform transform = frame.RenderTransform as Avalonia.Media.TranslateTransform;
+            if (transform is null)
+            {
+                transform = new Avalonia.Media.TranslateTransform();
+                frame.RenderTransform = transform;
+            }
+
+            transform.X = Math.Clamp(x, -maxOffsetX, maxOffsetX);
+            transform.Y = Math.Clamp(y, -maxOffsetY, maxOffsetY);
+        }
+
         private void SaveInitialGameDashboardSize()
         {
             if (_nextendoGameDashboardWindow?.IsVisible != true || _nextendoGameDashboardFrame is null)
@@ -306,6 +504,8 @@ namespace Ryujinx.Ava.UI.Windows
             _gameDashboardResizeStart = e.GetPosition(_nextendoGameDashboardWindow);
             _gameDashboardResizeWidth = _nextendoGameDashboardFrame.Bounds.Width;
             _gameDashboardResizeHeight = _nextendoGameDashboardFrame.Bounds.Height;
+            (_gameDashboardResizeOffsetX, _gameDashboardResizeOffsetY) = GetDashboardFrameOffset(_nextendoGameDashboardFrame);
+            (_gameDashboardResizeDirectionX, _gameDashboardResizeDirectionY) = GetDashboardResizeDirections(grip);
             _isResizingGameDashboard = true;
             e.Pointer.Capture(grip);
             e.Handled = true;
@@ -321,8 +521,28 @@ namespace Ryujinx.Ava.UI.Windows
             Point current = e.GetPosition(_nextendoGameDashboardWindow);
             double maxWidth = Math.Clamp(_nextendoGameDashboardWindow.ClientSize.Width - 48, 700, 2000);
             double maxHeight = Math.Clamp(_nextendoGameDashboardWindow.ClientSize.Height - 48, 400, 1400);
-            _nextendoGameDashboardFrame.Width = Math.Clamp(_gameDashboardResizeWidth + current.X - _gameDashboardResizeStart.X, 700, maxWidth);
-            _nextendoGameDashboardFrame.Height = Math.Clamp(_gameDashboardResizeHeight + current.Y - _gameDashboardResizeStart.Y, 400, maxHeight);
+            double scale = GetDashboardResizeScale(
+                _gameDashboardResizeWidth,
+                _gameDashboardResizeHeight,
+                current.X - _gameDashboardResizeStart.X,
+                current.Y - _gameDashboardResizeStart.Y,
+                _gameDashboardResizeDirectionX,
+                _gameDashboardResizeDirectionY,
+                700,
+                maxWidth,
+                400,
+                maxHeight);
+            double width = _gameDashboardResizeWidth * scale;
+            double height = _gameDashboardResizeHeight * scale;
+            _nextendoGameDashboardFrame.Width = width;
+            _nextendoGameDashboardFrame.Height = height;
+            SetDashboardFrameOffset(
+                _nextendoGameDashboardFrame,
+                _nextendoGameDashboardWindow,
+                _gameDashboardResizeOffsetX + _gameDashboardResizeDirectionX * (width - _gameDashboardResizeWidth) / 2,
+                _gameDashboardResizeOffsetY + _gameDashboardResizeDirectionY * (height - _gameDashboardResizeHeight) / 2,
+                width,
+                height);
             e.Handled = true;
         }
 
@@ -361,6 +581,8 @@ namespace Ryujinx.Ava.UI.Windows
             _nextendoDashboardResizeStart = e.GetPosition(this);
             _nextendoDashboardResizeWidth = NextendoDashboardFrame.Bounds.Width;
             _nextendoDashboardResizeHeight = NextendoDashboardFrame.Bounds.Height;
+            (_nextendoDashboardResizeOffsetX, _nextendoDashboardResizeOffsetY) = GetDashboardFrameOffset(NextendoDashboardFrame);
+            (_nextendoDashboardResizeDirectionX, _nextendoDashboardResizeDirectionY) = GetDashboardResizeDirections(grip);
             _isResizingNextendoDashboard = true;
             NextendoDashboardFrame.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center;
             NextendoDashboardFrame.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
@@ -380,8 +602,28 @@ namespace Ryujinx.Ava.UI.Windows
             Point current = e.GetPosition(this);
             double maxWidth = Math.Clamp(NextendoDashboardOverlay.Bounds.Width - 48, 700, 2000);
             double maxHeight = Math.Clamp(NextendoDashboardOverlay.Bounds.Height - 48, 400, 1400);
-            NextendoDashboardFrame.Width = Math.Clamp(_nextendoDashboardResizeWidth + current.X - _nextendoDashboardResizeStart.X, 700, maxWidth);
-            NextendoDashboardFrame.Height = Math.Clamp(_nextendoDashboardResizeHeight + current.Y - _nextendoDashboardResizeStart.Y, 400, maxHeight);
+            double scale = GetDashboardResizeScale(
+                _nextendoDashboardResizeWidth,
+                _nextendoDashboardResizeHeight,
+                current.X - _nextendoDashboardResizeStart.X,
+                current.Y - _nextendoDashboardResizeStart.Y,
+                _nextendoDashboardResizeDirectionX,
+                _nextendoDashboardResizeDirectionY,
+                700,
+                maxWidth,
+                400,
+                maxHeight);
+            double width = _nextendoDashboardResizeWidth * scale;
+            double height = _nextendoDashboardResizeHeight * scale;
+            NextendoDashboardFrame.Width = width;
+            NextendoDashboardFrame.Height = height;
+            SetDashboardFrameOffset(
+                NextendoDashboardFrame,
+                NextendoDashboardOverlay,
+                _nextendoDashboardResizeOffsetX + _nextendoDashboardResizeDirectionX * (width - _nextendoDashboardResizeWidth) / 2,
+                _nextendoDashboardResizeOffsetY + _nextendoDashboardResizeDirectionY * (height - _nextendoDashboardResizeHeight) / 2,
+                width,
+                height);
             e.Handled = true;
         }
 
@@ -394,8 +636,19 @@ namespace Ryujinx.Ava.UI.Windows
 
             double maxWidth = Math.Clamp(e.NewSize.Width - 48, 700, 2000);
             double maxHeight = Math.Clamp(e.NewSize.Height - 48, 400, 1400);
-            NextendoDashboardFrame.Width = Math.Min(NextendoDashboardFrame.Width, maxWidth);
-            NextendoDashboardFrame.Height = Math.Min(NextendoDashboardFrame.Height, maxHeight);
+            double scale = Math.Min(1, Math.Min(
+                maxWidth / NextendoDashboardFrame.Width,
+                maxHeight / NextendoDashboardFrame.Height));
+            NextendoDashboardFrame.Width *= scale;
+            NextendoDashboardFrame.Height *= scale;
+            (double offsetX, double offsetY) = GetDashboardFrameOffset(NextendoDashboardFrame);
+            SetDashboardFrameOffset(
+                NextendoDashboardFrame,
+                NextendoDashboardOverlay,
+                offsetX,
+                offsetY,
+                NextendoDashboardFrame.Width,
+                NextendoDashboardFrame.Height);
         }
 
         private void NextendoDashboardResize_PointerReleased(object sender, PointerReleasedEventArgs e)

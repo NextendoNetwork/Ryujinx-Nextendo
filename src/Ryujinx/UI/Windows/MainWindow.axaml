@@ -233,12 +233,18 @@
                 BoxShadow="0 12 40 0 #80000000">
                 <Grid ClipToBounds="True">
                     <ContentControl Name="NextendoDashboardContent" />
-                    <Border Width="24" Height="24" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                            Background="#FF202329" BorderBrush="#887F8C9B" BorderThickness="1,1,0,0"
+                    <Border Width="16" Height="16" Background="Transparent" HorizontalAlignment="Left" VerticalAlignment="Top" Tag="TopLeft"
                             PointerPressed="NextendoDashboardResize_PointerPressed"
-                            PointerMoved="NextendoDashboardResize_PointerMoved" PointerReleased="NextendoDashboardResize_PointerReleased">
-                        <TextBlock Text="◢" FontSize="15" Foreground="#FF3EE8C8" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Border>
+                            PointerMoved="NextendoDashboardResize_PointerMoved" PointerReleased="NextendoDashboardResize_PointerReleased" />
+                    <Border Width="16" Height="16" Background="Transparent" HorizontalAlignment="Right" VerticalAlignment="Top" Tag="TopRight"
+                            PointerPressed="NextendoDashboardResize_PointerPressed"
+                            PointerMoved="NextendoDashboardResize_PointerMoved" PointerReleased="NextendoDashboardResize_PointerReleased" />
+                    <Border Width="16" Height="16" Background="Transparent" HorizontalAlignment="Left" VerticalAlignment="Bottom" Tag="BottomLeft"
+                            PointerPressed="NextendoDashboardResize_PointerPressed"
+                            PointerMoved="NextendoDashboardResize_PointerMoved" PointerReleased="NextendoDashboardResize_PointerReleased" />
+                    <Border Width="16" Height="16" Background="Transparent" HorizontalAlignment="Right" VerticalAlignment="Bottom" Tag="BottomRight"
+                            PointerPressed="NextendoDashboardResize_PointerPressed"
+                            PointerMoved="NextendoDashboardResize_PointerMoved" PointerReleased="NextendoDashboardResize_PointerReleased" />
                 </Grid>
             </Border>
         </Border>

@@ -1030,7 +1030,17 @@ namespace Ryujinx.Common.Configuration
             int status = _curStatus;
 
             // The HOME Menu (or an applet of the system) is no game: online, playing nothing.
-            if (NextendoGames.IsSystemProgram(appId))
+            if (string.Equals(appId, "0100000000001000", StringComparison.OrdinalIgnoreCase))
+            {
+                // HOME is an online activity, not an unspecified idle emulator.
+                // Put the display label in the existing opaque field as well: older servers
+                // already relay it even when they do not expose a client platform field.
+                appId = "0100000000001000";
+                appDetail = "HOME";
+                appField = Encoding.UTF8.GetBytes("sys_description\0HOME Menu · Ryujinx\0");
+                status = 1;
+            }
+            else if (NextendoGames.IsSystemProgram(appId))
             {
                 appId = "";
                 appDetail = "";

@@ -58,6 +58,12 @@ namespace Ryujinx.Graphics.Gpu
         internal ulong SyncNumber { get; private set; }
 
         /// <summary>
+        /// Syncpoint increments waiting for the host GPU to reach their sync number, in submission order.
+        /// </summary>
+        private readonly BlockingCollection<(uint Id, ulong SyncNumber)> _hostSyncpointIncrements = new();
+        private Thread _hostSyncpointThread;
+
+        /// <summary>
         /// Actions to be performed when a CPU waiting syncpoint or barrier is triggered.
         /// If there are more than 0 items when this happens, a host sync object will be generated for the given <see cref="SyncNumber"/>,
         /// and the SyncNumber will be incremented.
@@ -552,6 +558,34 @@ namespace Ryujinx.Graphics.Gpu
         }
 
         /// <summary>
+        /// Increments a syncpoint once the host GPU has executed the commands submitted so far, as the real GPU would.
+        /// Games may poll a fence and read GPU written data as soon as it is signalled. Signalling it when the commands
+        /// were only processed, not executed, makes those reads wait for the host GPU, stalling the game.
+        /// </summary>
+        /// <param name="id">Syncpoint ID</param>
+        internal void IncrementSyncpointOnHostCompletion(uint id)
+        {
+            CreateHostSyncIfNeeded(HostSyncFlags.StrictSyncpoint | HostSyncFlags.Force);
+
+            if (_hostSyncpointThread == null)
+            {
+                _hostSyncpointThread = new Thread(HostSyncpointIncrementLoop) { Name = "GPU.SyncpointThread", IsBackground = true };
+                _hostSyncpointThread.Start();
+            }
+
+            _hostSyncpointIncrements.Add((id, SyncNumber - 1));
+        }
+
+        private void HostSyncpointIncrementLoop()
+        {
+            foreach ((uint id, ulong syncNumber) in _hostSyncpointIncrements.GetConsumingEnumerable())
+            {
+                Renderer.WaitSync(syncNumber);
+                Synchronization.IncrementSyncpoint(id);
+            }
+        }
+
+        /// <summary>
         /// Disposes all GPU resources currently cached.
         /// It's an error to push any GPU commands after disposal.
         /// Additionally, the GPU commands FIFO must be empty for disposal,
@@ -559,6 +593,10 @@ namespace Ryujinx.Graphics.Gpu
         /// </summary>
         public void Dispose()
         {
+            _hostSyncpointIncrements.CompleteAdding();
+            _hostSyncpointThread?.Join();
+            _hostSyncpointIncrements.Dispose();
+
             GPFifo.Dispose();
             HostInitalized.Dispose();
             _gpuReadyEvent.Dispose();

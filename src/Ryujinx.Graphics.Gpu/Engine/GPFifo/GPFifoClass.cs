@@ -160,8 +160,7 @@ namespace Ryujinx.Graphics.Gpu.Engine.GPFifo
                 // "Unbind" render targets since a syncpoint increment might indicate future CPU access for the textures.
                 _parent.TextureManager.RefreshModifiedTextures();
 
-                _context.CreateHostSyncIfNeeded(HostSyncFlags.StrictSyncpoint);
-                _context.Synchronization.IncrementSyncpoint(syncpointId);
+                _context.IncrementSyncpointOnHostCompletion(syncpointId);
             }
 
             _context.AdvanceSequence();

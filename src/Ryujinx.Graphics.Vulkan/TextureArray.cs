@@ -23,6 +23,12 @@ namespace Ryujinx.Graphics.Vulkan
         private readonly BufferView[] _bufferTextures;
         private readonly int[] _bufferViewGenerations;
 
+        // Indices of the buffer texture slots that are set, null if they must be found again.
+        // Large arrays are mostly empty, so only these slots are looked at when the command buffer changes.
+        private List<int> _bufferIndices;
+        private BufferView _dummyBufferView;
+        private int _dummyBufferViewGeneration;
+
         private HashSet<TextureStorage> _storages;
 
         private int _cachedCommandBufferIndex;
@@ -63,25 +69,31 @@ namespace Ryujinx.Graphics.Vulkan
                 return;
             }
 
+            bool changed = false;
+
             for (int i = 0; i < samplers.Length; i++)
             {
-                ISampler sampler = samplers[i];
+                Auto<DisposableSampler> sampler = (samplers[i] as SamplerHolder)?.GetSampler();
 
-                if (sampler is SamplerHolder samplerHolder)
+                if (_textureRefs[index + i].Sampler != sampler)
                 {
-                    _textureRefs[index + i].Sampler = samplerHolder.GetSampler();
-                }
-                else
-                {
-                    _textureRefs[index + i].Sampler = default;
+                    _textureRefs[index + i].Sampler = sampler;
+                    changed = true;
                 }
             }
 
-            SetDirty();
+            // Games may update the whole array without changing anything. Rewriting every descriptor
+            // is very costly for large arrays, so only do it when something actually changed.
+            if (changed)
+            {
+                SetDirty();
+            }
         }
 
         public void SetTextures(int index, ITexture[] textures)
         {
+            bool changed = false;
+
             for (int i = 0; i < textures.Length; i++)
             {
                 ITexture texture = textures[i];
@@ -90,21 +102,42 @@ namespace Ryujinx.Graphics.Vulkan
                 // as only the references matching the array kind are allocated.
                 if (_isBuffer)
                 {
-                    _bufferTextureRefs[index + i] = texture as TextureBuffer;
-                }
-                else if (texture is TextureView view)
-                {
-                    _textureRefs[index + i].Storage = view.Storage;
-                    _textureRefs[index + i].View = view.GetImageView();
+                    TextureBuffer bufferTexture = texture as TextureBuffer;
+
+                    // The same buffer texture must still be written again if its view changed since it was last written.
+                    if (_bufferTextureRefs[index + i] != bufferTexture ||
+                        (bufferTexture != null && bufferTexture.ViewGeneration != _bufferViewGenerations[index + i]))
+                    {
+                        if (_bufferTextureRefs[index + i] != bufferTexture)
+                        {
+                            _bufferIndices = null;
+                        }
+
+                        _bufferTextureRefs[index + i] = bufferTexture;
+                        changed = true;
+                    }
                 }
                 else
                 {
-                    _textureRefs[index + i].Storage = null;
-                    _textureRefs[index + i].View = default;
+                    TextureView view = texture as TextureView;
+                    TextureStorage storage = view?.Storage;
+                    Auto<DisposableImageView> imageView = view?.GetImageView();
+
+                    if (_textureRefs[index + i].Storage != storage || _textureRefs[index + i].View != imageView)
+                    {
+                        _textureRefs[index + i].Storage = storage;
+                        _textureRefs[index + i].View = imageView;
+                        changed = true;
+                    }
                 }
             }
 
-            SetDirty();
+            // Games may update the whole array without changing anything. Rewriting every descriptor
+            // is very costly for large arrays, so only do it when something actually changed.
+            if (changed)
+            {
+                SetDirty();
+            }
         }
 
         private void SetDirty()
@@ -193,16 +226,45 @@ namespace Ryujinx.Graphics.Vulkan
         {
             Span<BufferView> bufferTextures = _bufferTextures;
 
+            // Empty slots get a valid view: MoltenVK crashes on null buffer views in arrays.
+            BufferView dummyView = dummyBufferTexture.GetBufferView(cbs, false);
+            _dummyBufferView = dummyView;
+            _dummyBufferViewGeneration = dummyBufferTexture.ViewGeneration;
+
             for (int i = 0; i < bufferTextures.Length; i++)
             {
-                // Empty slots get a valid view: MoltenVK crashes on null buffer views in arrays.
-                TextureBuffer bufferTexture = _bufferTextureRefs[i] ?? dummyBufferTexture;
+                TextureBuffer bufferTexture = _bufferTextureRefs[i];
 
-                bufferTextures[i] = bufferTexture.GetBufferView(cbs, false);
-                _bufferViewGenerations[i] = bufferTexture.ViewGeneration;
+                if (bufferTexture == null)
+                {
+                    bufferTextures[i] = dummyView;
+                }
+                else
+                {
+                    bufferTextures[i] = bufferTexture.GetBufferView(cbs, false);
+                    _bufferViewGenerations[i] = bufferTexture.ViewGeneration;
+                }
             }
 
             return bufferTextures;
+        }
+
+        private List<int> GetBufferIndices()
+        {
+            if (_bufferIndices == null)
+            {
+                _bufferIndices = [];
+
+                for (int i = 0; i < _bufferTextureRefs.Length; i++)
+                {
+                    if (_bufferTextureRefs[i] != null)
+                    {
+                        _bufferIndices.Add(i);
+                    }
+                }
+            }
+
+            return _bufferIndices;
         }
 
         /// <summary>
@@ -227,9 +289,31 @@ namespace Ryujinx.Graphics.Vulkan
 
             bool changed = false;
 
-            for (int i = 0; i < _bufferTextures.Length; i++)
+            // All empty slots share the dummy view, so it only needs to be looked at once.
+            if (!sameCommandBuffer || dummyBufferTexture.ViewGeneration != _dummyBufferViewGeneration)
             {
-                TextureBuffer bufferTexture = _bufferTextureRefs[i] ?? dummyBufferTexture;
+                BufferView dummyView = dummyBufferTexture.GetBufferView(cbs, false);
+                _dummyBufferViewGeneration = dummyBufferTexture.ViewGeneration;
+
+                if (dummyView.Handle != _dummyBufferView.Handle)
+                {
+                    _dummyBufferView = dummyView;
+
+                    for (int i = 0; i < _bufferTextures.Length; i++)
+                    {
+                        if (_bufferTextureRefs[i] == null)
+                        {
+                            _bufferTextures[i] = dummyView;
+                        }
+                    }
+
+                    changed = true;
+                }
+            }
+
+            foreach (int i in GetBufferIndices())
+            {
+                TextureBuffer bufferTexture = _bufferTextureRefs[i];
 
                 // On the same command buffer, only the views released since need to be looked at again.
                 if (sameCommandBuffer && bufferTexture.ViewGeneration == _bufferViewGenerations[i])

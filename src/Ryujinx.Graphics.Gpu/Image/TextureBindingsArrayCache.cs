@@ -697,6 +697,10 @@ namespace Ryujinx.Graphics.Gpu.Image
 
                 if (hostTexture != null && texture.Target == Target.TextureBuffer)
                 {
+                    // Also set it on the array right away, so that the backend can see it as unchanged
+                    // instead of being cleared and set again, which would force a rewrite of the whole array.
+                    textures[index] = hostTexture;
+
                     // Ensure that the buffer texture is using the correct buffer as storage.
                     // Buffers are frequently re-created to accommodate larger data, so we need to re-bind
                     // to ensure we're not using a old buffer that was already deleted.
@@ -901,6 +905,10 @@ namespace Ryujinx.Graphics.Gpu.Image
 
                 if (hostTexture != null && texture.Target == Target.TextureBuffer)
                 {
+                    // Also set it on the array right away, so that the backend can see it as unchanged
+                    // instead of being cleared and set again, which would force a rewrite of the whole array.
+                    textures[index] = hostTexture;
+
                     // Ensure that the buffer texture is using the correct buffer as storage.
                     // Buffers are frequently re-created to accommodate larger data, so we need to re-bind
                     // to ensure we're not using a old buffer that was already deleted.

@@ -630,7 +630,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
             GamepadButtonInputId homeButton = GamepadButtonInputId.Guide;
             GamepadButtonInputId captureButton = GamepadButtonInputId.Misc1;
 
-            if (ViewModel?.AppHost?.NpadManager?.GetPlayerInputConfigByIndex(0) is Ryujinx.Common.Configuration.Hid.Controller.StandardControllerInputConfig pad)
+            if (ViewModel?.AppHost?.NpadManager?.TryGetPlayerInputConfigByIndex(0) is Ryujinx.Common.Configuration.Hid.Controller.StandardControllerInputConfig pad)
             {
                 if (pad.RightJoycon.ButtonHome != Ryujinx.Common.Configuration.Hid.Controller.GamepadInputId.Unbound)
                 {
@@ -809,7 +809,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
             // Use the controller the user selected in the emulator's input settings (player 1).
             Ryujinx.Common.Configuration.Hid.InputConfig config = null;
             if (ViewModel.AppHost?.NpadManager != null)
-                config = ViewModel.AppHost.NpadManager.GetPlayerInputConfigByIndex(0);
+                config = ViewModel.AppHost.NpadManager.TryGetPlayerInputConfigByIndex(0);
 
             string targetId = config is Ryujinx.Common.Configuration.Hid.Controller.StandardControllerInputConfig ? config.Id : null;
 

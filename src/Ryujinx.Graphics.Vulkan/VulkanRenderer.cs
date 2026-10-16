@@ -62,6 +62,11 @@ namespace Ryujinx.Graphics.Vulkan
 
         internal BufferManager BufferManager { get; private set; }
 
+        /// <summary>
+        /// Incremented every time a buffer texture releases its view, so cached descriptor sets can tell when a view may be stale.
+        /// </summary>
+        internal int BufferViewReleaseCount;
+
         internal HashSet<ShaderCollection> Shaders { get; }
         internal HashSet<ITexture> Textures { get; }
         internal HashSet<SamplerHolder> Samplers { get; }

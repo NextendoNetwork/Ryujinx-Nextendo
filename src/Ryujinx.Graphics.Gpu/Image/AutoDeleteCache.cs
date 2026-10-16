@@ -266,8 +266,14 @@ namespace Ryujinx.Graphics.Gpu.Image
         {
             ShortTextureCacheEntry entry = new(descriptor, texture);
 
+            // Another texture may already be cached with the same descriptor (pools can hold duplicate descriptors).
+            // Keep that one, this texture is then deleted as usual.
+            if (!_shortCacheLookup.TryAdd(entry.Descriptor, entry))
+            {
+                return;
+            }
+
             _shortCacheBuilder.Add(entry);
-            _shortCacheLookup.Add(entry.Descriptor, entry);
 
             texture.ShortCacheEntry = entry;
 

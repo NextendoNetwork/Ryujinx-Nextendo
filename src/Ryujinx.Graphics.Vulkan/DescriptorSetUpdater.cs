@@ -122,6 +122,8 @@ namespace Ryujinx.Graphics.Vulkan
 
         private readonly BufferHolder _dummyBuffer;
         private readonly TextureView _dummyTexture;
+        private readonly TextureBuffer _dummyBufferTexture;
+        private readonly BufferHandle _dummyBufferTextureStorage;
         private readonly SamplerHolder _dummySampler;
 
         public List<TextureView> FeedbackLoopHazards { get; private set; }
@@ -191,6 +193,27 @@ namespace Ryujinx.Graphics.Vulkan
                 SwizzleComponent.Green,
                 SwizzleComponent.Blue,
                 SwizzleComponent.Alpha));
+
+            // R32Uint must be supported for both uniform and storage texel buffers.
+            _dummyBufferTexture = (TextureBuffer)gd.CreateTexture(new TextureCreateInfo(
+                64,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                4,
+                Format.R32Uint,
+                DepthStencilMode.Depth,
+                Target.TextureBuffer,
+                SwizzleComponent.Red,
+                SwizzleComponent.Green,
+                SwizzleComponent.Blue,
+                SwizzleComponent.Alpha));
+
+            _dummyBufferTextureStorage = gd.CreateBuffer(0x100, BufferAccess.DeviceMemory);
+            _dummyBufferTexture.SetStorage(new BufferRange(_dummyBufferTextureStorage, 0, 0x100));
 
             _dummySampler = (SamplerHolder)gd.CreateSampler(new SamplerCreateInfo(
                 MinFilter.Nearest,
@@ -889,7 +912,7 @@ namespace Ryujinx.Graphics.Vulkan
                         }
                         else
                         {
-                            tu.Push(_textureArrayRefs[binding].Array.GetBufferViews(cbs));
+                            tu.Push(_textureArrayRefs[binding].Array.GetBufferViews(cbs, _dummyBufferTexture));
                         }
                     }
                 }
@@ -928,7 +951,7 @@ namespace Ryujinx.Graphics.Vulkan
                         }
                         else
                         {
-                            tu.Push(_imageArrayRefs[binding].Array.GetBufferViews(cbs));
+                            tu.Push(_imageArrayRefs[binding].Array.GetBufferViews(cbs, _dummyBufferTexture));
                         }
                     }
                 }
@@ -1010,7 +1033,7 @@ namespace Ryujinx.Graphics.Vulkan
                     }
                     else
                     {
-                        dsc.UpdateBufferImages(0, binding, _textureArrayRefs[binding].Array.GetBufferViews(cbs), DescriptorType.UniformTexelBuffer);
+                        dsc.UpdateBufferImages(0, binding, _textureArrayRefs[binding].Array.GetBufferViews(cbs, _dummyBufferTexture), DescriptorType.UniformTexelBuffer);
                     }
                 }
             }
@@ -1114,7 +1137,8 @@ namespace Ryujinx.Graphics.Vulkan
                             program,
                             setIndex,
                             _dummyTexture,
-                            _dummySampler);
+                            _dummySampler,
+                            _dummyBufferTexture);
                     }
                     else if (segment.Type is ResourceType.Image or ResourceType.BufferImage)
                     {
@@ -1124,7 +1148,8 @@ namespace Ryujinx.Graphics.Vulkan
                             _templateUpdater,
                             program,
                             setIndex,
-                            _dummyTexture);
+                            _dummyTexture,
+                            _dummyBufferTexture);
                     }
 
                     if (sets != null)
@@ -1177,6 +1202,8 @@ namespace Ryujinx.Graphics.Vulkan
             if (disposing)
             {
                 _dummyTexture.Dispose();
+                _dummyBufferTexture.Release();
+                _gd.DeleteBuffer(_dummyBufferTextureStorage);
                 _dummySampler.Dispose();
                 _templateUpdater.Dispose();
             }

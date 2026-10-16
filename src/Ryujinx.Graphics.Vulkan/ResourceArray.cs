@@ -64,7 +64,7 @@ namespace Ryujinx.Graphics.Vulkan
             Debug.Assert(newBindCount >= 0);
         }
 
-        private void ReleaseDescriptorSet()
+        protected void ReleaseDescriptorSet()
         {
             if (_cachedDescriptorSets != null)
             {

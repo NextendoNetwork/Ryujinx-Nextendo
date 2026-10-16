@@ -30,7 +30,7 @@ namespace Ryujinx.Graphics.GAL.Multithreading
         // The queue is shortened when callers often wait for the render thread to reach a sync, as every queued command
         // adds latency to that wait. Games that read GPU results every frame stall on it when the render thread is the
         // bottleneck, and a full queue of 10000 commands can take tens of milliseconds to get through.
-        private const int MinQueueLimit = 1000;
+        private const int MinQueueLimit = 500;
         private const int QueueLimitStep = 1000;
         private const double ShrinkSyncWaitMsPerSecond = 20;
         private const double GrowSyncWaitMsPerSecond = 1;

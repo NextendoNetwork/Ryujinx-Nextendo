@@ -1,5 +1,6 @@
 using Ryujinx.Common;
 using Ryujinx.Common.Configuration;
+using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.GAL.Multithreading.Commands;
 using Ryujinx.Graphics.GAL.Multithreading.Commands.Buffer;
 using Ryujinx.Graphics.GAL.Multithreading.Commands.Renderer;
@@ -26,6 +27,16 @@ namespace Ryujinx.Graphics.GAL.Multithreading
         private const int MaxRefsPerCommand = 2;
         private const int QueueCount = 10000;
 
+        // The queue is shortened when callers often wait for the render thread to reach a sync, as every queued command
+        // adds latency to that wait. Games that read GPU results every frame stall on it when the render thread is the
+        // bottleneck, and a full queue of 10000 commands can take tens of milliseconds to get through.
+        private const int MinQueueLimit = 1000;
+        private const int QueueLimitStep = 1000;
+        private const double ShrinkSyncWaitMsPerSecond = 20;
+        private const double GrowSyncWaitMsPerSecond = 1;
+        private const int GrowAfterQuietSeconds = 10;
+        private const int QueueLimitCheckInterval = 256;
+
         private readonly int _elementSize;
         private readonly IRenderer _baseRenderer;
         private Thread _gpuThread;
@@ -47,6 +58,11 @@ namespace Ryujinx.Graphics.GAL.Multithreading
 
         private int _consumerPtr;
         private int _commandCount;
+        private int _queueLimit = QueueCount;
+        private long _syncWaitTicks;
+        private long _queueLimitCheckTime;
+        private int _commandsSinceQueueLimitCheck;
+        private int _quietSeconds;
 
         private int _producerPtr;
         private int _lastProducedPtr;
@@ -169,7 +185,9 @@ namespace Ryujinx.Graphics.GAL.Multithreading
 
         internal unsafe T* New<T>() where T : unmanaged, IGALCommand
         {
-            while (_producerPtr == (Volatile.Read(ref _consumerPtr) + QueueCount - 1) % QueueCount)
+            UpdateQueueLimit();
+
+            while (IsQueueFull())
             {
                 // If incrementing the producer pointer would overflow, we need to wait.
                 // _consumerPtr can only move forward, so there's no race to worry about here.
@@ -189,6 +207,67 @@ namespace Ryujinx.Graphics.GAL.Multithreading
             memory[^1] = (byte)(result)->CommandType;
 
             return result;
+        }
+
+        private bool IsQueueFull()
+        {
+            return _producerPtr == (Volatile.Read(ref _consumerPtr) + QueueCount - 1) % QueueCount ||
+                   Volatile.Read(ref _commandCount) >= _queueLimit;
+        }
+
+        private void UpdateQueueLimit()
+        {
+            if (++_commandsSinceQueueLimitCheck < QueueLimitCheckInterval)
+            {
+                return;
+            }
+
+            _commandsSinceQueueLimitCheck = 0;
+
+            long now = Stopwatch.GetTimestamp();
+            long elapsed = now - _queueLimitCheckTime;
+
+            if (elapsed < Stopwatch.Frequency)
+            {
+                return;
+            }
+
+            bool firstCheck = _queueLimitCheckTime == 0;
+            _queueLimitCheckTime = now;
+
+            double syncWaitMsPerSecond = Interlocked.Exchange(ref _syncWaitTicks, 0) * 1000.0 / elapsed;
+
+            if (firstCheck)
+            {
+                return;
+            }
+
+            int newLimit = _queueLimit;
+
+            if (syncWaitMsPerSecond > ShrinkSyncWaitMsPerSecond)
+            {
+                _quietSeconds = 0;
+                newLimit = Math.Max(MinQueueLimit, _queueLimit / 2);
+            }
+            else if (syncWaitMsPerSecond < GrowSyncWaitMsPerSecond)
+            {
+                if (++_quietSeconds >= GrowAfterQuietSeconds)
+                {
+                    _quietSeconds = 0;
+                    newLimit = Math.Min(QueueCount, _queueLimit + QueueLimitStep);
+                }
+            }
+            else
+            {
+                _quietSeconds = 0;
+            }
+
+            if (newLimit != _queueLimit)
+            {
+                Logger.Info?.Print(LogClass.Gpu, $"Render queue limit {_queueLimit} -> {newLimit} (waited {syncWaitMsPerSecond:F0} ms/s for queued commands).");
+
+                _queueLimit = newLimit;
+            }
         }
 
         internal int AddTableRef(object obj)
@@ -472,7 +551,11 @@ namespace Ryujinx.Graphics.GAL.Multithreading
 
         public void WaitSync(ulong id)
         {
+            long waitStart = Stopwatch.GetTimestamp();
+
             Sync.WaitSyncAvailability(id);
+
+            Interlocked.Add(ref _syncWaitTicks, Stopwatch.GetTimestamp() - waitStart);
 
             _baseRenderer.WaitSync(id);
         }

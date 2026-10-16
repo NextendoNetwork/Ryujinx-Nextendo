@@ -719,7 +719,7 @@ namespace Ryujinx.Ava.UI.Views.Misc
                 return null;
             }
 
-            Ryujinx.Common.Configuration.Hid.InputConfig config = RyujinxApp.MainWindow.ViewModel.AppHost?.NpadManager?.GetPlayerInputConfigByIndex(0);
+            Ryujinx.Common.Configuration.Hid.InputConfig config = RyujinxApp.MainWindow.ViewModel.AppHost?.NpadManager?.TryGetPlayerInputConfigByIndex(0);
             string targetId = config is Ryujinx.Common.Configuration.Hid.Controller.StandardControllerInputConfig ? config.Id : null;
 
             if (string.IsNullOrEmpty(targetId))

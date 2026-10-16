@@ -515,6 +515,31 @@ namespace Ryujinx.Input.HLE
             }
         }
 
+        /// <summary>
+        /// Same as <see cref="GetPlayerInputConfigByIndex"/>, but returns null if the lock can't be taken in time.
+        /// For UI thread polling: on macOS, SDL runs the main run loop while holding its joystick lock when a
+        /// controller connects, while <see cref="Update"/> holds this lock and waits for SDL's, so waiting here
+        /// without a timeout can deadlock.
+        /// </summary>
+        public InputConfig TryGetPlayerInputConfigByIndex(int index)
+        {
+            if (!_lock.TryEnter(TimeSpan.FromMilliseconds(100)))
+            {
+                return null;
+            }
+
+            try
+            {
+                NpadController controller = _controllers[index];
+
+                return controller?.ActiveConfig ?? _inputConfig.FirstOrDefault(x => x.PlayerIndex == (Common.Configuration.Hid.PlayerIndex)index);
+            }
+            finally
+            {
+                _lock.Exit();
+            }
+        }
+
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)

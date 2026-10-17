@@ -239,6 +239,13 @@ namespace Ryujinx.Graphics.Gpu.Image
             private int _texturePoolSequence;
             private int _samplerPoolSequence;
 
+            // The array contents being built, and the contents last sent to the backend array.
+            // Both are reused, as large arrays are rebuilt often and only a few entries change each time.
+            private ITexture[] _textures;
+            private ISampler[] _samplers;
+            private ITexture[] _boundTextures;
+            private ISampler[] _boundSamplers;
+
             /// <summary>
             /// Creates a new array cache entry.
             /// </summary>
@@ -305,6 +312,88 @@ namespace Ryujinx.Graphics.Gpu.Image
             public virtual void Reset()
             {
                 Textures.Clear();
+            }
+
+            /// <summary>
+            /// Gets cleared arrays to build the new array contents in.
+            /// </summary>
+            /// <param name="length">Number of entries of the array</param>
+            /// <param name="textures">Textures of the array</param>
+            /// <param name="samplers">Samplers of the array, or null for image arrays</param>
+            public void GetBuildArrays(int length, out ITexture[] textures, out ISampler[] samplers)
+            {
+                if (_textures == null)
+                {
+                    _textures = new ITexture[length];
+                    _boundTextures = new ITexture[length];
+
+                    if (TextureArray != null)
+                    {
+                        _samplers = new ISampler[length];
+                        _boundSamplers = new ISampler[length];
+                    }
+                }
+                else
+                {
+                    Array.Clear(_textures);
+
+                    if (_samplers != null)
+                    {
+                        Array.Clear(_samplers);
+                    }
+                }
+
+                textures = _textures;
+                samplers = _samplers;
+            }
+
+            /// <summary>
+            /// Sends the entries that differ from the ones last sent to the backend array.
+            /// </summary>
+            /// <remarks>
+            /// Sending the whole array allocates and copies it several times, which is very costly for large arrays.
+            /// </remarks>
+            public void CommitChanges()
+            {
+                int length = _textures.Length;
+
+                for (int index = 0; index < length; index++)
+                {
+                    if (!IsChanged(index))
+                    {
+                        continue;
+                    }
+
+                    int start = index;
+
+                    while (index < length && IsChanged(index))
+                    {
+                        index++;
+                    }
+
+                    int count = index - start;
+
+                    ITexture[] textures = _textures.AsSpan(start, count).ToArray();
+                    Array.Copy(_textures, start, _boundTextures, start, count);
+
+                    if (ImageArray != null)
+                    {
+                        ImageArray.SetImages(start, textures);
+                    }
+                    else
+                    {
+                        ISampler[] samplers = _samplers.AsSpan(start, count).ToArray();
+                        Array.Copy(_samplers, start, _boundSamplers, start, count);
+
+                        TextureArray.SetSamplers(start, samplers);
+                        TextureArray.SetTextures(start, textures);
+                    }
+                }
+            }
+
+            private bool IsChanged(int index)
+            {
+                return _textures[index] != _boundTextures[index] || (_samplers != null && _samplers[index] != _boundSamplers[index]);
             }
 
             /// <summary>
@@ -658,8 +747,7 @@ namespace Ryujinx.Graphics.Gpu.Image
             int length = (isSampler ? samplerPool.MaximumId : texturePool.MaximumId) + 1;
             length = Math.Min(length, bindingInfo.ArrayLength);
 
-            ISampler[] samplers = isImage ? null : new ISampler[bindingInfo.ArrayLength];
-            ITexture[] textures = new ITexture[bindingInfo.ArrayLength];
+            entry.GetBuildArrays(bindingInfo.ArrayLength, out ITexture[] textures, out ISampler[] samplers);
 
             for (int index = 0; index < length; index++)
             {
@@ -724,17 +812,14 @@ namespace Ryujinx.Graphics.Gpu.Image
                 }
             }
 
+            entry.CommitChanges();
+
             if (isImage)
             {
-                entry.ImageArray.SetImages(0, textures);
-
                 SetImageArray(stage, bindingInfo, entry.ImageArray);
             }
             else
             {
-                entry.TextureArray.SetSamplers(0, samplers);
-                entry.TextureArray.SetTextures(0, textures);
-
                 SetTextureArray(stage, bindingInfo, entry.TextureArray);
             }
         }
@@ -851,8 +936,7 @@ namespace Ryujinx.Graphics.Gpu.Image
 
             entry.UpdateData(cachedTextureBuffer, cachedSamplerBuffer, separateSamplerBuffer);
 
-            ISampler[] samplers = isImage ? null : new ISampler[bindingInfo.ArrayLength];
-            ITexture[] textures = new ITexture[bindingInfo.ArrayLength];
+            entry.GetBuildArrays(bindingInfo.ArrayLength, out ITexture[] textures, out ISampler[] samplers);
 
             for (int index = 0; index < bindingInfo.ArrayLength; index++)
             {
@@ -932,17 +1016,14 @@ namespace Ryujinx.Graphics.Gpu.Image
                 }
             }
 
+            entry.CommitChanges();
+
             if (isImage)
             {
-                entry.ImageArray.SetImages(0, textures);
-
                 SetImageArray(stage, bindingInfo, entry.ImageArray);
             }
             else
             {
-                entry.TextureArray.SetSamplers(0, samplers);
-                entry.TextureArray.SetTextures(0, textures);
-
                 SetTextureArray(stage, bindingInfo, entry.TextureArray);
             }
         }

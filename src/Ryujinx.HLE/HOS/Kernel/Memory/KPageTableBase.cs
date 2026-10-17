@@ -2602,10 +2602,10 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
             KMemoryPermission firstPermission = info.Permission;
             MemoryAttribute firstAttribute = info.Attribute;
 
-            info = currBlock.GetInfo(info);
-            
-            while (info.Address + info.Size - 1 < endAddr - 1 && (currBlock = currBlock.Successor) != null)
+            do
             {
+                info = currBlock.GetInfo(info);
+
                 // Check if the block state matches what we expect.
                 if (firstState != info.State ||
                      firstPermission != info.Permission ||
@@ -2617,15 +2617,14 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                     outState = MemoryState.Unmapped;
                     outPermission = KMemoryPermission.None;
                     outAttribute = MemoryAttribute.None;
-                    
+
                     KMemoryInfo.Pool.Release(info);
 
                     return false;
                 }
-                
-                info = currBlock.GetInfo(info);
             }
-            
+            while (info.Address + info.Size - 1 < endAddr - 1 && (currBlock = currBlock.Successor) != null);
+
             KMemoryInfo.Pool.Release(info);
 
             outState = firstState;
@@ -2649,21 +2648,22 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
 
             KMemoryInfo info = currBlock.GetInfo();
 
-            while (info.Address + info.Size - 1 < address + size - 1 && (currBlock = currBlock.Successor) != null)
+            do
             {
+                info = currBlock.GetInfo(info);
+
                 // Check if the block state matches what we expect.
                 if ((info.State & stateMask) != stateExpected ||
                     (info.Permission & permissionMask) != permissionExpected ||
                     (info.Attribute & attributeMask) != attributeExpected)
                 {
                     KMemoryInfo.Pool.Release(info);
-                    
+
                     return false;
                 }
-                
-                info = currBlock.GetInfo(info);
             }
-            
+            while (info.Address + info.Size - 1 < address + size - 1 && (currBlock = currBlock.Successor) != null);
+
             KMemoryInfo.Pool.Release(info);
 
             return true;

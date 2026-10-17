@@ -225,6 +225,7 @@ namespace Ryujinx.HLE.HOS.Applets.SoftwareKeyboard
                 Color = _textNormalColor,
                 IsAntialias = true
             };
+            paint.Typeface = TypefaceFallback.For(paint.Typeface, MessageText);
 
             SKCanvas canvas = _surface.Canvas;
             SKRect messageRectangle = MeasureString(MessageText, paint);
@@ -342,6 +343,7 @@ namespace Ryujinx.HLE.HOS.Applets.SoftwareKeyboard
                 IsAntialias = true,
                 Color = _textNormalColor
             };
+            textPaint.Typeface = TypefaceFallback.For(textPaint.Typeface, state.InputText);
             SKRect inputTextRectangle = MeasureString(state.InputText, textPaint);
 
             float boxWidth = (int)(Math.Max(300, inputTextRectangle.Width + inputTextRectangle.Left + 8));
@@ -467,6 +469,7 @@ namespace Ryujinx.HLE.HOS.Applets.SoftwareKeyboard
                         Color = cursorTextColor,
                         IsAntialias = true
                     };
+                    cursorPaint.Typeface = TypefaceFallback.For(cursorPaint.Typeface, state.InputText);
 
                     textOverCanvas.DrawText(state.InputText, textRelativePosition.X, textRelativePosition.Y + _inputTextFont.Metrics.XHeight + _inputTextFont.Metrics.Descent, cursorPaint);
 
@@ -498,6 +501,7 @@ namespace Ryujinx.HLE.HOS.Applets.SoftwareKeyboard
                 Color = _textNormalColor,
                 IsAntialias = true
             };
+            paint.Typeface = TypefaceFallback.For(paint.Typeface, label);
 
             SKRect labelRectangle = MeasureString(label, paint);
 
@@ -551,6 +555,7 @@ namespace Ryujinx.HLE.HOS.Applets.SoftwareKeyboard
                 IsAntialias = true,
                 Color = _textNormalColor
             };
+            paint.Typeface = TypefaceFallback.For(paint.Typeface, ControllerToggleText);
             SKRect labelRectangle = MeasureString(ControllerToggleText, paint);
 
             // Use relative positions so we can center the entire drawing later.

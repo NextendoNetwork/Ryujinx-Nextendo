@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Media;
 using Avalonia.Threading;
 using DiscordRPC;
 using Gommon;
@@ -25,6 +26,7 @@ using Ryujinx.SDL3.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Threading.Tasks;
@@ -245,7 +247,30 @@ namespace Ryujinx.Ava
                     RenderingMode = UseHardwareAcceleration
                         ? [Win32RenderingMode.AngleEgl, Win32RenderingMode.Software]
                         : [Win32RenderingMode.Software]
-                });
+                })
+                .With(CreateFontManagerOptions());
+
+        // On macOS the default font has no glyphs for CJK, Arabic, Devanagari, Thai etc. and Avalonia's
+        // implicit fallback does not find them, so those strings (language names, game titles) render as boxes.
+        // Register the system fonts that cover them; they are only used for characters the default font lacks.
+        private static FontManagerOptions CreateFontManagerOptions()
+        {
+            if (!OperatingSystem.IsMacOS())
+            {
+                return new FontManagerOptions();
+            }
+
+            string[] families =
+            [
+                "PingFang SC", "Hiragino Sans GB", "PingFang TC", "Hiragino Sans", "Apple SD Gothic Neo",
+                "Geeza Pro", "Kohinoor Devanagari", "Thonburi", "Apple Symbols", "Apple Color Emoji",
+            ];
+
+            return new FontManagerOptions
+            {
+                FontFallbacks = families.Select(family => new FontFallback { FontFamily = new FontFamily(family) }).ToArray(),
+            };
+        }
 
         private static bool ConsumeCommandLineArgument(ref string[] args, string targetArgument)
         {

@@ -1,4 +1,5 @@
 using Ryujinx.Common.Logging;
+using Ryujinx.HLE.UI;
 using SkiaSharp;
 using System;
 using System.Collections.Concurrent;
@@ -269,8 +270,8 @@ namespace Ryujinx.Ava.Common
             float textWidth = CardWidth - textLeft - 20;
 
             using SKTypeface typeface = SKTypeface.FromFamilyName("Segoe UI", SKFontStyle.Normal) ?? SKTypeface.Default;
-            using SKPaint white = new() { Color = SKColors.White, IsAntialias = true, Typeface = typeface, TextSize = 27 };
-            using SKPaint grey = new() { Color = new SKColor(0xC8, 0xC8, 0xC8), IsAntialias = true, Typeface = typeface, TextSize = 23 };
+            using SKPaint white = new() { Color = SKColors.White, IsAntialias = true, Typeface = TypefaceFallback.For(typeface, title), TextSize = 27 };
+            using SKPaint grey = new() { Color = new SKColor(0xC8, 0xC8, 0xC8), IsAntialias = true, Typeface = TypefaceFallback.For(typeface, text), TextSize = 23 };
 
             if (string.IsNullOrEmpty(text))
             {

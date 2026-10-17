@@ -263,10 +263,19 @@ namespace Ryujinx.Cpu.Jit
                 yield break;
             }
 
+            // The physical regions are page aligned, but the host regions must start
+            // and end exactly where the requested range does.
+            ulong offset = va & PageMask;
+            ulong remaining = size;
+
             foreach (MemoryRange guestRegion in guestRegions)
             {
-                nint pointer = _backingMemory.GetPointer(guestRegion.Address, guestRegion.Size);
-                yield return new HostMemoryRange((nuint)(ulong)pointer, guestRegion.Size);
+                ulong regionSize = Math.Min(guestRegion.Size - offset, remaining);
+                nint pointer = _backingMemory.GetPointer(guestRegion.Address + offset, regionSize);
+                yield return new HostMemoryRange((nuint)(ulong)pointer, regionSize);
+
+                remaining -= regionSize;
+                offset = 0;
             }
         }
 

@@ -81,26 +81,26 @@ namespace Ryujinx.Audio.Backends.SDL3
 
         private unsafe void Update(nint userdata, SDL_AudioStream* streamDevice, int additionalAmount, int totalAmmount)
         {
-            using SpanOwner<byte> stream = SpanOwner<byte>.Rent(additionalAmount);
-            Span<byte> streamSpan = stream.Span;
-
-
-            int maxFrameCount = (int)GetSampleCount(additionalAmount);
+            // Hand everything available to the stream, which plays it in order, up to one guest buffer
+            // ahead of what is needed now. Filling only what is needed padded the missing part with silence
+            // whenever the next guest buffer had not arrived yet, as the guest only queues it once the
+            // previous one was played, which made the audio crackle.
+            int neededFrames = (int)GetSampleCount(additionalAmount);
+            int queuedFrames = SDL_GetAudioStreamQueued(streamDevice) / _bytesPerFrame;
             int bufferedFrames = _ringBuffer.Length / _bytesPerFrame;
 
-            int frameCount = Math.Min(bufferedFrames, maxFrameCount);
+            int frameCount = Math.Min(bufferedFrames, Math.Max(0, neededFrames + (int)_sampleCount - queuedFrames));
 
             if (frameCount == 0)
             {
-                // SDL3 left the responsibility to the user to clear the buffer.
-                streamSpan.Clear();
-
                 return;
             }
 
             using SpanOwner<byte> samplesOwner = SpanOwner<byte>.Rent(frameCount * _bytesPerFrame);
+            using SpanOwner<byte> streamOwner = SpanOwner<byte>.Rent(frameCount * _bytesPerFrame);
 
             Span<byte> samples = samplesOwner.Span;
+            Span<byte> streamSpan = streamOwner.Span;
 
             _ringBuffer.Read(samples, 0, samples.Length);
 
@@ -113,7 +113,7 @@ namespace Ryujinx.Audio.Backends.SDL3
 
                     // Apply volume to written data
                     SDL_MixAudio(pStreamDst, pStreamSrc, _nativeSampleFormat, (uint)samples.Length, _driver.Volume * _volume);
-                    SDL_PutAudioStreamData(streamDevice, (nint)pStreamDst, additionalAmount);
+                    SDL_PutAudioStreamData(streamDevice, (nint)pStreamDst, samples.Length);
                 }
             }
 

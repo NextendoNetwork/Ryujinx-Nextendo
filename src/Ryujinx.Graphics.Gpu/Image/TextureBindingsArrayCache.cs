@@ -760,7 +760,15 @@ namespace Ryujinx.Graphics.Gpu.Image
                 }
                 else
                 {
+                    // Most entries of a large pool are empty. Looking each of them up reads its descriptor
+                    // from guest memory, which is what made rebuilding a 524288 entry array so costly.
+                    if (texturePool.IsKnownEmpty(index))
+                    {
+                        continue;
+                    }
+
                     ref readonly TextureDescriptor descriptor = ref texturePool.GetForBinding(index, bindingInfo.FormatInfo, out texture);
+
 
                     if (texture != null)
                     {

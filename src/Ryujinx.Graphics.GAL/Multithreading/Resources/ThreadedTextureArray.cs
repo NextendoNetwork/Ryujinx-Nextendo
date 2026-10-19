@@ -1,6 +1,5 @@
 using Ryujinx.Graphics.GAL.Multithreading.Commands.TextureArray;
 using Ryujinx.Graphics.GAL.Multithreading.Model;
-using System.Linq;
 
 namespace Ryujinx.Graphics.GAL.Multithreading.Resources
 {
@@ -30,13 +29,14 @@ namespace Ryujinx.Graphics.GAL.Multithreading.Resources
 
         public unsafe void SetSamplers(int index, ISampler[] samplers)
         {
-            _renderer.New<TextureArraySetSamplersCommand>()->Set(Ref(this), index, Ref(samplers.ToArray()));
+            // The array is handed over (see ITextureArray), so it is not copied.
+            _renderer.New<TextureArraySetSamplersCommand>()->Set(Ref(this), index, Ref(samplers));
             _renderer.QueueCommand();
         }
 
         public unsafe void SetTextures(int index, ITexture[] textures)
         {
-            _renderer.New<TextureArraySetTexturesCommand>()->Set(Ref(this), index, Ref(textures.ToArray()));
+            _renderer.New<TextureArraySetTexturesCommand>()->Set(Ref(this), index, Ref(textures));
             _renderer.QueueCommand();
         }
     }

@@ -522,15 +522,14 @@ namespace Ryujinx.Graphics.Gpu.Memory
 
             if (_bufferTextureArrays.Count > 0 || _bufferImageArrays.Count > 0)
             {
-                ITexture[] textureArray = new ITexture[1];
-
+                // The arrays are handed over to the backend (and kept until a threaded renderer ran the
+                // command), so each call gets its own.
                 foreach (BufferTextureArrayBinding<ITextureArray> binding in _bufferTextureArrays)
                 {
                     BufferRange range = bufferCache.GetBufferRange(binding.Range, BufferStage.None);
                     binding.Texture.SetStorage(range);
 
-                    textureArray[0] = binding.Texture;
-                    binding.Array.SetTextures(binding.Index, textureArray);
+                    binding.Array.SetTextures(binding.Index, [binding.Texture]);
                 }
 
                 foreach (BufferTextureArrayBinding<IImageArray> binding in _bufferImageArrays)
@@ -539,8 +538,7 @@ namespace Ryujinx.Graphics.Gpu.Memory
                     BufferRange range = bufferCache.GetBufferRange(binding.Range, BufferStage.None, isStore);
                     binding.Texture.SetStorage(range);
 
-                    textureArray[0] = binding.Texture;
-                    binding.Array.SetImages(binding.Index, textureArray);
+                    binding.Array.SetImages(binding.Index, [binding.Texture]);
                 }
 
                 _bufferTextureArrays.Clear();

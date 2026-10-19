@@ -30,7 +30,8 @@ namespace Ryujinx.Memory.Tracking
         private readonly BitMap _dirtyCheckedBitmap;
         private int _uncheckedHandles;
 
-        private static bool _misplacedHandleLogged;
+        private const int MaxMisplacedHandleLogs = 20;
+        private static int _misplacedHandleLogs;
 
         public bool Dirty { get; private set; } = true;
 
@@ -61,9 +62,11 @@ namespace Ryujinx.Memory.Tracking
 
                 foreach (RegionHandle handle in handles.Cast<RegionHandle>())
                 {
-                    // A handle that overlaps a previous one or is outside the range can't be reused,
-                    // as that would write past the end of the handles.
-                    if (handle.RealAddress < address + (ulong)i * granularity || handle.RealAddress >= address + size)
+                    // A handle that overlaps a previous one, is outside the range or does not start on the
+                    // granularity can't be reused, as it would be placed on a slot it does not cover.
+                    if (handle.RealAddress < address + (ulong)i * granularity ||
+                        handle.RealAddress >= address + size ||
+                        (handle.RealAddress - address) % granularity != 0)
                     {
                         DiscardMisplacedHandle(tracking, handle, address, size, i);
 
@@ -141,9 +144,9 @@ namespace Ryujinx.Memory.Tracking
         /// <param name="createdCount">Number of handles of this handle already created</param>
         private void DiscardMisplacedHandle(MemoryTracking tracking, RegionHandle handle, ulong address, ulong size, int createdCount)
         {
-            if (!_misplacedHandleLogged)
+            if (_misplacedHandleLogs < MaxMisplacedHandleLogs)
             {
-                _misplacedHandleLogged = true;
+                _misplacedHandleLogs++;
 
                 Logger.Warning?.Print(LogClass.Emulation,
                     $"Inherited tracking handle 0x{handle.RealAddress:X}+0x{handle.RealSize:X} (size 0x{handle.Size:X}) overlaps another one or is outside " +

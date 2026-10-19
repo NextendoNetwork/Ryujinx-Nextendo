@@ -344,6 +344,8 @@ namespace Ryujinx.Graphics.Vulkan
             SamplerHolder dummySampler,
             TextureBuffer dummyBufferTexture)
         {
+            bool bufferViewsUpToDate = false;
+
             if (TryGetCachedDescriptorSets(cbs, program, setIndex, out DescriptorSet[] sets))
             {
                 // We still need to ensure the current command buffer holds a reference to all used textures.
@@ -362,8 +364,10 @@ namespace Ryujinx.Graphics.Vulkan
 
                 // A buffer texture got a new view (its storage was changed by another binding, which releases
                 // the old view), so the cached set references a destroyed view and must be written again.
+                // The views were just brought up to date, so they need not be gathered again.
                 ReleaseDescriptorSet();
                 TryGetCachedDescriptorSets(cbs, program, setIndex, out sets);
+                bufferViewsUpToDate = true;
             }
 
             DescriptorSetTemplate template = program.Templates[setIndex];
@@ -376,7 +380,7 @@ namespace Ryujinx.Graphics.Vulkan
             }
             else
             {
-                tu.Push(GetBufferViews(cbs, dummyBufferTexture));
+                tu.Push(bufferViewsUpToDate ? (ReadOnlySpan<BufferView>)_bufferTextures : GetBufferViews(cbs, dummyBufferTexture));
             }
 
             templateUpdater.Commit(_gd, device, sets[0]);

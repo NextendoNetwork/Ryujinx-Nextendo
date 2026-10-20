@@ -29,6 +29,14 @@ namespace Ryujinx.Graphics.Vulkan
         private BufferView _dummyBufferView;
         private int _dummyBufferViewGeneration;
 
+        // Entries changed since the descriptor set was last written, as [Start, End) ranges. A large array
+        // only changes in a few places at a time, so the next set is copied from the last one and only these
+        // are written. With too many ranges, or before the first write, the whole array is written instead.
+        private readonly List<(int Start, int End)> _dirtyRanges = [];
+        private bool _allDirty = true;
+
+        private const int MaxDirtyRanges = 64;
+
         private HashSet<TextureStorage> _storages;
 
         private int _cachedCommandBufferIndex;
@@ -114,6 +122,7 @@ namespace Ryujinx.Graphics.Vulkan
                         }
 
                         _bufferTextureRefs[index + i] = bufferTexture;
+                        AddDirty(index + i);
                         changed = true;
                     }
                 }
@@ -145,6 +154,41 @@ namespace Ryujinx.Graphics.Vulkan
             _cachedCommandBufferIndex = -1;
             _storages = null;
             SetDirty(_gd, isImage: false);
+        }
+
+        private void AddDirty(int index)
+        {
+            if (_allDirty)
+            {
+                return;
+            }
+
+            if (_dirtyRanges.Count != 0)
+            {
+                (int start, int end) = _dirtyRanges[^1];
+
+                if (index == end)
+                {
+                    _dirtyRanges[^1] = (start, end + 1);
+
+                    return;
+                }
+
+                if (index >= start && index < end)
+                {
+                    return;
+                }
+            }
+
+            if (_dirtyRanges.Count == MaxDirtyRanges)
+            {
+                _allDirty = true;
+                _dirtyRanges.Clear();
+
+                return;
+            }
+
+            _dirtyRanges.Add((index, index + 1));
         }
 
         public void QueueWriteToReadBarriers(CommandBufferScoped cbs, PipelineStageFlags stageFlags)
@@ -307,6 +351,7 @@ namespace Ryujinx.Graphics.Vulkan
                         }
                     }
 
+                    _allDirty = true;
                     changed = true;
                 }
             }
@@ -327,11 +372,62 @@ namespace Ryujinx.Graphics.Vulkan
                 if (view.Handle != _bufferTextures[i].Handle)
                 {
                     _bufferTextures[i] = view;
+                    AddDirty(i);
                     changed = true;
                 }
             }
 
             return changed;
+        }
+
+        /// <summary>
+        /// Writes the changed entries of the array into a descriptor set copied from the last one written.
+        /// </summary>
+        private unsafe void WriteDirtyBufferViews(Device device, DescriptorSet staleSet, DescriptorSet set, ResourceBindingSegment segment)
+        {
+            // On MoltenVK the copy is a memcpy of the argument buffer, while writing an entry costs
+            // a couple of Objective-C calls, which for a large array is far more than the draw itself.
+            CopyDescriptorSet copy = new()
+            {
+                SType = StructureType.CopyDescriptorSet,
+                SrcSet = staleSet,
+                SrcBinding = (uint)segment.Binding,
+                DstSet = set,
+                DstBinding = (uint)segment.Binding,
+                DescriptorCount = (uint)_bufferTextures.Length,
+            };
+
+            _gd.Api.UpdateDescriptorSets(device, 0, null, 1, &copy);
+
+            DescriptorType type = segment.Type.Convert();
+
+            foreach ((int start, int end) in _dirtyRanges)
+            {
+                for (int i = start; i < end; i++)
+                {
+                    // Emptied slots get the dummy view: MoltenVK crashes on null buffer views in arrays.
+                    if (_bufferTextureRefs[i] == null)
+                    {
+                        _bufferTextures[i] = _dummyBufferView;
+                    }
+                }
+
+                fixed (BufferView* pViews = &_bufferTextures[start])
+                {
+                    WriteDescriptorSet write = new()
+                    {
+                        SType = StructureType.WriteDescriptorSet,
+                        DstSet = set,
+                        DstBinding = (uint)segment.Binding,
+                        DstArrayElement = (uint)start,
+                        DescriptorType = type,
+                        DescriptorCount = (uint)(end - start),
+                        PTexelBufferView = pViews,
+                    };
+
+                    _gd.Api.UpdateDescriptorSets(device, 1, &write, 0, null);
+                }
+            }
         }
 
         public DescriptorSet[] GetDescriptorSets(
@@ -344,19 +440,43 @@ namespace Ryujinx.Graphics.Vulkan
             SamplerHolder dummySampler,
             TextureBuffer dummyBufferTexture)
         {
-            bool bufferViewsUpToDate = false;
+            if (_isBuffer)
+            {
+                return GetBufferDescriptorSets(device, cbs, templateUpdater, program, setIndex, dummyBufferTexture);
+            }
 
             if (TryGetCachedDescriptorSets(cbs, program, setIndex, out DescriptorSet[] sets))
             {
                 // We still need to ensure the current command buffer holds a reference to all used textures.
+                GetImageInfos(_gd, cbs, dummyTexture, dummySampler);
 
-                if (!_isBuffer)
-                {
-                    GetImageInfos(_gd, cbs, dummyTexture, dummySampler);
+                return sets;
+            }
 
-                    return sets;
-                }
+            DescriptorSetTemplate template = program.Templates[setIndex];
 
+            DescriptorSetTemplateWriter tu = templateUpdater.Begin(template);
+
+            tu.Push(GetImageInfos(_gd, cbs, dummyTexture, dummySampler));
+
+            templateUpdater.Commit(_gd, device, sets[0]);
+
+            ReleaseStaleDescriptorSet();
+
+            return sets;
+        }
+
+        private DescriptorSet[] GetBufferDescriptorSets(
+            Device device,
+            CommandBufferScoped cbs,
+            DescriptorSetTemplateUpdater templateUpdater,
+            ShaderCollection program,
+            int setIndex,
+            TextureBuffer dummyBufferTexture)
+        {
+            if (TryGetCachedDescriptorSets(cbs, program, setIndex, out DescriptorSet[] sets))
+            {
+                // The current command buffer must hold a reference to all views, and views released since must be found.
                 if (!UpdateBufferViews(cbs, dummyBufferTexture))
                 {
                     return sets;
@@ -364,26 +484,34 @@ namespace Ryujinx.Graphics.Vulkan
 
                 // A buffer texture got a new view (its storage was changed by another binding, which releases
                 // the old view), so the cached set references a destroyed view and must be written again.
-                // The views were just brought up to date, so they need not be gathered again.
-                ReleaseDescriptorSet();
+                MakeDescriptorSetStale();
                 TryGetCachedDescriptorSets(cbs, program, setIndex, out sets);
-                bufferViewsUpToDate = true;
-            }
-
-            DescriptorSetTemplate template = program.Templates[setIndex];
-
-            DescriptorSetTemplateWriter tu = templateUpdater.Begin(template);
-
-            if (!_isBuffer)
-            {
-                tu.Push(GetImageInfos(_gd, cbs, dummyTexture, dummySampler));
             }
             else
             {
-                tu.Push(bufferViewsUpToDate ? (ReadOnlySpan<BufferView>)_bufferTextures : GetBufferViews(cbs, dummyBufferTexture));
+                // The array changed or is new, and got new sets: bring the views up to date for this command buffer.
+                UpdateBufferViews(cbs, dummyBufferTexture);
             }
 
-            templateUpdater.Commit(_gd, device, sets[0]);
+            if (!_allDirty && TryGetStaleDescriptorSet(program, out DescriptorSet staleSet))
+            {
+                WriteDirtyBufferViews(device, staleSet, sets[0], program.BindingSegments[setIndex][0]);
+            }
+            else
+            {
+                DescriptorSetTemplate template = program.Templates[setIndex];
+
+                DescriptorSetTemplateWriter tu = templateUpdater.Begin(template);
+
+                tu.Push(GetBufferViews(cbs, dummyBufferTexture));
+
+                templateUpdater.Commit(_gd, device, sets[0]);
+            }
+
+            ReleaseStaleDescriptorSet();
+
+            _dirtyRanges.Clear();
+            _allDirty = false;
 
             return sets;
         }

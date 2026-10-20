@@ -264,6 +264,8 @@ namespace Ryujinx.Graphics.Vulkan
 
             templateUpdater.Commit(_gd, device, sets[0]);
 
+            ReleaseStaleDescriptorSet();
+
             return sets;
         }
     }

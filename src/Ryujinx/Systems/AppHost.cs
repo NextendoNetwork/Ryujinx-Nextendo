@@ -67,7 +67,7 @@ namespace Ryujinx.Ava.Systems
     {
         private const int CursorHideIdleTime = 5; // Hide Cursor seconds.
         private const float MaxResolutionScale = 4.0f; // Max resolution hotkeys can scale to before wrapping.
-        private const int TargetFps = 60;
+        private const int StatusUpdatesPerSecond = 4;
         private const float VolumeDelta = 0.05f;
 
         private static readonly Cursor _invisibleCursor = new(StandardCursorType.None);
@@ -178,7 +178,7 @@ namespace Ryujinx.Ava.Systems
             RendererHost = renderer;
 
             _chrono = new Stopwatch();
-            _ticksPerFrame = Stopwatch.Frequency / TargetFps;
+            _ticksPerFrame = Stopwatch.Frequency / StatusUpdatesPerSecond;
             _playTimer = new Stopwatch();
 
             if (ApplicationPath.StartsWith("@SystemContent"))
@@ -1247,9 +1247,13 @@ namespace Ryujinx.Ava.Systems
                                 (RendererHost.EmbeddedWindow as EmbeddedWindowOpenGL)?.SwapBuffers());
                         }
 
+                        // The ticks were never consumed, so the status bar (and with it the whole
+                        // window) was refreshed on every pass of this loop, hundreds of times per second.
                         if (_ticks >= _ticksPerFrame)
                         {
                             UpdateStatus();
+
+                            _ticks = Math.Min(_ticks - _ticksPerFrame, _ticksPerFrame);
                         }
                     }
                 }

@@ -75,6 +75,7 @@ namespace Ryujinx.Graphics.Gpu.Image
         private readonly GpuChannel _channel;
         private readonly BitMap _invalidMap;
         private readonly ConcurrentQueue<DereferenceRequest> _dereferenceQueue = new();
+        private static readonly ConcurrentDictionary<(uint, bool), byte> _loggedInvalidFormats = new();
         private TextureDescriptor _defaultDescriptor;
 
         /// <summary>
@@ -586,7 +587,9 @@ namespace Ryujinx.Graphics.Gpu.Image
 
             if (!FormatTable.TryGetTextureFormat(format, srgb, out FormatInfo formatInfo))
             {
-                if (gpuVa != 0 && format != 0)
+                // Pools can hold many garbage descriptors (e.g. unused array slots): log each format once,
+                // as logging every lookup wrote hundreds of thousands of lines per second and stalled the game.
+                if (gpuVa != 0 && format != 0 && _loggedInvalidFormats.TryAdd((format, srgb), 0))
                 {
                     Logger.Error?.Print(LogClass.Gpu, $"Invalid texture format 0x{format:X} (sRGB: {srgb}).");
                 }

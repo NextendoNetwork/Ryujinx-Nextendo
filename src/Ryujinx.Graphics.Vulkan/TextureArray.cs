@@ -336,10 +336,13 @@ namespace Ryujinx.Graphics.Vulkan
             // All empty slots share the dummy view, so it only needs to be looked at once.
             if (!sameCommandBuffer || dummyBufferTexture.ViewGeneration != _dummyBufferViewGeneration)
             {
+                // A released view may be recreated with the same handle value, so the generation decides,
+                // not the handle: the descriptor written for the old view would point at a destroyed object.
+                bool dummyReleased = dummyBufferTexture.ViewGeneration != _dummyBufferViewGeneration;
                 BufferView dummyView = dummyBufferTexture.GetBufferView(cbs, false);
                 _dummyBufferViewGeneration = dummyBufferTexture.ViewGeneration;
 
-                if (dummyView.Handle != _dummyBufferView.Handle)
+                if (dummyReleased || dummyView.Handle != _dummyBufferView.Handle)
                 {
                     _dummyBufferView = dummyView;
 
@@ -366,10 +369,11 @@ namespace Ryujinx.Graphics.Vulkan
                     continue;
                 }
 
+                bool released = bufferTexture.ViewGeneration != _bufferViewGenerations[i];
                 BufferView view = bufferTexture.GetBufferView(cbs, false);
                 _bufferViewGenerations[i] = bufferTexture.ViewGeneration;
 
-                if (view.Handle != _bufferTextures[i].Handle)
+                if (released || view.Handle != _bufferTextures[i].Handle)
                 {
                     _bufferTextures[i] = view;
                     AddDirty(i);

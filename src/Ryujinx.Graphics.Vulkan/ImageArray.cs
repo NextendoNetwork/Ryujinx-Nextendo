@@ -205,10 +205,12 @@ namespace Ryujinx.Graphics.Vulkan
                     continue;
                 }
 
+                bool released = bufferTexture.ViewGeneration != _bufferViewGenerations[i];
                 BufferView view = bufferTexture.GetBufferView(cbs, true);
                 _bufferViewGenerations[i] = bufferTexture.ViewGeneration;
 
-                if (view.Handle != _bufferTextures[i].Handle)
+                // A recreated view can reuse the old handle value; the generation says whether it was released.
+                if (released || view.Handle != _bufferTextures[i].Handle)
                 {
                     _bufferTextures[i] = view;
                     changed = true;

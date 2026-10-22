@@ -1,6 +1,5 @@
 using Ryujinx.Graphics.GAL.Multithreading.Model;
 using Ryujinx.Graphics.GAL.Multithreading.Resources;
-using System.Linq;
 
 namespace Ryujinx.Graphics.GAL.Multithreading.Commands.TextureArray
 {
@@ -21,7 +20,15 @@ namespace Ryujinx.Graphics.GAL.Multithreading.Commands.TextureArray
         public static void Run(ref TextureArraySetTexturesCommand command, ThreadedRenderer threaded, IRenderer renderer)
         {
             ThreadedTextureArray textureArray = command._textureArray.Get(threaded);
-            textureArray.Base.SetTextures(command._index, command._textures.Get(threaded).Select(texture => ((ThreadedTexture)texture)?.Base).ToArray());
+            ITexture[] array = command._textures.Get(threaded);
+
+            // The array was handed over, so the proxies are replaced in place.
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i] = ((ThreadedTexture)array[i])?.Base;
+            }
+
+            textureArray.Base.SetTextures(command._index, array);
         }
     }
 }

@@ -400,6 +400,39 @@ namespace Ryujinx.Tests.Memory
             Assert.AreEqual(singlePages[2], combinedHandles.ElementAt(10));
         }
 
+        [Test]
+        public void InheritOverlappingHandles()
+        {
+            // Inherited handles are expected not to overlap. If they do, the overlapping ones can't be reused,
+            // but must neither write past the end of the handles nor lose their dirty state.
+
+            MultiRegionHandle low = _tracking.BeginGranularTracking(0, PageSize * 4, null, PageSize, 0);
+            PreparePages(low, 4);
+
+            MultiRegionHandle high = _tracking.BeginGranularTracking(PageSize * 2, PageSize * 4, null, PageSize, 0);
+            PreparePages(high, 4, PageSize * 2);
+
+            // Write to a page covered by both handles.
+            _tracking.VirtualMemoryEvent(PageSize * 3, PageSize, true);
+
+            MultiRegionHandle combined = _tracking.BeginGranularTracking(0, PageSize * 6, low.Handles.Concat(high.Handles), PageSize, 0);
+
+            bool[] expectedDirty =
+            [
+                false, false, // Only in the first handle.
+                true, true, // Overlap: the second handle's handles are not reused, so these are synchronized again.
+                false, false, // Only in the second handle.
+            ];
+
+            for (int i = 0; i < 6; i++)
+            {
+                bool modified = false;
+                combined.QueryModified(PageSize * (ulong)i, PageSize, (_, _) => { modified = true; });
+
+                Assert.AreEqual(expectedDirty[i], modified);
+            }
+        }
+
         static readonly bool[] _expectedPagesModified = [true, false, false];
 
         [Test]

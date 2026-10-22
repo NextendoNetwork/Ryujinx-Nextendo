@@ -1,3 +1,4 @@
+using Ryujinx.Common.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +30,9 @@ namespace Ryujinx.Memory.Tracking
         private readonly BitMap _dirtyCheckedBitmap;
         private int _uncheckedHandles;
 
+        private const int MaxMisplacedHandleLogs = 20;
+        private static int _misplacedHandleLogs;
+
         public bool Dirty { get; private set; } = true;
 
         internal MultiRegionHandle(
@@ -58,6 +62,17 @@ namespace Ryujinx.Memory.Tracking
 
                 foreach (RegionHandle handle in handles.Cast<RegionHandle>())
                 {
+                    // A handle that overlaps a previous one, is outside the range or does not start on the
+                    // granularity can't be reused, as it would be placed on a slot it does not cover.
+                    if (handle.RealAddress < address + (ulong)i * granularity ||
+                        handle.RealAddress >= address + size ||
+                        (handle.RealAddress - address) % granularity != 0)
+                    {
+                        DiscardMisplacedHandle(tracking, handle, address, size, i);
+
+                        continue;
+                    }
+
                     int startIndex = (int)((handle.RealAddress - address) / granularity);
 
                     // Fill any gap left before this handle.
@@ -80,7 +95,7 @@ namespace Ryujinx.Memory.Tracking
                         }
                         else
                         {
-                            int endIndex = (int)((handle.RealEndAddress - address) / granularity);
+                            int endIndex = (int)Math.Min((handle.RealEndAddress - address) / granularity, (ulong)_handles.Length);
 
                             while (i < endIndex)
                             {
@@ -116,6 +131,46 @@ namespace Ryujinx.Memory.Tracking
 
             Address = address;
             Size = size;
+        }
+
+        /// <summary>
+        /// Disposes an inherited handle that can't be reused, making the handles already created over its range dirty,
+        /// so that its memory is synchronized again.
+        /// </summary>
+        /// <param name="tracking">Tracking object the handle belongs to</param>
+        /// <param name="handle">Handle to discard</param>
+        /// <param name="address">Start address of this handle</param>
+        /// <param name="size">Size of this handle</param>
+        /// <param name="createdCount">Number of handles of this handle already created</param>
+        private void DiscardMisplacedHandle(MemoryTracking tracking, RegionHandle handle, ulong address, ulong size, int createdCount)
+        {
+            if (_misplacedHandleLogs < MaxMisplacedHandleLogs)
+            {
+                _misplacedHandleLogs++;
+
+                Logger.Warning?.Print(LogClass.Emulation,
+                    $"Inherited tracking handle 0x{handle.RealAddress:X}+0x{handle.RealSize:X} (size 0x{handle.Size:X}) overlaps another one or is outside " +
+                    $"the new region 0x{address:X}+0x{size:X} (granularity 0x{Granularity:X}, {createdCount} of {_handles.Length} created); it was discarded.");
+            }
+
+            ulong start = Math.Max(handle.RealAddress, address);
+            ulong end = Math.Min(handle.RealEndAddress, address + size);
+
+            if (start < end)
+            {
+                int first = (int)((start - address) / Granularity);
+                int last = (int)Math.Min((end - address + Granularity - 1) / Granularity, (ulong)createdCount);
+
+                for (int index = first; index < last; index++)
+                {
+                    _handles[index].ForceDirty();
+                }
+            }
+
+            lock (tracking.TrackingLock)
+            {
+                handle.Dispose();
+            }
         }
 
         public void SignalWrite()

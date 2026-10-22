@@ -15,12 +15,17 @@ namespace Ryujinx.Graphics.Vulkan
         private int _size;
         private Auto<DisposableBufferView> _bufferView;
 
-        private int _bufferCount;
+        private BufferHolder _bufferHolder;
 
         public int Width { get; }
         public int Height { get; }
 
         public VkFormat VkFormat { get; }
+
+        /// <summary>
+        /// Incremented every time the view is released, so arrays can tell which of their views may be stale.
+        /// </summary>
+        public int ViewGeneration { get; private set; }
 
         public TextureBuffer(VulkanRenderer gd, TextureCreateInfo info)
         {
@@ -79,6 +84,8 @@ namespace Ryujinx.Graphics.Vulkan
         {
             _bufferView?.Dispose();
             _bufferView = null;
+            ViewGeneration++;
+            _gd.BufferViewReleaseCount++;
         }
 
         /// <inheritdoc/>
@@ -102,10 +109,14 @@ namespace Ryujinx.Graphics.Vulkan
 
         public void SetStorage(BufferRange buffer)
         {
+            // Handles are reused after a buffer is deleted, so compare the buffer itself as well. Releasing the view
+            // whenever any buffer is created is too costly, as every array holding the view must then be rebuilt.
+            _gd.BufferManager.TryGetBuffer(buffer.Handle, out BufferHolder holder);
+
             if (_bufferHandle == buffer.Handle &&
                 _offset == buffer.Offset &&
                 _size == buffer.Size &&
-                _bufferCount == _gd.BufferManager.BufferCount)
+                _bufferHolder == holder)
             {
                 return;
             }
@@ -113,7 +124,7 @@ namespace Ryujinx.Graphics.Vulkan
             _bufferHandle = buffer.Handle;
             _offset = buffer.Offset;
             _size = buffer.Size;
-            _bufferCount = _gd.BufferManager.BufferCount;
+            _bufferHolder = holder;
 
             ReleaseImpl();
         }

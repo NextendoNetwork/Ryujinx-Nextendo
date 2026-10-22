@@ -141,6 +141,31 @@ namespace Ryujinx.Graphics.Gpu.Memory
         /// <param name="virtualOffset">Virtual offset of the match, always greater than or equal <paramref name="minimumVirtOffset"/></param>
         /// <param name="size">Size of the range match</param>
         /// <returns>True if a match was found for the given parameters, false otherwise</returns>
+        /// <summary>
+        /// Replaces a physical buffer this virtual buffer depends on with the buffer that replaced it.
+        /// </summary>
+        /// <param name="oldBuffer">Buffer being replaced</param>
+        /// <param name="newBuffer">New buffer, which contains the whole range of the old one</param>
+        public void ReplacePhysicalBuffer(Buffer oldBuffer, Buffer newBuffer)
+        {
+            if (_dependencies == null)
+            {
+                return;
+            }
+
+            ulong offsetDelta = oldBuffer.Address - newBuffer.Address;
+
+            for (int i = 0; i < _dependencies.Count; i++)
+            {
+                PhysicalDependency dependency = _dependencies[i];
+
+                if (dependency.PhysicalBuffer == oldBuffer)
+                {
+                    _dependencies[i] = new(newBuffer, dependency.PhysicalOffset + offsetDelta, dependency.VirtualOffset, dependency.Size);
+                }
+            }
+        }
+
         public bool TryGetPhysicalOffset(Buffer buffer, ulong minimumVirtOffset, out ulong physicalOffset, out ulong virtualOffset, out ulong size)
         {
             physicalOffset = 0;

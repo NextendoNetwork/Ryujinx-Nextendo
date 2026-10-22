@@ -79,8 +79,6 @@ namespace Ryujinx.Graphics.Vulkan
 
         private readonly IdList<BufferHolder> _buffers;
 
-        public int BufferCount { get; private set; }
-
         public StagingBuffer StagingBuffer { get; }
 
         public MemoryRequirements HostImportedBufferMemoryRequirements { get; }
@@ -125,8 +123,6 @@ namespace Ryujinx.Graphics.Vulkan
             gd.Api.BindBufferMemory(_device, buffer, allocation.GetUnsafe().Memory, allocation.GetUnsafe().Offset + offset);
 
             BufferHolder holder = new(gd, _device, buffer, allocation, size, BufferAllocationType.HostMapped, BufferAllocationType.HostMapped, (int)offset);
-
-            BufferCount++;
 
             ulong handle64 = (uint)_buffers.Add(holder);
 
@@ -226,8 +222,6 @@ namespace Ryujinx.Graphics.Vulkan
 
             BufferHolder holder = new(gd, _device, buffer, (int)size, storageAllocations);
 
-            BufferCount++;
-
             ulong handle64 = (uint)_buffers.Add(holder);
 
             return Unsafe.As<ulong, BufferHandle>(ref handle64);
@@ -261,8 +255,6 @@ namespace Ryujinx.Graphics.Vulkan
             {
                 holder.UseMirrors();
             }
-
-            BufferCount++;
 
             ulong handle64 = (uint)_buffers.Add(holder);
 
@@ -651,7 +643,7 @@ namespace Ryujinx.Graphics.Vulkan
             }
         }
 
-        private bool TryGetBuffer(BufferHandle handle, out BufferHolder holder)
+        internal bool TryGetBuffer(BufferHandle handle, out BufferHolder holder)
         {
             return _buffers.TryGetValue((int)Unsafe.As<BufferHandle, ulong>(ref handle), out holder);
         }

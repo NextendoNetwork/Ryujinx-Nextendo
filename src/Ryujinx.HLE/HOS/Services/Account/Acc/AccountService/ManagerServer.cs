@@ -127,6 +127,17 @@ namespace Ryujinx.HLE.HOS.Services.Account.Acc.AccountService
             return rsa;
         }
 
+        private static bool IsNsoClassics(ulong programId)
+        {
+            return programId is
+                0x0100D870045B6000 or // NES
+                0x01008D300C50C000 or // SNES
+                0x0100C62011050000 or // Game Boy
+                0x010012F017576000 or // Game Boy Advance
+                0x0100C9A00ECE6000 or // Nintendo 64
+                0x0100B3C014BDA000;   // Mega Drive / Genesis
+        }
+
         private string GenerateIdToken(string installedVersion, ulong programId)
         {
             RSAParameters parameters = _nextendoIdTokenRsa.ExportParameters(true);
@@ -160,7 +171,10 @@ namespace Ryujinx.HLE.HOS.Services.Account.Acc.AccountService
             // Scarlet shares Violet's NPLN tenant, and Monster Hunter Rise JP/HK shares the
             // US/EU one, but each needs its own app_id. Every other game's BAAS token remains
             // byte-compatible with the existing claim shape.
-            if (programId == 0x0100A3D008C5C000 || programId == 0x0100559011740000)
+            // The NSO Classics share one endpoint that routes each login by catalogue, so they send
+            // their application ID too. It is a routing scope only: the server still authenticates
+            // the enclosed nx2 proof.
+            if (IsNsoClassics(programId) || programId == 0x0100A3D008C5C000 || programId == 0x0100559011740000)
             {
                 claims["app_id"] = programId.ToString("X16");
             }

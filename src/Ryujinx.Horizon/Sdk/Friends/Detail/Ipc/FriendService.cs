@@ -20,6 +20,17 @@ namespace Ryujinx.Horizon.Sdk.Friends.Detail.Ipc
         private SystemEventType _completionEvent;
         private bool _isAsyncSession;
 
+        // Retain the bounded Classics lab experiment without changing upstream's
+        // default cache wait or the behavior of unrelated titles.
+        private static bool WarmClassicsFriendInfo =>
+            (Environment.GetEnvironmentVariable("NEXTENDO_GBA_FRIEND_TRACE") == "1" &&
+             Environment.GetEnvironmentVariable("NEXTENDO_GBA_FRIEND_WARM") == "1" &&
+             string.Equals(NextendoFriends.CurrentTitleId, "010012f017576000", StringComparison.OrdinalIgnoreCase)) ||
+            (Environment.GetEnvironmentVariable("NEXTENDO_NES_FRIEND_TRACE") == "1" &&
+             string.Equals(NextendoFriends.CurrentTitleId, "0100d870045b6000", StringComparison.OrdinalIgnoreCase)) ||
+            (Environment.GetEnvironmentVariable("NEXTENDO_GB_FRIEND_TRACE") == "1" &&
+             string.Equals(NextendoFriends.CurrentTitleId, "0100c62011050000", StringComparison.OrdinalIgnoreCase));
+
         public FriendService(IEmulatorAccountManager accountManager, FriendsServicePermissionLevel permissionLevel)
         {
             _accountManager = accountManager;
@@ -352,7 +363,8 @@ namespace Ryujinx.Horizon.Sdk.Friends.Detail.Ipc
             // the remaining ids with the wrong friends.
             // A list not loaded yet (the overlay of the system asks right after a friend comes online)
             // is waited for a little.
-            IReadOnlyList<NextendoFriends.Entry> known = NextendoFriends.GetWarm(1500);
+            bool warmClassics = WarmClassicsFriendInfo;
+            IReadOnlyList<NextendoFriends.Entry> known = NextendoFriends.GetWarm(warmClassics ? 3000 : 1500);
 
             for (int i = 0; i < friendIds.Length && i < info.Length; i++)
             {

@@ -453,6 +453,15 @@ namespace Ryujinx.Ava.Systems.AppLibrary
             "010001701248c000" => "1.0.4",  // Super Monkey Ball Banana Mania
             "0100b6e012ebe000" => "1.1.17", // UNO
             "0100abd01785c000" => "1.0.3",  // Portal 2 (update v196608, NACP display version)
+            // Nintendo Switch Online Classics: the application versions the online-classics servers
+            // (NextendoNetwork/online-classics) are written and tested for. Each NSO application is a
+            // separate title with its own server module, and a different version is a different client.
+            "0100d870045b6000" => "9.1.0",  // Nintendo Entertainment System - Nintendo Switch Online
+            "01008d300c50c000" => "6.0.0",  // Super Nintendo Entertainment System - Nintendo Switch Online
+            "0100c62011050000" => "4.1.0",  // Game Boy - Nintendo Switch Online
+            "010012f017576000" => "3.4.0",  // Game Boy Advance - Nintendo Switch Online
+            "0100b3c014bda000" => "3.1.1",  // SEGA Genesis - Nintendo Switch Online
+            "0100c9a00ece6000" => "4.2.0",  // Nintendo 64 - Nintendo Classics
             _ => "",
         };
 

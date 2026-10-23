@@ -4,6 +4,7 @@ using LibHac.Loader;
 using LibHac.Tools.FsSystem;
 using Ryujinx.Common.Helper;
 using Ryujinx.Common.Logging;
+using Ryujinx.HLE.HOS;
 using System;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -51,6 +52,8 @@ namespace Ryujinx.HLE.Loaders.Executables
 
             Name = name;
             BuildId = reader.Header.ModuleId;
+            TextSize = NextendoJustDancePatch.PaddedTextSize(Convert.ToHexString(BuildId), Name,
+                TextOffset, TextSize, RoOffset);
 
             PrintRoSectionInfo();
         }

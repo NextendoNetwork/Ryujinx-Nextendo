@@ -991,6 +991,13 @@ namespace Ryujinx.HLE.HOS
                     continue;
                 }
 
+                if (NextendoJustDancePatch.Apply(applicationId, Convert.ToHexString(nso.BuildId), nso.Name, nso.Program))
+                {
+                    Logger.Info?.Print(LogClass.ModLoader, "[Nextendo] JD2022 exact-build TLS trust applied");
+                    count++;
+                    continue;
+                }
+
                 MemPatch patch = new();
 
                 if (NextendoS3Patches.Verser(Convert.ToHexString(nso.BuildId).TrimEnd('0'), patch) == 0)

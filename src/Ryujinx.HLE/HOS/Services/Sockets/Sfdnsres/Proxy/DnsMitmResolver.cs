@@ -174,6 +174,11 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Sfdnsres.Proxy
             ("pvzgw3prodapp-*.ea.com", ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
             // UNO signs in through Ubisoft's public services endpoint before any matchmaking.
             ("public-ubiservices.ubi.com", ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
+            // JD2022 title/notification endpoints. Shared REST keeps the existing UNO entry.
+            ("public-ws-ubiservices.ubi.com", ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
+            ("jd.ubisoft.com", ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
+            ("phonescoring.jd.ubisoft.com", ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
+            ("v2.phonescoring.jd.ubisoft.com", ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
         };
 
         // Reads a server address from an environment variable; falls back to loopback so no

@@ -745,6 +745,8 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd
         // RecvFrom(u32 sock, u32 flags) -> (i32 ret, u32 bsd_errno, u32 addrlen, buffer<i8, 0x22, 0> message, buffer<nn::socket::sockaddr_in, 0x22, 0x10>)
         public ResultCode RecvFrom(ServiceCtx context)
         {
+            // A closed socket or invalid buffer must finish a deferred call with its error.
+            context.PollResult = 1;
             int socketFd = context.RequestData.ReadInt32();
             BsdSocketFlags socketFlags = (BsdSocketFlags)context.RequestData.ReadInt32();
 
@@ -758,19 +760,30 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd
                 return WriteBsdResult(context, -1, LinuxError.EFAULT);
             }
 
+            using WritableRegion receiveScope = receiveRegion;
+
             LinuxError errno = LinuxError.EBADF;
             ISocket socket = _context.RetrieveSocket(socketFd);
             int result = -1;
 
             if (socket != null)
             {
-                errno = socket.ReceiveFrom(out result, receiveRegion.Memory.Span, receiveRegion.Memory.Span.Length, socketFlags, out IPEndPoint endPoint);
+                errno = DeferredDatagramReceive.Receive(socket, receiveRegion.Memory.Span, socketFlags,
+                    out result, out IPEndPoint endPoint, out bool pending);
+
+                // Reuse the server's deferred IPC reply loop. No reply is sent while the
+                // datagram is absent; other sessions can continue to use BSD meanwhile.
+                context.PollResult = pending ? 0 : 1;
+                if (pending && !context.PollForceNonBlocking)
+                {
+                    context.PollDeferRequested = true;
+                    context.PollDeadlineMs = DeferredDatagramReceive.Deadline(socket, PerformanceCounter.ElapsedMilliseconds);
+                    return ResultCode.Success;
+                }
 
                 if (errno == LinuxError.SUCCESS)
                 {
                     SetResultErrno(socket, result);
-
-                    receiveRegion.Dispose();
 
                     if (sockAddrOutSize != 0 && sockAddrOutSize >= (ulong)Unsafe.SizeOf<BsdSockAddr>())
                     {

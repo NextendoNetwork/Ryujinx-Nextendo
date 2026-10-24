@@ -24,9 +24,14 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
         private bool _isBlockingSocket;
         private int _previousReadTimeout;
 
-        public SslManagedSocketConnection(BsdContext bsdContext, SslVersion sslVersion, int socketFd, ISocket socket)
+        // Ultimate Chicken Horse only: non-blocking reads complete on decrypted data (see UchBufferedRead).
+        private readonly bool _uch;
+        private UchBufferedRead _uchBufferedRead;
+
+        public SslManagedSocketConnection(BsdContext bsdContext, SslVersion sslVersion, int socketFd, ISocket socket, bool uch = false)
         {
             _bsdContext = bsdContext;
+            _uch = uch;
             _sslVersion = sslVersion;
 
             SocketFd = socketFd;
@@ -249,6 +254,17 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
 
         public ResultCode Peek(out int peekCount, Memory<byte> buffer)
         {
+            if (_uch && !Socket.Blocking)
+            {
+                _uchBufferedRead ??= new UchBufferedRead(_stream);
+
+                int? count = _uchBufferedRead.Read(buffer, peek: true);
+
+                peekCount = count ?? -1;
+
+                return count.HasValue ? ResultCode.Success : ResultCode.WouldBlock;
+            }
+
             // NOTE: We cannot support that on .NET SSL API.
             // As Nintendo's curl implementation detail check if a connection is alive via Peek, we just return that it would block to let it know that it's alive.
             peekCount = -1;
@@ -287,6 +303,11 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
 
         public int Pending()
         {
+            if (_uchBufferedRead != null)
+            {
+                return _uchBufferedRead.Pending;
+            }
+
             return _stream is null ? 0 : Buffered();
         }
 
@@ -311,6 +332,17 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
 
         public ResultCode Read(out int readCount, Memory<byte> buffer)
         {
+            if (_uch && !Socket.Blocking)
+            {
+                _uchBufferedRead ??= new UchBufferedRead(_stream);
+
+                int? count = _uchBufferedRead.Read(buffer);
+
+                readCount = count ?? -1;
+
+                return count.HasValue ? ResultCode.Success : ResultCode.WouldBlock;
+            }
+
             if (Buffered() == 0 && !Socket.Poll(0, SelectMode.SelectRead))
             {
                 readCount = -1;
@@ -421,6 +453,7 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
 
         public void Dispose()
         {
+            _uchBufferedRead?.Dispose();
             _bsdContext.CloseFileDescriptor(SocketFd);
         }
     }

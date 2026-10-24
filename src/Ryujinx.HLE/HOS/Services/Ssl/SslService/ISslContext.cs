@@ -6,7 +6,7 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
 {
     class ISslContext : IpcService
     {
-        private uint _connectionCount;
+        private readonly SslConnectionTracker _connections = new();
 
         private readonly ulong _processId;
         private readonly SslVersion _sslVersion;
@@ -23,9 +23,19 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
         // CreateConnection() -> object<nn::ssl::sf::ISslConnection>
         public ResultCode CreateConnection(ServiceCtx context)
         {
-            MakeObject(context, new ISslConnection(_processId, _sslVersion));
+            // The slot is released when the connection object is disposed, so the count the game reads goes back down.
+            ISslConnection connection = new(_processId, _sslVersion, _connections.Register());
 
-            _connectionCount++;
+            try
+            {
+                MakeObject(context, connection);
+            }
+            catch
+            {
+                connection.Dispose();
+
+                throw;
+            }
 
             return ResultCode.Success;
         }
@@ -34,9 +44,11 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
         // GetConnectionCount() -> u32 count
         public ResultCode GetConnectionCount(ServiceCtx context)
         {
-            context.ResponseData.Write(_connectionCount);
+            uint connectionCount = _connections.Count;
 
-            Logger.Stub?.PrintStub(LogClass.ServiceSsl, new { _connectionCount });
+            context.ResponseData.Write(connectionCount);
+
+            Logger.Stub?.PrintStub(LogClass.ServiceSsl, new { connectionCount });
 
             return ResultCode.Success;
         }

@@ -77,12 +77,21 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd
         {
             BsdAddressFamily domain = (BsdAddressFamily)context.RequestData.ReadInt32();
             BsdSocketType type = (BsdSocketType)context.RequestData.ReadInt32();
+            int requestedType = (int)type;
             ProtocolType protocol = (ProtocolType)context.RequestData.ReadInt32();
 
             Logger.Info?.PrintMsg(LogClass.ServiceBsd, $"Creating socket with domain={domain}, type={type}, protocol={protocol}");
 
             BsdSocketCreationFlags creationFlags = (BsdSocketCreationFlags)((int)type >> (int)BsdSocketCreationFlags.FlagsShift);
             type &= BsdSocketType.TypeMask;
+
+            // Ultimate Chicken Horse opens its UNET transport socket with the selector 0x10000000 and protocol IP,
+            // which has no socket type of its own. It is a datagram socket.
+            if (protocol == ProtocolType.IP && UchOnline.IsUdpSelector(context.Device.Processes.GetProcess(context.ClientProcessId).ProgramId, requestedType))
+            {
+                type = BsdSocketType.Dgram;
+                protocol = ProtocolType.Udp;
+            }
 
             if (domain == BsdAddressFamily.Unknown)
             {
@@ -835,6 +844,15 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd
             if (socket != null)
             {
                 IPEndPoint endPoint = context.Memory.Read<BsdSockAddr>(bufferPosition).ToIPEndPoint();
+
+                // Ultimate Chicken Horse: the NXU1 ticket frame goes out first, from this same gameplay socket,
+                // in front of the game's own connect request to the relay.
+                if (UchAccountTransport.Bootstrap(context.Device.Processes.ActiveApplication?.ProgramId ?? 0,
+                        socket, sendBuffer, socketFlags, endPoint, out LinuxError bootstrapError) &&
+                    bootstrapError != LinuxError.SUCCESS)
+                {
+                    return WriteBsdResult(context, -1, bootstrapError);
+                }
 
                 errno = socket.SendTo(out result, sendBuffer, sendBuffer.Length, socketFlags, endPoint);
 

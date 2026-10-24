@@ -5,6 +5,7 @@ using Ryujinx.HLE.HOS.Services.Ssl.Types;
 using Ryujinx.Memory;
 using System;
 using System.Text;
+using System.Threading;
 
 namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
 {
@@ -27,13 +28,20 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
 
         private byte[] _nextAplnProto;
 
-        public ISslConnection(ulong processId, SslVersion sslVersion)
+        // Releases this connection's slot in the context's live-connection count, exactly once.
+        private Action _onDisposed;
+
+        // UCH only: sees the login response of the brainCloud/allocation hosts to pick up the NXU1 ticket.
+        private UchResponseObserver _uchResponse;
+
+        public ISslConnection(ulong processId, SslVersion sslVersion, Action onDisposed = null)
         {
             _processId = processId;
             _sslVersion = sslVersion;
             _ioMode = IoMode.Blocking;
             _sessionCacheMode = SessionCacheMode.None;
             _verifyOption = VerifyOption.PeerCa | VerifyOption.HostName;
+            _onDisposed = onDisposed;
         }
 
         [CommandCmif(0)]
@@ -61,7 +69,7 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
                 return ResultCode.InvalidSocket;
             }
 
-            InitializeConnection(internalFd);
+            InitializeConnection(internalFd, UchOnline.IsTitle(context.Device.Processes.ActiveApplication?.ProgramId ?? 0));
 
             int outputFd = inputFd;
 
@@ -75,11 +83,11 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
             return ResultCode.Success;
         }
 
-        private void InitializeConnection(int socketFd)
+        private void InitializeConnection(int socketFd, bool uch)
         {
             ISocket bsdSocket = _bsdContext.RetrieveSocket(socketFd);
 
-            _connection = new SslManagedSocketConnection(_bsdContext, _sslVersion, socketFd, bsdSocket);
+            _connection = new SslManagedSocketConnection(_bsdContext, _sslVersion, socketFd, bsdSocket, uch);
         }
 
         [CommandCmif(1)]
@@ -94,6 +102,11 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
             context.Memory.Read(hostNameDataPosition, hostNameData);
 
             _hostName = Encoding.ASCII.GetString(hostNameData).Trim('\0');
+
+            _uchResponse = UchAccountTransport.Enabled(context.Device.Processes.ActiveApplication?.ProgramId ?? 0) &&
+                           UchOnline.IsServiceHost(_hostName)
+                ? new UchResponseObserver(UchAccountTransport.Observe)
+                : null;
 
             Logger.Info?.Print(LogClass.ServiceSsl, _hostName);
 
@@ -240,6 +253,11 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
 
             if (result == ResultCode.Success)
             {
+                if (readCount > 0)
+                {
+                    _uchResponse?.Observe(region.Memory.Span[..readCount]);
+                }
+
                 context.ResponseData.Write(readCount);
             }
 
@@ -509,7 +527,14 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
 
         public void Dispose()
         {
-            _connection?.Dispose();
+            try
+            {
+                _connection?.Dispose();
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _onDisposed, null)?.Invoke();
+            }
         }
     }
 }

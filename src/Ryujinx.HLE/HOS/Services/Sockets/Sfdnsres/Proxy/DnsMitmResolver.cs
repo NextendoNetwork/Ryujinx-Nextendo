@@ -174,6 +174,12 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Sfdnsres.Proxy
             ("pvzgw3prodapp-*.ea.com", ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
             // UNO signs in through Ubisoft's public services endpoint before any matchmaking.
             ("public-ubiservices.ubi.com", ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
+            // Ultimate Chicken Horse: brainCloud RPC and its three regional allocation hosts (same names
+            // Prelude writes into the hosts file). Only UCH uses them among the supported games.
+            ("api.braincloudservers.com", ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
+            ("na.ultimatechickenhorseserver.com", ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
+            ("eu.ultimatechickenhorseserver.com", ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
+            ("ap.ultimatechickenhorseserver.com", ResolveConfiguredIp("NEXTENDO_SERVER_IP")),
         };
 
         // Reads a server address from an environment variable; falls back to loopback so no

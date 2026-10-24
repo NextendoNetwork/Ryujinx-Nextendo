@@ -451,6 +451,7 @@ namespace Ryujinx.Ava.Systems.AppLibrary
             "01009b90006dc000" => "3.0.3",  // Super Mario Maker 2
             "0100000000010000" => "1.4.1",  // Super Mario Odyssey
             "010001701248c000" => "1.0.4",  // Super Monkey Ball Banana Mania
+            "0100fcf002a58000" => "1.13.13.765", // Ultimate Chicken Horse
             "0100b6e012ebe000" => "1.1.17", // UNO
             "0100abd01785c000" => "1.0.3",  // Portal 2 (update v196608, NACP display version)
             _ => "",

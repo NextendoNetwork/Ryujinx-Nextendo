@@ -538,7 +538,11 @@ namespace Ryujinx.Graphics.Gpu.Memory
                     
                     ulong newSize = endAddress - address;
 
-                    _buffers.Add(CreateBufferAligned(address, newSize, stage, anySparseCompatible, overlapsArray));
+                    Buffer merged = CreateBufferAligned(address, newSize, stage, anySparseCompatible, overlapsArray);
+
+                    _buffers.Add(merged);
+
+                    RecreateMultiRangeBuffers(merged.Address, merged.Size);
                 }
             }
             else
@@ -601,7 +605,11 @@ namespace Ryujinx.Graphics.Gpu.Memory
                     
                     _buffers.RemoveRange(overlaps[0], overlaps[^1]);
                     
-                    _buffers.Add(CreateBufferAligned(address, newSize, stage, sparseAligned, overlapsArray));
+                    Buffer merged = CreateBufferAligned(address, newSize, stage, sparseAligned, overlapsArray);
+
+                    _buffers.Add(merged);
+
+                    RecreateMultiRangeBuffers(merged.Address, merged.Size);
                 }
             }
             else
@@ -633,6 +641,7 @@ namespace Ryujinx.Graphics.Gpu.Memory
 
                 buffer.CopyTo(newBuffer, dstOffset);
                 newBuffer.InheritModifiedRanges(buffer);
+                buffer.TransferVirtualDependencies(newBuffer);
 
                 buffer.DecrementReferenceCount();
             }
@@ -642,8 +651,10 @@ namespace Ryujinx.Graphics.Gpu.Memory
             // Existing buffers were modified, we need to rebind everything.
             NotifyBuffersModified?.Invoke();
 
-            RecreateMultiRangeBuffers(address, size);
-            
+            // The caller adds the new buffer to the list and then recreates the virtual buffers that overlap it.
+            // Doing that here, before the buffer is on the list, makes the recreation create a second buffer
+            // for the same range that is never synchronized, and the virtual buffer then copies zeros from it.
+
             return newBuffer;
         }
 

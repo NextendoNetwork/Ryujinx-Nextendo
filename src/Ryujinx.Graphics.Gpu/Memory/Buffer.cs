@@ -838,6 +838,33 @@ namespace Ryujinx.Graphics.Gpu.Memory
         /// Removes a virtual buffer dependency, indicating that a virtual buffer no longer depends on data from this buffer.
         /// </summary>
         /// <param name="virtualBuffer">Dependant virtual buffer</param>
+        /// <summary>
+        /// Moves the virtual buffers that depend on this buffer to the buffer that replaces it,
+        /// so that they keep receiving the data written to the new buffer.
+        /// </summary>
+        /// <param name="newBuffer">Buffer that replaces this one, must contain its whole range</param>
+        public void TransferVirtualDependencies(Buffer newBuffer)
+        {
+            _virtualDependenciesLock.EnterWriteLock();
+            try
+            {
+                if (_virtualDependencies != null)
+                {
+                    foreach (MultiRangeBuffer virtualBuffer in _virtualDependencies)
+                    {
+                        virtualBuffer.ReplacePhysicalBuffer(this, newBuffer);
+                        newBuffer.AddVirtualDependency(virtualBuffer);
+                    }
+
+                    _virtualDependencies = null;
+                }
+            }
+            finally
+            {
+                _virtualDependenciesLock.ExitWriteLock();
+            }
+        }
+
         public void RemoveVirtualDependency(MultiRangeBuffer virtualBuffer)
         {
             _virtualDependenciesLock.EnterWriteLock();

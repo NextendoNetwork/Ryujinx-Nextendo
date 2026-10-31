@@ -266,6 +266,20 @@ namespace Ryujinx.Graphics.Gpu.Image
         }
 
         /// <summary>
+        /// Checks if the entry with the given ID is known to hold no texture: its descriptor was found
+        /// invalid the last time it was looked up, and nothing has written to it since.
+        /// </summary>
+        /// <remarks>
+        /// Much cheaper than looking the entry up again, as that reads the descriptor from guest memory.
+        /// </remarks>
+        /// <param name="id">ID of the texture. This is effectively a zero-based index</param>
+        /// <returns>True if the entry is known to hold no texture, false if it must be looked up</returns>
+        public bool IsKnownEmpty(int id)
+        {
+            return Items[id] == null && _invalidMap.IsSet(id);
+        }
+
+        /// <summary>
         /// Gets the texture descriptor and texture with the given ID.
         /// </summary>
         /// <remarks>
